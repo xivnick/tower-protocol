@@ -347,14 +347,6 @@ button:disabled {
   font-weight: 900;
 }
 
-.rail-brand strong {
-  border: 1px solid var(--line-2);
-  color: var(--mut);
-  padding: 1px 5px;
-  font-size: 10px;
-  font-weight: 800;
-}
-
 .rail-brand.compact {
   height: auto;
   padding: 0;
