@@ -266,6 +266,51 @@ button:disabled {
   padding: 12px;
 }
 
+.update-banner {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(460px, calc(100vw - 32px));
+  border: 1px solid var(--acc-dim);
+  background: color-mix(in srgb, var(--surf) 94%, black);
+  padding: 10px;
+  box-shadow: 0 0 0 1px rgba(57, 255, 122, 0.08), 0 18px 60px rgba(0, 0, 0, 0.36);
+}
+
+.update-banner.is-required {
+  border-color: var(--neg);
+}
+
+.update-banner div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.update-banner span {
+  color: var(--acc);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.update-banner.is-required span {
+  color: var(--neg);
+}
+
+.update-banner strong {
+  color: var(--txt-bright);
+  font-size: 12px;
+}
+
+.update-banner .btn {
+  min-height: 34px;
+  flex: 0 0 auto;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: var(--rail) minmax(0, 1fr);
