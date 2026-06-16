@@ -9,5 +9,5 @@ app/.env.local
 .DS_Store
 supabase/.temp/
 
-# Obsidian 볼트는 docs/ 로 이동됨. 루트에 재생성되는 .obsidian 은 무시
-/.obsidian/
+# Obsidian 개인 설정은 추적 안 함 (어느 위치든)
+.obsidian/
