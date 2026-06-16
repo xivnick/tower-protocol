@@ -1,16 +1,16 @@
-export function validateEmail(value) {
+export function validateEmail(value: string) {
   return /\S+@\S+\.\S+/.test(value);
 }
 
-export function validatePassword(value) {
+export function validatePassword(value: string) {
   return value.length >= 8;
 }
 
-export function validateNickname(value) {
+export function validateNickname(value: string) {
   return getNicknameValidationMessage(value) === "";
 }
 
-export function getNicknameValidationMessage(value) {
+export function getNicknameValidationMessage(value: string) {
   const nickname = value.trim();
 
   if (nickname.length < 2 || nickname.length > 16) {

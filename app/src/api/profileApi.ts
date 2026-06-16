@@ -1,8 +1,29 @@
-import { supabase } from "../config/supabaseClient.js";
-import { toKoreanAuthMessage } from "../shared/authMessages.js";
-import { getNicknameValidationMessage } from "../shared/validation.js";
+import { supabase } from "../lib/supabase";
+import { toKoreanAuthMessage } from "../shared/authMessages";
+import { getNicknameValidationMessage } from "../shared/validation";
 
-export async function getMyProfile() {
+export type Profile = {
+  user_id: string;
+  nickname: string;
+  created_at: string;
+  updated_at: string;
+};
+
+type ProfileResult = {
+  ok: boolean;
+  profile: Profile | null;
+  message: string;
+};
+
+type NicknameAvailabilityResult = {
+  ok: boolean;
+  available: boolean;
+  message: string;
+};
+
+export async function getMyProfile(): Promise<ProfileResult> {
+  if (!supabase) return { ok: false, profile: null, message: "Supabase 설정을 확인해주세요." };
+
   const { data: userResult, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userResult.user) {
@@ -26,7 +47,9 @@ export async function getMyProfile() {
   return { ok: true, profile: data, message: "" };
 }
 
-export async function createMyProfile(nickname) {
+export async function createMyProfile(nickname: string): Promise<ProfileResult> {
+  if (!supabase) return { ok: false, profile: null, message: "Supabase 설정을 확인해주세요." };
+
   const validationMessage = getNicknameValidationMessage(nickname);
 
   if (validationMessage) {
@@ -59,7 +82,9 @@ export async function createMyProfile(nickname) {
   return { ok: true, profile: data, message: "" };
 }
 
-export async function checkNicknameAvailability(nickname) {
+export async function checkNicknameAvailability(nickname: string): Promise<NicknameAvailabilityResult> {
+  if (!supabase) return { ok: false, available: false, message: "Supabase 설정을 확인해주세요." };
+
   const candidate = nickname.trim();
   const validationMessage = getNicknameValidationMessage(candidate);
 
@@ -67,9 +92,7 @@ export async function checkNicknameAvailability(nickname) {
     return { ok: true, available: false, message: validationMessage };
   }
 
-  const { data, error } = await supabase.rpc("is_nickname_available", {
-    candidate,
-  });
+  const { data, error } = await supabase.rpc("is_nickname_available", { candidate });
 
   if (error) {
     return {
