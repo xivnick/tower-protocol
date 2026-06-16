@@ -346,11 +346,6 @@ button:disabled {
   font-weight: 900;
 }
 
-.rail-brand strong {
-  color: var(--acc);
-  font-size: 11px;
-}
-
 .rail-brand.compact {
   height: auto;
   padding: 0;
@@ -563,10 +558,7 @@ button:disabled {
 
   .mobile-shell-head {
     order: 1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    display: block;
     border-bottom: 1px solid var(--line);
     background: var(--bg-2);
     padding: 12px;
@@ -607,15 +599,11 @@ button:disabled {
 
   .topbar {
     order: 2;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
     min-height: 52px;
     border-bottom: 0;
     background: var(--surf);
     padding: 10px 12px;
-  }
-
-  .topbar .btn {
-    display: none;
   }
 
   .workspace-body {
