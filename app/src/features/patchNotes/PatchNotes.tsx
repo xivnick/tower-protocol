@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { loadPatchNotes } from "./loadPatchNotes";
 import type { PatchNote } from "./patchNoteTypes";
 
@@ -34,6 +35,8 @@ export function PatchNotesSummary() {
 }
 
 export function PatchNotesArchive() {
+  useDocumentTitle("TOWER://PATCH_NOTES");
+
   const { status, notes, message } = usePatchNotes();
 
   return (

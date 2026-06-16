@@ -1,5 +1,6 @@
 import type { Session } from "@supabase/supabase-js";
 import type { Profile } from "../../api/profileApi";
+import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { PatchNotesSummary } from "../patchNotes/PatchNotes";
 
 export function DashboardScreen({
@@ -9,6 +10,8 @@ export function DashboardScreen({
   session: Session | null;
   profile: Profile | null;
 }) {
+  useDocumentTitle("TOWER://DASHBOARD");
+
   const nickname = profile?.nickname ?? "UNKNOWN";
   const email = session?.user?.email ?? "-";
 

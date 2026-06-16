@@ -19,6 +19,16 @@ export function AppShell({
     <>
       <div className="crt-overlay" aria-hidden="true" />
       <main className="app-shell">
+        <header className="mobile-shell-head">
+          <div className="rail-brand compact">
+            <span>TOWER://</span>
+            <strong>ONLINE</strong>
+          </div>
+          <button className="btn ghost" type="button" onClick={onSignOut}>
+            로그아웃
+          </button>
+        </header>
+
         <aside className="rail" aria-label="주요 메뉴">
           <div className="rail-brand">
             <span>TOWER://</span>
@@ -45,7 +55,7 @@ export function AppShell({
 
         <section className="workspace">
           <header className="topbar">
-            <div>
+            <div className="session-block">
               <span className="eyebrow">SESSION</span>
               <strong>{nickname}</strong>
             </div>
@@ -54,11 +64,13 @@ export function AppShell({
             </button>
           </header>
 
-          <Routes>
-            <Route path="/" element={<DashboardScreen session={session} profile={profile} />} />
-            <Route path="/patch-notes" element={<PatchNotesArchive />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <div className="workspace-body">
+            <Routes>
+              <Route path="/" element={<DashboardScreen session={session} profile={profile} />} />
+              <Route path="/patch-notes" element={<PatchNotesArchive />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
         </section>
       </main>
     </>
