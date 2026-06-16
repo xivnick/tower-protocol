@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+.env.local
+app/node_modules/
+app/dist/
+app/.env
+app/.env.local
+.DS_Store
+supabase/.temp/
+
+# Obsidian 볼트는 docs/ 로 이동됨. 루트에 재생성되는 .obsidian 은 무시
+/.obsidian/

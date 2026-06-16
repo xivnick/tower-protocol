@@ -1,0 +1,3 @@
+-- Remote migration history placeholder.
+-- The original 002 migration was applied to the linked Supabase project during an earlier prototype pass.
+-- Current effective schema is maintained by later migrations in this directory.

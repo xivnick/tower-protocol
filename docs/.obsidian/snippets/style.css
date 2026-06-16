@@ -1,0 +1,5 @@
+/* 편집기와 미리보기 모두 적용 */
+.cm-contentContainer, 
+.markdown-preview-view {
+    line-height: 1.5; /* 행간 */
+}

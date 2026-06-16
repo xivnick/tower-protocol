@@ -1,0 +1,3 @@
+-- Remote migration history placeholder.
+-- The original 003 migration reset the remote schema back to the minimal profiles-only structure.
+-- Current effective schema is maintained by later migrations in this directory.

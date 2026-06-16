@@ -1,0 +1,17 @@
+{
+  "name": "rpg-tower-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "app:dev": "npm --prefix app run dev",
+    "app:build": "npm --prefix app run build",
+    "app:preview": "npm --prefix app run preview",
+    "supabase": "supabase",
+    "db:push": "set -a; . ./app/.env.local; set +a; supabase db push",
+    "db:list": "set -a; . ./app/.env.local; set +a; supabase migration list"
+  },
+  "devDependencies": {
+    "supabase": "^1.207.9"
+  }
+}

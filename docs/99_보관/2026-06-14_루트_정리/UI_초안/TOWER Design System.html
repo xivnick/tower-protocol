@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOWER:// — 디자인 시스템</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tower-styles.css">
+<style>
+  /* ---- 문서 스캐폴드 (디자인 시스템 자체가 아님 / 보여주기용) ---- */
+  html, body { overflow:auto; height:auto; }
+  body { padding:0; }
+  .ds-wrap { max-width:1200px; margin:0 auto; padding:48px 36px 120px; }
+  .ds-top { border-bottom:1px solid var(--line); padding-bottom:28px; margin-bottom:40px; }
+  .ds-top .logo { font-family:var(--disp); font-weight:700; font-size:40px; color:var(--acc); }
+  .ds-top .logo .sl { color:var(--mut); }
+  .ds-top .logo .cur { display:inline-block; width:13px; height:28px; background:var(--acc); margin-left:5px; transform:translateY(3px); box-shadow:0 0 10px var(--acc); }
+  .ds-top h1 { font-family:var(--disp); font-size:18px; color:var(--txt-bright); margin:18px 0 6px; }
+  .ds-top p { color:var(--mut); font-size:13px; max-width:760px; line-height:1.7; margin:0; }
+  .ds-top .rule { display:inline-block; margin-top:14px; font-size:11.5px; color:var(--acc); border:1px solid var(--acc-deep); padding:6px 12px; background:color-mix(in oklch,var(--acc) 7%,transparent); }
+
+  .ds-sec { margin-top:52px; }
+  .ds-sec > .sh { display:flex; align-items:baseline; gap:14px; border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:22px; }
+  .ds-sec > .sh .n { font-family:var(--disp); font-size:13px; color:var(--mut-2); }
+  .ds-sec > .sh h2 { font-family:var(--disp); font-size:19px; color:var(--txt-bright); margin:0; }
+  .ds-sec > .sh .d { margin-left:auto; font-size:12px; color:var(--mut); }
+
+  .ds-grid { display:grid; gap:14px; }
+  .g2 { grid-template-columns:1fr 1fr; } .g3 { grid-template-columns:repeat(3,1fr); }
+  .g4 { grid-template-columns:repeat(4,1fr); } .g5 { grid-template-columns:repeat(5,1fr); }
+  .ds-cap { font-size:11px; color:var(--mut); margin-top:9px; line-height:1.6; }
+  .ds-cap b { color:var(--txt); font-weight:500; }
+  .ds-cap code, code.k { font-family:var(--mono); color:var(--acc); background:color-mix(in oklch,var(--acc) 8%,transparent); padding:1px 5px; font-size:10.5px; }
+
+  /* 스와치 */
+  .sw { border:1px solid var(--line); }
+  .sw .chip { height:60px; border-bottom:1px solid var(--line); }
+  .sw .meta { padding:8px 10px; }
+  .sw .meta .nm { font-size:11.5px; color:var(--txt); }
+  .sw .meta .vr { font-size:10px; color:var(--mut); margin-top:2px; }
+  .sw .meta .hx { font-size:10px; color:var(--mut-2); }
+
+  .demo { border:1px solid var(--line); background:var(--bg-2); padding:20px; }
+  .demo.row-wrap { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+  .note { font-size:12px; color:var(--mut); line-height:1.8; }
+  .note .pip { background:var(--acc); }
+  .typ-row { display:flex; align-items:baseline; gap:18px; padding:12px 0; border-bottom:1px dashed var(--line); }
+  .typ-row .lbl { width:150px; flex:0 0 150px; font-size:11px; color:var(--mut); }
+</style>
+</head>
+<body>
+<div id="crt"><div class="vig"></div><div class="scan"></div><div class="flick"></div></div>
+<div class="ds-wrap">
+
+  <!-- HEADER -->
+  <div class="ds-top">
+    <div class="logo glow">TOWER<span class="sl">://</span><span class="cur blink"></span></div>
+    <h1>디자인 시스템 — 불변 (Design System · Canonical)</h1>
+    <p>아래 요소들은 <b style="color:var(--txt)">페이지 구조와 무관하게 항상 동일</b>합니다. 페이지 레이아웃은 바뀌어도 색·타입·컴포넌트·전투로그 색상·등급·모션은 이 정의를 그대로 따르세요. 이 페이지는 실제 <code class="k">tower-styles.css</code>로 렌더링되어 구현과 100% 일치합니다.</p>
+    <span class="rule">규칙: 새 색을 만들지 말 것 · 모서리는 각지게(radius 0) · 모노스페이스만 · word-break:keep-all</span>
+  </div>
+
+  <!-- 1. LOGO -->
+  <section class="ds-sec">
+    <div class="sh"><span class="n">01</span><h2>로고</h2><span class="d">TOWER:// + 블록 커서</span></div>
+    <div class="ds-grid g2">
+      <div class="demo" style="display:flex; align-items:center; justify-content:center; padding:34px;">
+        <span style="font-family:var(--disp); font-weight:700; font-size:34px; color:var(--acc); text-shadow:0 0 6px color-mix(in oklch,var(--acc) 55%,transparent),0 0 16px color-mix(in oklch,var(--acc) 28%,transparent);">TOWER<span style="color:var(--mut)">://</span><span class="blink" style="display:inline-block; width:11px; height:24px; background:var(--acc); margin-left:5px; transform:translateY(2px); box-shadow:0 0 9px var(--acc);"></span></span>
+      </div>
+      <div class="note">
+        <p style="margin:0 0 10px"><span class="pip"></span><b style="color:var(--txt)">TOWER</b> = Space Mono 700 · 색 <code class="k">--acc</code> · <code class="k">.glow</code></p>
+        <p style="margin:0 0 10px"><span class="pip"></span><b style="color:var(--txt)">://</b> = 색 <code class="k">--mut</code> · 글로우 없음 (URL 스킴처럼 읽히게)</p>
+        <p style="margin:0 0 10px"><span class="pip"></span><b style="color:var(--txt)">커서</b> = 채워진 사각 블록 · <code class="k">--acc</code> · 글로우 · <code class="k">.blink</code>(1.05s)</p>
+        <p style="margin:0"><span class="pip"></span>인증 화면에서는 동일 구조로 크게(40px), 그 외엔 22px.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. COLORS -->
+  <section class="ds-sec">
+    <div class="sh"><span class="n">02</span><h2>색상</h2><span class="d">전부 CSS 변수로만 사용</span></div>
+
+    <p class="ds-cap" style="margin-bottom:12px"><b>배경 / 표면</b> — 검정에 가까운 녹색 계열, 채도 매우 낮음. 어두움 → 밝음 순.</p>
+    <div class="ds-grid g5" style="margin-bottom:24px">
+      <div class="sw"><div class="chip" style="background:#060a07"></div><div class="meta"><div class="nm">BG</div><div class="vr">--bg</div><div class="hx">#060A07</div></div></div>
+      <div class="sw"><div class="chip" style="background:#0a0f0b"></div><div class="meta"><div class="nm">BG-2</div><div class="vr">--bg-2</div><div class="hx">#0A0F0B</div></div></div>
+      <div class="sw"><div class="chip" style="background:#0d140f"></div><div class="meta"><div class="nm">SURFACE</div><div class="vr">--surf</div><div class="hx">#0D140F</div></div></div>
+      <div class="sw"><div class="chip" style="background:#121b15"></div><div class="meta"><div class="nm">SURFACE-2</div><div class="vr">--surf-2</div><div class="hx">#121B15</div></div></div>
+      <div class="sw"><div class="chip" style="background:#16221a"></div><div class="meta"><div class="nm">SURFACE-3</div><div class="vr">--surf-3</div><div class="hx">#16221A</div></div></div>
+    </div>
+
+    <p class="ds-cap" style="margin-bottom:12px"><b>보더(3단계) / 텍스트(4단계)</b></p>
+    <div class="ds-grid g5" style="margin-bottom:24px">
+      <div class="sw"><div class="chip" style="background:#1b271f"></div><div class="meta"><div class="nm">LINE</div><div class="vr">--line</div><div class="hx">#1B271F</div></div></div>
+      <div class="sw"><div class="chip" style="background:#27382d"></div><div class="meta"><div class="nm">LINE-2</div><div class="vr">--line-2</div><div class="hx">#27382D</div></div></div>
+      <div class="sw"><div class="chip" style="background:#34503f"></div><div class="meta"><div class="nm">LINE-3</div><div class="vr">--line-3</div><div class="hx">#34503F</div></div></div>
+      <div class="sw"><div class="chip" style="background:#cdd6cf"></div><div class="meta"><div class="nm">TEXT</div><div class="vr">--txt</div><div class="hx">#CDD6CF</div></div></div>
+      <div class="sw"><div class="chip" style="background:#eafff3"></div><div class="meta"><div class="nm">TEXT-BRIGHT</div><div class="vr">--txt-bright</div><div class="hx">#EAFFF3</div></div></div>
+    </div>
+    <div class="ds-grid g5" style="margin-bottom:24px">
+      <div class="sw"><div class="chip" style="background:#7a857d"></div><div class="meta"><div class="nm">MUTED</div><div class="vr">--mut</div><div class="hx">#7A857D</div></div></div>
+      <div class="sw"><div class="chip" style="background:#525c54"></div><div class="meta"><div class="nm">MUTED-2</div><div class="vr">--mut-2</div><div class="hx">#525C54</div></div></div>
+      <div class="sw"><div class="chip" style="background:#39ff7a"></div><div class="meta"><div class="nm">ACCENT</div><div class="vr">--acc</div><div class="hx">#39FF7A</div></div></div>
+      <div class="sw"><div class="chip" style="background:#1f7a45"></div><div class="meta"><div class="nm">ACCENT-DIM</div><div class="vr">--acc-dim</div><div class="hx">#1F7A45</div></div></div>
+      <div class="sw"><div class="chip" style="background:#0f3d23"></div><div class="meta"><div class="nm">ACCENT-DEEP</div><div class="vr">--acc-deep</div><div class="hx">#0F3D23</div></div></div>
+    </div>
+
+    <p class="ds-cap" style="margin-bottom:12px"><b>시맨틱</b> — 의미 고정. <code class="k">--neg</code>=피해(빨강), <code class="k">--ess</code>=정수(보라). <span style="color:var(--neg)">정수 보라는 등급4 보라와 용도가 다름</span>.</p>
+    <div class="ds-grid g5">
+      <div class="sw"><div class="chip" style="background:#ff6b6b"></div><div class="meta"><div class="nm">피해 NEG</div><div class="vr">--neg</div><div class="hx">#FF6B6B</div></div></div>
+      <div class="sw"><div class="chip" style="background:#c9a6ff"></div><div class="meta"><div class="nm">정수 ESS</div><div class="vr">--ess</div><div class="hx">#C9A6FF</div></div></div>
+      <div class="sw"><div class="chip" style="background:#37e0ff"></div><div class="meta"><div class="nm">EXP 바</div><div class="vr">(고정)</div><div class="hx">#37E0FF</div></div></div>
+      <div style="grid-column:span 2" class="note" style2=""><p style="margin:0; padding:14px 0 0; font-size:11.5px; color:var(--mut)">시맨틱 색은 액센트 테마가 바뀌어도 <b style="color:var(--txt)">절대 변하지 않습니다.</b> 피해는 항상 빨강, 정수는 항상 보라, EXP 바는 항상 시안.</p></div>
+    </div>
+  </section>
+
+  <!-- 3. GRADE -->
+  <section class="ds-sec">
+    <div class="sh"><span class="n">03</span><h2>등급 (레어도)</h2><span class="d">아이템·정수 공통 5단계 · 액센트와 독립</span></div>
+    <div class="ds-grid g5">
+      <div class="sw"><div class="chip" style="background:#9a988f"></div><div class="meta"><div class="nm">1 · 일반</div><div class="vr">--g1</div><div class="hx">#9A988F</div></div></div>
+      <div class="sw"><div class="chip" style="background:#5cd98a"></div><div class="meta"><div class="nm">2 · 고급</div><div class="vr">--g2</div><div class="hx">#5CD98A</div></div></div>
+      <div class="sw"><div class="chip" style="background:#4db8ff"></div><div class="meta"><div class="nm">3 · 희귀</div><div class="vr">--g3</div><div class="hx">#4DB8FF</div></div></div>
+      <div class="sw"><div class="chip" style="background:#b06bff"></div><div class="meta"><div class="nm">4 · 영웅</div><div class="vr">--g4</div><div class="hx">#B06BFF</div></div></div>
+      <div class="sw"><div class="chip" style="background:#ffb24d"></div><div class="meta"><div class="nm">5 · 전설</div><div class="vr">--g5</div><div class="hx">#FFB24D</div></div></div>
+    </div>
+    <div class="demo row-wrap" style="margin-top:14px">
+      <span class="grade gg1">일반</span><span class="grade gg2">고급</span><span class="grade gg3">희귀</span><span class="grade gg4">영웅</span><span class="grade gg5">전설</span>
+      <span class="ds-cap" style="margin:0 0 0 10px">뱃지 <code class="k">.grade.gg{1..5}</code> · 보더·텍스트 모두 등급색. 아이템 이름도 <code class="k">.gtext{1..5}</code>로 등급색 적용.</span>
+    </div>
+  </section>
+
+  <!-- 4. TYPOGRAPHY -->
+  <section class="ds-sec">
+    <div class="sh"><span class="n">04</span><h2>타이포그래피</h2><span class="d">Space Mono(디스플레이) · JetBrains Mono(UI/로그)</span></div>
+    <div class="demo">
+      <div class="typ-row"><span class="lbl">로고/디스플레이</span><span style="font-family:var(--disp); font-weight:700; font-size:28px; color:var(--txt-bright)">TOWER://</span><span class="ds-cap" style="margin:0">Space Mono 700</span></div>
+      <div class="typ-row"><span class="lbl">페이지 제목 .h-title</span><span style="font-family:var(--disp); font-size:24px; color:var(--txt-bright)">정수 합성</span><span class="ds-cap" style="margin:0">--disp 24px / --txt-bright</span></div>
+      <div class="typ-row"><span class="lbl">큰 숫자 .metric .big</span><span style="font-family:var(--disp); font-size:26px; color:var(--acc)">148,230</span><span class="ds-cap" style="margin:0">--disp 26px / 강조 시 --acc</span></div>
+      <div class="typ-row"><span class="lbl">본문 / 값</span><span style="font-size:13px; color:var(--txt-bright)">플레이어 → 고블린 정찰병</span><span class="ds-cap" style="margin:0">JetBrains Mono 13px</span></div>
+      <div class="typ-row"><span class="lbl">라벨 .eyebrow</span><span class="eyebrow" style="margin:0">// DASHBOARD</span><span class="ds-cap" style="margin:0">10.5px · letter-spacing 2.5 · 대문자 · --mut</span></div>
+      <div class="typ-row" style="border:0"><span class="lbl">힌트/타임스탬프</span><span style="font-size:11px; color:var(--mut-2)">[12:04:01]</span><span class="ds-cap" style="margin:0">11px / --mut-2</span></div>
+    </div>
+  </section>
+
+  <!-- 5. COMBAT LOG (핵심) -->
+  <section class="ds-sec">
+    <div class="sh"><span class="n">05</span><h2>전투 로그 색상 시스템</h2><span class="d">★ 가장 중요 — 정확히 지킬 것</span></div>
+    <div class="ds-grid g2" style="align-items:start">
+      <div class="panel">
+        <div class="panel-h"><span class="dot blink"></span><span class="ttl">사냥 현황 :: 망령의 숲</span><span class="rt acc" style="font-size:11px">LIVE</span></div>
+        <div style="padding:9px 12px; border-bottom:1px solid var(--line)">
+          <div class="legend">
+            <span><i style="background:#9aa39d"></i>일반</span>
+            <span><i style="background:var(--acc)"></i>치명타</span>
+            <span><i style="background:var(--ess)"></i>정수</span>
+            <span><i style="background:var(--g2)"></i>드랍</span>
+            <span><i style="background:var(--txt)"></i>처치</span>
+          </div>
+        </div>
+        <div class="feed" style="padding:12px 14px">
+          <div class="ln norm"><span class="ts">[12:04:01] </span>플레이어 → 고블린 정찰병 <span class="neg">-142</span></div>
+          <div class="ln crit"><span class="ts">[12:04:02] </span><span class="crit">✦ 치명타! 플레이어 → 고블린 정찰병 <span class="neg">-488</span></span></div>
+          <div class="ln ess"><span class="ts">[12:04:02] </span><span class="ess">◇ 정수 발동 · 화염의 숨결 </span><span class="neg">-320</span></div>
+          <div class="ln norm"><span class="ts">[12:04:03] </span>고블린 정찰병 → 플레이어 <span class="neg">-37</span></div>
+          <div class="ln kill"><span class="ts">[12:04:03] </span>고블린 정찰병 처치 <span class="num">+18 EXP</span> <span class="num">+44 G</span></div>
+          <div class="ln drop"><span class="ts">[12:04:03] </span>+ 드랍 · <span class="gtext3">희귀</span> 정찰병의 단검 ×1</div>
+          <div class="ln drop"><span class="ts">[12:04:04] </span>+ 드랍 · <span class="gtext2">고급</span> 거친 가죽 ×2</div>
+          <div class="ln sys"><span class="ts">[12:04:05] </span><span class="sys">▶ 24층 입장 — 탑의 수호자 출현</span></div>
+          <div class="ln info"><span class="ts">[12:04:06] </span><span class="info">HP 35% 미만 — 휴식 진입</span></div>
+        </div>
+      </div>
+      <div class="note">
+        <p style="margin:0 0 14px; color:var(--txt); font-size:12.5px">원칙: <b style="color:var(--acc)">액센트(녹색)=신호</b> · <b style="color:var(--neg)">빨강=피해</b> · <b style="color:var(--ess)">보라=정수</b> · 드랍은 등급색 · 일반은 눈에 안 띄는 회색.</p>
+        <table style="width:100%; border-collapse:collapse; font-size:11.5px">
+          <tr style="color:var(--mut); text-align:left"><th style="padding:6px 8px; border-bottom:1px solid var(--line); font-weight:400">종류</th><th style="padding:6px 8px; border-bottom:1px solid var(--line); font-weight:400">클래스</th><th style="padding:6px 8px; border-bottom:1px solid var(--line); font-weight:400">색</th></tr>
+          <tr><td style="padding:6px 8px; border-bottom:1px solid var(--line)">타임스탬프</td><td style="padding:6px 8px; border-bottom:1px solid var(--line)"><code class="k">.ts</code></td><td style="padding:6px 8px; border-bottom:1px solid var(--line)"><span style="color:var(--mut-2)">--mut-2</span></td></tr>
+          <tr><td style="padding:6px 8px; border-bottom:1px solid var(--line)">일반 공격</td><td style="padding:6px 8px; border-bottom:1px solid var(--line)"><code class="k">.norm</code></td><td style="padding:6px 8px; border-bottom:1px solid var(--line)"><span style="color:#9aa39d">#9AA39D</span></td></tr>
+          <tr><td style="padding:6px 8px; border-bottom:1px solid var(--line)">치명타 +굵게+glow</td><td style="padding:6px 8px; border-bottom:1px solid var(--line)"><code class="k">.crit</code></td><td style="padding:6px 8px; border-bottom:1px solid var(--line)"><span style="color:var(--acc)">--acc</span></td></tr>
+          <tr><td style="padding:6px 8px; border-bottom:1px solid var(--line)">정수 발동</td><td style="padding:6px 8px; border-bottom:1px solid var(--line)"><code class="k">.ess</code></td><td style="padding:6px 8px; border-bottom:1px solid var(--line)"><span style="color:var(--ess)">--ess</span></td></tr>
+          <tr><td style="padding:6px 8px; border-bottom:1px solid var(--line)">시스템/입장</td><td style="padding:6px 8px; border-bottom:1px solid var(--line)"><code class="k">.sys</code></td><td style="padding:6px 8px; border-bottom:1px solid var(--line)"><span style="color:var(--acc)">--acc</span></td></tr>
+          <tr><td style="padding:6px 8px; border-bottom:1px solid var(--line)">처치+보상</td><td style="padding:6px 8px; border-bottom:1px solid var(--line)"><code class="k">.kill/.num</code></td><td style="padding:6px 8px; border-bottom:1px solid var(--line)"><span style="color:var(--txt)">--txt</span> / <span style="color:var(--acc)">--acc</span></td></tr>
+          <tr><td style="padding:6px 8px; border-bottom:1px solid var(--line)">드랍</td><td style="padding:6px 8px; border-bottom:1px solid var(--line)"><code class="k">.drop</code></td><td style="padding:6px 8px; border-bottom:1px solid var(--line)">이름앞 등급색</td></tr>
+          <tr><td style="padding:6px 8px">피해 수치</td><td style="padding:6px 8px"><code class="k">.neg</code></td><td style="padding:6px 8px"><span style="color:var(--neg)">--neg</span></td></tr>
+        </table>
+        <p class="ds-cap" style="margin-top:12px">줄은 <code class="k">nowrap+ellipsis</code> · 새 줄 좌측 슬라이드 인 · 추가 시 자동 하단 스크롤.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. BUTTONS -->
+  <section class="ds-sec">
+    <div class="sh"><span class="n">06</span><h2>버튼</h2><span class="d">각진 1px · 모노스페이스</span></div>
+    <div class="demo row-wrap">
+      <button class="btn btn-primary glow">자동사냥 시작</button>
+      <button class="btn btn-ghost">탑 도전 <span class="kc">3</span></button>
+      <button class="btn">기본 버튼</button>
+      <button class="btn btn-danger">■ 정지</button>
+      <button class="btn btn-sm">작은 버튼</button>
+      <button class="btn" disabled>비활성</button>
+    </div>
+    <p class="ds-cap"><code class="k">.btn-primary</code> 액센트 채움(검정 텍스트)+glow · <code class="k">.btn-ghost</code> 투명+액센트 · <code class="k">.btn-danger</code> 위험/정지 · <code class="k">.btn-sm</code> 소형 · <code class="k">:disabled</code> opacity .4. hover 시 한 단계 밝아짐.</p>
+  </section>
+
+  <!-- 7. CONTAINERS -->
+  <section class="ds-sec">
+    <div class="sh"><span class="n">07</span><h2>패널 · 메트릭 · 바</h2><span class="d">컨테이너 기본형</span></div>
+    <div class="ds-grid g3" style="align-items:start">
+      <div class="panel">
+        <div class="panel-h"><span class="dot"></span><span class="ttl">패널 제목</span><span class="rt mut" style="font-size:11px">우측</span></div>
+        <div class="panel-b">
+          <div class="kv"><span class="k">키</span><span class="v">값</span></div>
+          <div class="kv"><span class="k">HP</span><span class="v">1,840 / 2,710</span></div>
+          <div style="height:8px"></div>
+          <div class="bar hp"><i style="width:68%"></i></div>
+          <div style="height:10px"></div>
+          <div class="bar exp"><i style="width:64%"></i></div>
+          <div style="height:10px"></div>
+          <div class="bar ess"><i style="width:40%"></i></div>
+        </div>
+      </div>
+      <div class="ds-grid" style="gap:14px">
+        <div class="metric"><div class="lab">누적 골드</div><div class="big acc">148,230</div><div class="sub">G</div></div>
+        <div class="metric"><div class="lab">최고 탑 층수</div><div class="big">24F</div><div class="sub">랭킹 #42</div></div>
+      </div>
+      <div class="note">
+        <p style="margin:0 0 10px"><span class="pip"></span><b style="color:var(--txt)">.panel</b> = 1px <code class="k">--line</code> + <code class="k">--surf</code>. 헤더 좌측 상태점 <code class="k">.dot</code>(live면 .blink).</p>
+        <p style="margin:0 0 10px"><span class="pip"></span><b style="color:var(--txt)">.metric</b> 큰 숫자 지표 · <b style="color:var(--txt)">.kv</b> 라벨—값 행(점선 구분).</p>
+        <p style="margin:0"><span class="pip"></span><b style="color:var(--txt)">.bar</b> HP=녹색 · EXP=<span style="color:#37e0ff">시안</span> · 정수=<span style="color:var(--ess)">보라</span>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. TABS / TAGS / ROWS -->
+  <section class="ds-sec">
+    <div class="sh"><span class="n">08</span><h2>탭 · 태그 · 리스트 행</h2></div>
+    <div class="ds-grid g2" style="align-items:start">
+      <div>
+        <div class="tabs" style="margin-bottom:14px">
+          <div class="tab on">슬롯 배치</div><div class="tab">정수 목록</div><div class="tab">합성</div>
+        </div>
+        <div class="demo row-wrap" style="margin-bottom:14px">
+          <span class="tag">선택됨</span><span class="tag rec">추천</span><span class="tag boss">BOSS</span><span class="tag dim">잠김</span>
+        </div>
+        <p class="ds-cap"><code class="k">.tab.on</code> 하단 액센트 보더 · <code class="k">.tag</code> 작은 칩(nowrap).</p>
+      </div>
+      <div class="ds-grid" style="gap:8px">
+        <div class="row sel"><div style="width:40px; height:40px; border:1px solid var(--line-2); display:flex; align-items:center; justify-content:center; color:var(--acc); font-family:var(--disp)">망</div><div style="flex:1"><div class="between"><span style="font-family:var(--disp); color:var(--txt-bright)">망령의 숲</span><span class="tag rec">추천</span></div><div style="font-size:11px; color:var(--mut); margin-top:4px">권장 Lv.8 · <span class="acc">880 G/h</span></div></div></div>
+        <div class="row locked"><div style="width:40px; height:40px; border:1px solid var(--line-2); display:flex; align-items:center; justify-content:center; color:var(--mut-2)">🔒</div><div style="flex:1"><div class="between"><span style="font-family:var(--disp); color:var(--mut)">독성 늪지</span><span class="tag dim">잠김</span></div><div style="font-size:11px; color:var(--mut); margin-top:4px">권장 Lv.24</div></div></div>
+        <p class="ds-cap" style="margin:2px 0 0"><code class="k">.row</code> 기본 · <code class="k">.sel</code> 선택(액센트 틴트) · <code class="k">.locked</code> 흐리게.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. SLOTS -->
+  <section class="ds-sec">
+    <div class="sh"><span class="n">09</span><h2>슬롯</h2><span class="d">장비·정수 칸 · 등급색 보더</span></div>
+    <div class="ds-grid g4" style="max-width:600px">
+      <div class="slot filled gtext3" style="color:var(--g3); aspect-ratio:1"><span class="type">ACTIVE</span><span class="cd">◇8s</span><span class="ico">◈</span><span class="nm">화염의 숨결</span></div>
+      <div class="slot filled" style="color:var(--g2); aspect-ratio:1"><span class="type">PASSIVE</span><span class="ico">◈</span><span class="nm">정찰병의 직감</span></div>
+      <div class="slot filled" style="color:var(--g5); aspect-ratio:1"><span class="type">무기</span><span class="ico">⚔</span><span class="nm">+7</span></div>
+      <div class="slot empty" style="aspect-ratio:1"><span class="ico">＋</span><span class="nm">빈 슬롯</span></div>
+    </div>
+    <p class="ds-cap"><code class="k">.slot.filled</code> 등급색 보더(color로 지정) · <code class="k">.empty</code> 점선 · 액티브는 <code class="k">.type</code>(좌상단)+<code class="k">.cd</code>(우상단 보라) · 드롭 가능 시 <code class="k">.drag-ok</code>.</p>
+  </section>
+
+  <!-- 10. MOTION -->
+  <section class="ds-sec">
+    <div class="sh"><span class="n">10</span><h2>모션 · 효과</h2></div>
+    <div class="ds-grid g4">
+      <div class="demo" style="text-align:center"><span class="blink" style="display:inline-block; width:11px; height:22px; background:var(--acc); box-shadow:0 0 9px var(--acc)"></span><p class="ds-cap">커서 깜빡임<br>1.05s steps(1)</p></div>
+      <div class="demo" style="text-align:center; position:relative; overflow:hidden"><div style="position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,.6) 3px,transparent 4px); opacity:.5"></div><span style="position:relative; color:var(--acc); font-family:var(--disp)">SCANLINE</span><p class="ds-cap" style="position:relative">스캔라인 오버레이</p></div>
+      <div class="demo" style="text-align:center"><span class="glow" style="color:var(--acc); font-family:var(--disp); font-size:20px">GLOW</span><p class="ds-cap">.glow<br>text-shadow 2겹</p></div>
+      <div class="demo" style="text-align:center"><span style="color:var(--mut); font-size:11px">page-in / ln-in</span><p class="ds-cap">진입 시 transform만 이동<br>(opacity는 항상 1 = 항상 보임)</p></div>
+    </div>
+    <p class="ds-cap" style="margin-top:12px"><b style="color:var(--txt)">중요:</b> 항상 켜져있는 콘텐츠(<code class="k">.page</code>, 로그 <code class="k">.ln</code>)의 진입 애니메이션은 <b style="color:var(--txt)">transform만</b> 움직이고 opacity는 항상 1. 이래야 프린트/PDF/백그라운드 탭에서도 내용이 안 사라집니다. <code class="k">prefers-reduced-motion</code>에서는 모두 정지. 콘텐츠에 무한 반복 장식 애니메이션 금지(커서/플리커 제외).</p>
+  </section>
+
+  <!-- FOOTER -->
+  <section class="ds-sec">
+    <div class="sh"><span class="n">—</span><h2>이건 변해도 됨</h2><span class="d">페이지 구조 = 적용 예시</span></div>
+    <p class="note" style="margin:0">네비게이션 배치, 어떤 페이지가 몇 개인지, 각 페이지에 어떤 패널을 어떻게 배열할지는 <b style="color:var(--txt)">바뀔 수 있습니다.</b> 그래도 위 1~10번 디자인 요소(색·타입·전투로그·등급·컴포넌트·모션)는 <b style="color:var(--acc)">항상 그대로</b> 가져가세요. 페이지별 적용 예시는 <code class="k">DESIGN.md</code> PART B와 레퍼런스 구현 <code class="k">TOWER.html</code>을 참고.</p>
+  </section>
+
+</div>
+</body>
+</html>

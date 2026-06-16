@@ -1,0 +1,225 @@
+{
+  "main": {
+    "id": "7ef64b451019955f",
+    "type": "split",
+    "children": [
+      {
+        "id": "3a7297bf2b4a7ccb",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "355b006b98aedf6b",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "그래프 뷰"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "7bc9c734bad8543b",
+    "type": "split",
+    "children": [
+      {
+        "id": "65b34d78cd37614d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "556b114f725ece2b",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "파일 탐색기"
+            }
+          },
+          {
+            "id": "cb532949cef2eb8b",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "검색"
+            }
+          },
+          {
+            "id": "681a09a36ca99112",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "북마크"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 256.5
+  },
+  "right": {
+    "id": "1f3519093d82c98b",
+    "type": "split",
+    "children": [
+      {
+        "id": "9b0c579cf583e53b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "9a6686a5ebc0b3ba",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "01_게임_기획/01_게임_개요.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "01_게임_개요 의 백링크"
+            }
+          },
+          {
+            "id": "2ae3618ae764d0e5",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "rpg-tower-level-design.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "rpg-tower-level-design 의 나가는 링크"
+            }
+          },
+          {
+            "id": "b66505afbcf6c86f",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "태그"
+            }
+          },
+          {
+            "id": "22f6cf5ef74e74fa",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "모든 속성"
+            }
+          },
+          {
+            "id": "91edf86a0e8f0d90",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "rpg-tower-level-design.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "rpg-tower-level-design 의 개요"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:빠른 전환기 열기": false,
+      "graph:그래프 뷰 열기": false,
+      "canvas:새 캔버스 만들기": false,
+      "daily-notes:오늘의 일일 노트 열기": false,
+      "templates:템플릿 삽입": false,
+      "command-palette:명령어 팔레트 열기": false,
+      "bases:새 베이스 생성하기": false
+    }
+  },
+  "active": "355b006b98aedf6b",
+  "lastOpenFiles": [
+    "01_게임_기획/01_게임_개요.md",
+    "node_modules/mkdirp 2",
+    "node_modules/supabase 2",
+    "node_modules/signal-exit 2",
+    "node_modules/tar 2",
+    "node_modules/minizlib 2",
+    "node_modules/web-streams-polyfill 2",
+    "node_modules/https-proxy-agent 2",
+    "node_modules/ms 2",
+    "node_modules/yallist 2",
+    "node_modules/proc-log 2",
+    "app/node_modules/@supabase/phoenix/priv/static/phoenix.png",
+    "app/node_modules/@supabase/phoenix/priv/static/phoenix-orange.png",
+    "app/node_modules/@supabase/supabase-js/migrations/README.md",
+    "app/node_modules/@supabase/storage-js/migrations/README.md",
+    "app/node_modules/@supabase/realtime-js/migrations/httpsend-server-version.md",
+    "app/node_modules/@supabase/realtime-js/migrations/README.md",
+    "app/node_modules/@supabase/postgrest-js/migrations/README.md",
+    "app/node_modules/@supabase/functions-js/migrations/README.md",
+    "app/node_modules/@supabase/auth-js/migrations/lockless-coordination.md",
+    "app/node_modules/@supabase/auth-js/migrations/README.md",
+    "app/node_modules/@types/estree/README.md",
+    "app/node_modules/@supabase/supabase-js/README.md",
+    "app/node_modules/@supabase/supabase-js/AGENTS.md",
+    "app/node_modules/@supabase/storage-js/README.md",
+    "app/node_modules/@supabase/storage-js/AGENTS.md",
+    "app/node_modules/@supabase/realtime-js/README.md",
+    "app/node_modules/@supabase/realtime-js/AGENTS.md",
+    "app/node_modules/@supabase/postgrest-js/README.md",
+    "app/node_modules/@supabase/postgrest-js/AGENTS.md",
+    "app/node_modules/@supabase/phoenix/README.md",
+    "app/node_modules/@supabase/phoenix/LICENSE.md",
+    "app/node_modules/@supabase/functions-js/README.md",
+    "app/node_modules/@supabase/functions-js/AGENTS.md",
+    "app/node_modules/@supabase/auth-js/README.md",
+    "app/node_modules/@supabase/auth-js/AGENTS.md",
+    "app/node_modules/@rollup/rollup-darwin-x64/README.md",
+    "app/node_modules/@esbuild/darwin-x64/README.md",
+    "node_modules/@supabase/phoenix/priv/static/phoenix.png",
+    "node_modules/@supabase/phoenix/priv/static/phoenix-orange.png"
+  ]
+}
