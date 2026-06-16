@@ -16,7 +16,7 @@ export function PatchNotesSummary({ onOpenAll }: { onOpenAll: () => void }) {
       <div className="panel-head compact action-head">
         <div>
           <span>PATCH NOTES</span>
-          <h2>프로토콜 기록</h2>
+          <h2>패치노트 터미널</h2>
         </div>
         <button className="text-button" type="button" onClick={onOpenAll}>
           전체 보기
@@ -32,7 +32,7 @@ export function PatchNotesSummary({ onOpenAll }: { onOpenAll: () => void }) {
   );
 }
 
-export function PatchNotesArchive({ onBack }: { onBack: () => void }) {
+export function PatchNotesArchive() {
   const { status, notes, message } = usePatchNotes();
 
   return (
@@ -40,11 +40,8 @@ export function PatchNotesArchive({ onBack }: { onBack: () => void }) {
       <div className="archive-head">
         <div>
           <span className="eyebrow">PATCH NOTES</span>
-          <h1>프로토콜 기록</h1>
+          <h1>패치노트 터미널</h1>
         </div>
-        <button className="btn ghost" type="button" onClick={onBack}>
-          대시보드
-        </button>
       </div>
 
       {status !== "ready" ? (

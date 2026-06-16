@@ -31,9 +31,6 @@ export function AppShell({
             <button className={`nav-item ${view === "dashboard" ? "is-active" : ""}`} type="button" onClick={() => setView("dashboard")}>
               대시보드
             </button>
-            <button className={`nav-item ${view === "patch-notes" ? "is-active" : ""}`} type="button" onClick={() => setView("patch-notes")}>
-              패치노트
-            </button>
             <button className="nav-item" type="button" disabled>
               사냥
             </button>
@@ -43,11 +40,8 @@ export function AppShell({
             <button className="nav-item" type="button" disabled>
               캐릭터
             </button>
-            <button className="nav-item" type="button" disabled>
-              장비
-            </button>
-            <button className="nav-item" type="button" disabled>
-              정수
+            <button className={`nav-item ${view === "patch-notes" ? "is-active" : ""}`} type="button" onClick={() => setView("patch-notes")}>
+              패치노트
             </button>
           </nav>
         </aside>
@@ -80,7 +74,7 @@ export function AppShell({
               <PatchNotesSummary onOpenAll={() => setView("patch-notes")} />
             </section>
           ) : (
-            <PatchNotesArchive onBack={() => setView("dashboard")} />
+            <PatchNotesArchive />
           )}
         </section>
       </main>
