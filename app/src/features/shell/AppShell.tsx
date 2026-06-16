@@ -1,9 +1,8 @@
-import { useState } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { Navigate, NavLink, Route, Routes } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
-import { PatchNotesArchive, PatchNotesSummary } from "../patchNotes/PatchNotes";
-
-type ShellView = "dashboard" | "patch-notes";
+import { DashboardScreen } from "../dashboard/DashboardScreen";
+import { PatchNotesArchive } from "../patchNotes/PatchNotes";
 
 export function AppShell({
   session,
@@ -14,9 +13,7 @@ export function AppShell({
   profile: Profile | null;
   onSignOut: () => void;
 }) {
-  const [view, setView] = useState<ShellView>("dashboard");
   const nickname = profile?.nickname ?? "UNKNOWN";
-  const email = session?.user?.email ?? "-";
 
   return (
     <>
@@ -28,9 +25,9 @@ export function AppShell({
             <strong>ONLINE</strong>
           </div>
           <nav className="nav-list" aria-label="게임 화면">
-            <button className={`nav-item ${view === "dashboard" ? "is-active" : ""}`} type="button" onClick={() => setView("dashboard")}>
+            <NavLink className={({ isActive }) => `nav-item ${isActive ? "is-active" : ""}`} to="/" end>
               대시보드
-            </button>
+            </NavLink>
             <button className="nav-item" type="button" disabled>
               사냥
             </button>
@@ -40,9 +37,9 @@ export function AppShell({
             <button className="nav-item" type="button" disabled>
               캐릭터
             </button>
-            <button className={`nav-item ${view === "patch-notes" ? "is-active" : ""}`} type="button" onClick={() => setView("patch-notes")}>
+            <NavLink className={({ isActive }) => `nav-item ${isActive ? "is-active" : ""}`} to="/patch-notes">
               패치노트
-            </button>
+            </NavLink>
           </nav>
         </aside>
 
@@ -57,36 +54,13 @@ export function AppShell({
             </button>
           </header>
 
-          {view === "dashboard" ? (
-            <section className="content-grid">
-              <article className="panel">
-                <div className="panel-head">
-                  <span>DASHBOARD</span>
-                  <h2>접속 완료</h2>
-                </div>
-                <div className="kv-grid">
-                  <Kv label="닉네임" value={nickname} />
-                  <Kv label="계정" value={email} />
-                  <Kv label="다음 구현" value="캐릭터 생성" />
-                </div>
-              </article>
-
-              <PatchNotesSummary onOpenAll={() => setView("patch-notes")} />
-            </section>
-          ) : (
-            <PatchNotesArchive />
-          )}
+          <Routes>
+            <Route path="/" element={<DashboardScreen session={session} profile={profile} />} />
+            <Route path="/patch-notes" element={<PatchNotesArchive />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </section>
       </main>
     </>
-  );
-}
-
-function Kv({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="kv">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
   );
 }

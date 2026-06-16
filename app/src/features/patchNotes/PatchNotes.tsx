@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { loadPatchNotes } from "./loadPatchNotes";
 import type { PatchNote } from "./patchNoteTypes";
 
@@ -7,7 +8,7 @@ type PatchNotesState =
   | { status: "ready"; notes: PatchNote[]; message: string }
   | { status: "error"; notes: PatchNote[]; message: string };
 
-export function PatchNotesSummary({ onOpenAll }: { onOpenAll: () => void }) {
+export function PatchNotesSummary() {
   const { status, notes, message } = usePatchNotes();
   const recentNotes = notes.slice(0, 3);
 
@@ -18,9 +19,9 @@ export function PatchNotesSummary({ onOpenAll }: { onOpenAll: () => void }) {
           <span>PATCH NOTES</span>
           <h2>패치노트 터미널</h2>
         </div>
-        <button className="text-button" type="button" onClick={onOpenAll}>
+        <Link className="text-button" to="/patch-notes">
           전체 보기
-        </button>
+        </Link>
       </div>
 
       {status !== "ready" ? (
