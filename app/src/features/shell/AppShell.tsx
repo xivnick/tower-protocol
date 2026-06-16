@@ -22,12 +22,14 @@ export function AppShell({
         <header className="mobile-shell-head">
           <div className="rail-brand compact">
             <span>TOWER://</span>
+            <strong>LINKED</strong>
           </div>
         </header>
 
         <aside className="rail" aria-label="주요 메뉴">
           <div className="rail-brand">
             <span>TOWER://</span>
+            <strong>LINKED</strong>
           </div>
           <nav className="nav-list" aria-label="게임 화면">
             <NavLink className={({ isActive }) => `nav-item ${isActive ? "is-active" : ""}`} to="/" end>
