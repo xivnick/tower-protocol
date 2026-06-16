@@ -1,4 +1,4 @@
-const AUTH_ERROR_MESSAGES = [
+const AUTH_ERROR_MESSAGES: Array<[RegExp, string]> = [
   [/invalid login credentials/i, "이메일 또는 비밀번호를 확인해주세요."],
   [/email rate limit exceeded/i, "이메일 발송 한도를 초과했습니다. 잠시 후 다시 시도해주세요."],
   [/user already registered/i, "이미 가입된 이메일입니다."],
@@ -17,7 +17,7 @@ const AUTH_ERROR_MESSAGES = [
   [/duplicate key value/i, "이미 사용 중인 값입니다."],
 ];
 
-export function toKoreanAuthMessage(message, fallback = "요청을 처리하지 못했습니다.") {
+export function toKoreanAuthMessage(message?: string, fallback = "요청을 처리하지 못했습니다.") {
   if (!message) return fallback;
 
   const matched = AUTH_ERROR_MESSAGES.find(([pattern]) => pattern.test(message));
