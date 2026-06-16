@@ -573,7 +573,8 @@ button:disabled {
     order: 3;
     border-right: 0;
     border-bottom: 1px solid var(--line);
-    padding: 0 12px 12px;
+    background: var(--bg-2);
+    padding: 12px;
   }
 
   .rail > .rail-brand {
@@ -601,7 +602,7 @@ button:disabled {
     order: 2;
     grid-template-columns: minmax(0, 1fr) auto;
     min-height: 52px;
-    border-bottom: 0;
+    border-bottom: 1px solid var(--line);
     background: var(--surf);
     padding: 10px 12px;
   }
