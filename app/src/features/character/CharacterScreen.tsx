@@ -2,6 +2,7 @@ import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
+import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
 import type { Character } from "../../types/character";
 
@@ -26,6 +27,8 @@ export function CharacterScreen({
           </div>
           <div className="kv-grid">
             <Kv label="이름" value={character.name} />
+            <Kv label="레벨" value={formatCharacterLevel(character.level)} />
+            <Kv label="경험치" value={formatCharacterExperience(character.level, character.experience)} />
             <Kv label="상태" value="대기 중" />
           </div>
         </article>

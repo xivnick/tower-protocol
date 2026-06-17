@@ -35,7 +35,7 @@ export async function getMyCharacter(): Promise<CharacterResult> {
 
   const { data, error } = await supabase
     .from("characters")
-    .select("id,user_id,name,created_at,updated_at")
+    .select("id,user_id,name,level,experience,created_at,updated_at")
     .eq("user_id", userResult.user.id)
     .maybeSingle();
 
@@ -72,7 +72,7 @@ export async function createMyCharacter(name: string): Promise<CharacterResult> 
       user_id: userResult.user.id,
       name: trimmedName,
     })
-    .select("id,user_id,name,created_at,updated_at")
+    .select("id,user_id,name,level,experience,created_at,updated_at")
     .single();
 
   if (error) {

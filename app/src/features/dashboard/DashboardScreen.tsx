@@ -1,6 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
 import { Link } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
+import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import type { Character } from "../../types/character";
 import { PatchNotesSummary } from "../patchNotes/PatchNotes";
@@ -45,6 +46,12 @@ export function DashboardScreen({
           <Kv label="닉네임" value={nickname} />
           <Kv label="계정" value={email} />
           <Kv label="캐릭터" value={character?.name ?? "없음"} />
+          {character && (
+            <>
+              <Kv label="레벨" value={formatCharacterLevel(character.level)} />
+              <Kv label="경험치" value={formatCharacterExperience(character.level, character.experience)} />
+            </>
+          )}
         </div>
       </article>
 
