@@ -1,6 +1,7 @@
-import type { FormEvent } from "react";
+import type { FormEvent, MouseEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   getAuthState,
   getCurrentUser,
@@ -14,6 +15,7 @@ import {
 } from "../../api/authApi";
 import { getMyCharacter } from "../../api/characterApi";
 import { checkNicknameAvailability, createMyProfile, getMyProfile } from "../../api/profileApi";
+import type { Profile } from "../../api/profileApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { getNicknameValidationMessage, validateEmail, validateNickname, validatePassword } from "../../shared/validation";
 import type { AuthMode, AuthState } from "../../types/auth";
@@ -34,6 +36,8 @@ const initialState: AuthState = {
 
 export function AuthGate() {
   const [state, setState] = useState<AuthState>(initialState);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const unsubscribe = onPasswordRecovery((session) => {
@@ -43,6 +47,16 @@ export function AuthGate() {
     void boot();
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    const routeMode = getAuthModeFromPath(location.pathname);
+
+    if (state.status !== "signed-out" || state.isSubmitting || !routeMode || state.mode === routeMode) {
+      return;
+    }
+
+    patchState({ mode: routeMode, message: "", messageType: "info" });
+  }, [location.pathname, state.isSubmitting, state.mode, state.status]);
 
   async function boot() {
     const authState = await getAuthState();
@@ -66,9 +80,15 @@ export function AuthGate() {
         return;
       }
 
+      const routeMode = getAuthModeFromPath(location.pathname) ?? "signin";
+
+      if (!isAuthRoute(location.pathname)) {
+        navigate("/login", { replace: true });
+      }
+
       patchState({
         status: "signed-out",
-        mode: "signin",
+        mode: routeMode,
         email: "",
         recoveryEmail: "",
         isSubmitting: false,
@@ -129,6 +149,10 @@ export function AuthGate() {
       message: characterResult.ok ? "" : characterResult.message,
       messageType: characterResult.ok ? "info" : "error",
     });
+
+    if (isAuthRoute(location.pathname)) {
+      navigate("/", { replace: true });
+    }
   }
 
   async function enterPasswordRecovery(initialSession: Session | null) {
@@ -177,7 +201,7 @@ export function AuthGate() {
 
   async function handleSignOut() {
     await signOut();
-    window.history.replaceState(null, "", "/");
+    navigate("/login", { replace: true });
     patchState({
       status: "signed-out",
       mode: "signin",
@@ -188,6 +212,18 @@ export function AuthGate() {
       profile: null,
       character: null,
       message: "접속을 종료했습니다.",
+      messageType: "info",
+    });
+  }
+
+  function handleProfileComplete(profile: Profile) {
+    navigate("/", { replace: true });
+    patchState({
+      status: "signed-in",
+      isSubmitting: false,
+      profile,
+      character: null,
+      message: "",
       messageType: "info",
     });
   }
@@ -213,6 +249,7 @@ export function AuthGate() {
       state={state}
       patchState={patchState}
       enterApp={enterApp}
+      onProfileComplete={handleProfileComplete}
       signOut={handleSignOut}
     />
   );
@@ -222,11 +259,13 @@ function AuthScreen({
   state,
   patchState,
   enterApp,
+  onProfileComplete,
   signOut: handleSignOut,
 }: {
   state: AuthState;
   patchState: (patch: Partial<AuthState>) => void;
   enterApp: (session: Session) => Promise<void>;
+  onProfileComplete: (profile: Profile) => void;
   signOut: () => Promise<void>;
 }) {
   const canGoBack = state.mode === "reset-request" || state.mode === "reset-update";
@@ -247,8 +286,13 @@ function AuthScreen({
               </button>
             )}
           </div>
-          <h1 id="authTitle">TOWER://</h1>
-          <AuthBody state={state} patchState={patchState} enterApp={enterApp} />
+          <h1 id="authTitle" className="auth-logo">
+            <span>TOWER://</span>
+            <i aria-hidden="true" />
+          </h1>
+          <div className="auth-route-frame" key={getAuthFrameKey(state)}>
+            <AuthBody state={state} patchState={patchState} enterApp={enterApp} onProfileComplete={onProfileComplete} />
+          </div>
         </section>
       </main>
     </>
@@ -275,10 +319,12 @@ function AuthBody({
   state,
   patchState,
   enterApp,
+  onProfileComplete,
 }: {
   state: AuthState;
   patchState: (patch: Partial<AuthState>) => void;
   enterApp: (session: Session) => Promise<void>;
+  onProfileComplete: (profile: Profile) => void;
 }) {
   if (state.status === "checking") {
     return <p className="auth-copy">{state.message}</p>;
@@ -295,7 +341,7 @@ function AuthBody({
   }
 
   if (state.status === "profile-required") {
-    return <ProfileForm state={state} patchState={patchState} />;
+    return <ProfileForm state={state} patchState={patchState} onProfileComplete={onProfileComplete} />;
   }
 
   if (state.mode === "reset-request") {
@@ -376,15 +422,34 @@ function EmailAuthForm({
     patchState({ mode: nextMode, message: "", messageType: "info" });
   }
 
+  function handleTabClick(event: MouseEvent<HTMLAnchorElement>, nextMode: AuthMode) {
+    if (state.isSubmitting) {
+      event.preventDefault();
+      return;
+    }
+
+    setMode(nextMode);
+  }
+
   return (
     <>
       <div className="tabs" role="tablist" aria-label="인증 모드">
-        <button className={`tab ${mode === "signin" ? "is-active" : ""}`} type="button" onClick={() => setMode("signin")} disabled={state.isSubmitting}>
+        <NavLink
+          aria-disabled={state.isSubmitting}
+          className={({ isActive }) => `tab ${isActive || mode === "signin" ? "is-active" : ""}`}
+          to="/login"
+          onClick={(event) => handleTabClick(event, "signin")}
+        >
           로그인
-        </button>
-        <button className={`tab ${isSignup ? "is-active" : ""}`} type="button" onClick={() => setMode("signup")} disabled={state.isSubmitting}>
+        </NavLink>
+        <NavLink
+          aria-disabled={state.isSubmitting}
+          className={({ isActive }) => `tab ${isActive || isSignup ? "is-active" : ""}`}
+          to="/signup"
+          onClick={(event) => handleTabClick(event, "signup")}
+        >
           회원가입
-        </button>
+        </NavLink>
       </div>
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <label htmlFor="emailInput">
@@ -395,9 +460,9 @@ function EmailAuthForm({
           <span className="label-row">
             <span>비밀번호</span>
             {mode === "signin" && (
-              <button className="text-button" type="button" onClick={() => patchState({ mode: "reset-request", message: "", messageType: "info" })} disabled={state.isSubmitting}>
+              <NavLink className="text-button" to="/reset-password/request" onClick={() => patchState({ mode: "reset-request", message: "", messageType: "info" })}>
                 비밀번호 찾기
-              </button>
+              </NavLink>
             )}
           </span>
           <input id="passwordInput" name="password" type="password" autoComplete={isSignup ? "new-password" : "current-password"} minLength={8} placeholder="8자 이상" required disabled={state.isSubmitting} />
@@ -474,6 +539,7 @@ function ResetUpdateForm({
   state: AuthState;
   patchState: (patch: Partial<AuthState>) => void;
 }) {
+  const navigate = useNavigate();
   const canSubmit = Boolean(state.recoveryEmail || state.session?.user?.email) && !state.isSubmitting;
   const email = state.recoveryEmail || state.session?.user?.email || "";
 
@@ -503,7 +569,7 @@ function ResetUpdateForm({
 
     const result = await updatePassword(password);
     await signOut();
-    window.history.replaceState(null, "", "/");
+    navigate("/login", { replace: true });
 
     patchState({
       status: "signed-out",
@@ -543,9 +609,11 @@ function ResetUpdateForm({
 function ProfileForm({
   state,
   patchState,
+  onProfileComplete,
 }: {
   state: AuthState;
   patchState: (patch: Partial<AuthState>) => void;
+  onProfileComplete: (profile: Profile) => void;
 }) {
   const [nickname, setNickname] = useState("");
   const [hint, setHint] = useState("");
@@ -598,19 +666,12 @@ function ProfileForm({
     patchState({ status: "profile-required", isSubmitting: true, message: "프로필 생성 중...", messageType: "info" });
     const result = await createMyProfile(trimmedNickname);
 
-    if (!result.ok) {
+    if (!result.ok || !result.profile) {
       patchState({ status: "profile-required", isSubmitting: false, message: result.message, messageType: "error" });
       return;
     }
 
-    patchState({
-      status: "signed-in",
-      isSubmitting: false,
-      profile: result.profile,
-      character: null,
-      message: "",
-      messageType: "info",
-    });
+    onProfileComplete(result.profile);
   }
 
   return (
@@ -635,6 +696,29 @@ function Message({ state }: { state: AuthState }) {
 
 function isRecoveryRoute() {
   return window.location.pathname === "/reset-password" || window.location.hash.includes("type=recovery");
+}
+
+function isAuthRoute(pathname: string) {
+  return pathname === "/login"
+    || pathname === "/signup"
+    || pathname === "/reset-password"
+    || pathname === "/reset-password/request";
+}
+
+function getAuthModeFromPath(pathname: string): AuthMode | null {
+  if (pathname === "/signup") return "signup";
+  if (pathname === "/reset-password/request") return "reset-request";
+  if (pathname === "/reset-password") return "reset-update";
+  if (pathname === "/login" || pathname === "/") return "signin";
+  return null;
+}
+
+function getAuthFrameKey(state: AuthState) {
+  if (state.status === "profile-required" || state.status === "config-error" || state.status === "checking") {
+    return state.status;
+  }
+
+  return state.mode;
 }
 
 function delay(ms: number) {
