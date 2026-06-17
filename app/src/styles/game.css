@@ -399,6 +399,22 @@ button:disabled {
   flex: 0 0 auto;
 }
 
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 35;
+  max-width: min(360px, calc(100vw - 32px));
+  border: 1px solid var(--acc-dim);
+  background: color-mix(in srgb, var(--surf) 94%, black);
+  color: var(--txt-bright);
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 0 0 1px rgba(57, 255, 122, 0.08), 0 18px 60px rgba(0, 0, 0, 0.36);
+  animation: toast-in 160ms ease-out;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: var(--rail) minmax(0, 1fr);
@@ -881,6 +897,13 @@ button:disabled {
   .archive-view {
     overflow: visible;
   }
+
+  .toast {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    max-width: none;
+  }
 }
 
 @keyframes dropdown-in {
@@ -904,6 +927,18 @@ button:disabled {
   to {
     opacity: 0;
     transform: translateY(-4px);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -936,6 +971,7 @@ button:disabled {
   .mobile-nav-menu,
   .mobile-account-menu.is-closing,
   .mobile-nav-menu.is-closing,
+  .toast,
   .rail-brand i,
   .auth-logo i,
   .checking-message i {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
@@ -16,6 +16,7 @@ const navItems = [
 ];
 
 const dropdownCloseMs = 100;
+const toastDurationMs = 3000;
 
 export function AppShell({
   session,
@@ -34,6 +35,8 @@ export function AppShell({
   const [isAccountClosing, setIsAccountClosing] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavClosing, setIsNavClosing] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const toastTimeoutRef = useRef(0);
   const location = useLocation();
   const navigate = useNavigate();
   const nickname = profile?.nickname ?? "UNKNOWN";
@@ -77,6 +80,14 @@ export function AppShell({
         navigate(nextPath);
       }
     }, dropdownCloseMs);
+  }
+
+  function showToast(message: string) {
+    window.clearTimeout(toastTimeoutRef.current);
+    setToastMessage(message);
+    toastTimeoutRef.current = window.setTimeout(() => {
+      setToastMessage("");
+    }, toastDurationMs);
   }
 
   return (
@@ -166,13 +177,18 @@ export function AppShell({
           <div className="workspace-body route-frame" key={location.pathname}>
             <Routes>
               <Route path="/" element={<DashboardScreen session={session} profile={profile} character={character} />} />
-              <Route path="/character" element={<CharacterScreen character={character} onCharacterChange={onCharacterChange} />} />
+              <Route path="/character" element={<CharacterScreen character={character} onCharacterChange={onCharacterChange} onToast={showToast} />} />
               <Route path="/patch-notes" element={<PatchNotesArchive />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
         </section>
       </main>
+      {toastMessage && (
+        <div className="toast" role="status">
+          {toastMessage}
+        </div>
+      )}
     </>
   );
 }

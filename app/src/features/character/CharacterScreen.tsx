@@ -8,9 +8,11 @@ import type { Character } from "../../types/character";
 export function CharacterScreen({
   character,
   onCharacterChange,
+  onToast,
 }: {
   character: Character | null;
   onCharacterChange: (character: Character | null) => void;
+  onToast: (message: string) => void;
 }) {
   useDocumentTitle("TOWER://CHARACTER");
 
@@ -28,7 +30,7 @@ export function CharacterScreen({
           </div>
         </article>
 
-        <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} />
+        <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
       </section>
     );
   }
@@ -147,9 +149,11 @@ function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (chara
 function CharacterDeletePanel({
   character,
   onCharacterChange,
+  onToast,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
+  onToast: (message: string) => void;
 }) {
   const [confirmName, setConfirmName] = useState("");
   const [isConfirming, setIsConfirming] = useState(false);
@@ -178,6 +182,7 @@ function CharacterDeletePanel({
     }
 
     onCharacterChange(null);
+    onToast("캐릭터를 삭제했습니다.");
   }
 
   return (
