@@ -12,6 +12,7 @@ import {
   signUpWithEmail,
   updatePassword,
 } from "../../api/authApi";
+import { getMyCharacter } from "../../api/characterApi";
 import { checkNicknameAvailability, createMyProfile, getMyProfile } from "../../api/profileApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { getNicknameValidationMessage, validateEmail, validateNickname, validatePassword } from "../../shared/validation";
@@ -26,6 +27,7 @@ const initialState: AuthState = {
   isSubmitting: false,
   session: null,
   profile: null,
+  character: null,
   message: "세션 확인 중...",
   messageType: "info",
 };
@@ -51,6 +53,7 @@ export function AuthGate() {
         isSubmitting: false,
         session: null,
         profile: null,
+        character: null,
         message: authState.message,
         messageType: "error",
       });
@@ -71,6 +74,7 @@ export function AuthGate() {
         isSubmitting: false,
         session: null,
         profile: null,
+        character: null,
         message: "",
         messageType: "info",
       });
@@ -94,19 +98,36 @@ export function AuthGate() {
         isSubmitting: false,
         session,
         profile: null,
+        character: null,
         message: profileResult.message,
         messageType: "error",
       });
       return;
     }
 
+    if (!profileResult.profile) {
+      patchState({
+        status: "profile-required",
+        isSubmitting: false,
+        session,
+        profile: null,
+        character: null,
+        message: "",
+        messageType: "info",
+      });
+      return;
+    }
+
+    const characterResult = await getMyCharacter();
+
     patchState({
-      status: profileResult.profile ? "signed-in" : "profile-required",
+      status: "signed-in",
       isSubmitting: false,
       session,
       profile: profileResult.profile,
-      message: "",
-      messageType: "info",
+      character: characterResult.ok ? characterResult.character : null,
+      message: characterResult.ok ? "" : characterResult.message,
+      messageType: characterResult.ok ? "info" : "error",
     });
   }
 
@@ -118,6 +139,7 @@ export function AuthGate() {
       isSubmitting: true,
       session: initialSession,
       profile: null,
+      character: null,
       message: "계정 확인 중...",
       messageType: "info",
     });
@@ -133,6 +155,7 @@ export function AuthGate() {
       isSubmitting: false,
       session: recoverySession,
       profile: null,
+      character: null,
       message: email ? "" : "재설정 링크를 확인하지 못했습니다. 메일의 링크로 다시 접속해주세요.",
       messageType: email ? "info" : "error",
     });
@@ -163,6 +186,7 @@ export function AuthGate() {
       isSubmitting: false,
       session: null,
       profile: null,
+      character: null,
       message: "접속을 종료했습니다.",
       messageType: "info",
     });
@@ -173,7 +197,15 @@ export function AuthGate() {
   }
 
   if (state.status === "signed-in") {
-    return <AppShell session={state.session} profile={state.profile} onSignOut={handleSignOut} />;
+    return (
+      <AppShell
+        session={state.session}
+        profile={state.profile}
+        character={state.character}
+        onCharacterChange={(character) => patchState({ character })}
+        onSignOut={handleSignOut}
+      />
+    );
   }
 
   return (
@@ -479,6 +511,7 @@ function ResetUpdateForm({
       isSubmitting: false,
       session: null,
       profile: null,
+      character: null,
       recoveryEmail: "",
       message: result.message,
       messageType: result.ok ? "info" : "error",
@@ -574,6 +607,7 @@ function ProfileForm({
       status: "signed-in",
       isSubmitting: false,
       profile: result.profile,
+      character: null,
       message: "",
       messageType: "info",
     });

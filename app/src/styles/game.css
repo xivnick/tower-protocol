@@ -344,6 +344,7 @@ button:disabled {
   border-bottom: 1px solid var(--line);
   margin-bottom: 16px;
   position: relative;
+  text-decoration: none;
 }
 
 .rail-brand span {
@@ -440,6 +441,12 @@ button:disabled {
   overflow: auto;
 }
 
+.screen-panel {
+  min-height: 0;
+  padding: 14px;
+  overflow: auto;
+}
+
 .panel {
   min-width: 0;
   border: 1px solid var(--line);
@@ -501,6 +508,23 @@ button:disabled {
 
 .panel-message.is-error {
   color: var(--neg);
+}
+
+.panel-action-body {
+  display: grid;
+  gap: 12px;
+}
+
+.panel-action-body .panel-message {
+  margin-top: 0;
+}
+
+.panel-primary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  text-decoration: none;
 }
 
 .patch-list {

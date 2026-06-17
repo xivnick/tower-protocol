@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
+import type { Character } from "../../types/character";
+import { CharacterScreen } from "../character/CharacterScreen";
 import { DashboardScreen } from "../dashboard/DashboardScreen";
 import { PatchNotesArchive } from "../patchNotes/PatchNotes";
 
@@ -9,7 +11,7 @@ const navItems = [
   { label: "대시보드", to: "/", end: true, enabled: true },
   { label: "사냥", to: "/hunt", enabled: false },
   { label: "탑", to: "/tower", enabled: false },
-  { label: "캐릭터", to: "/character", enabled: false },
+  { label: "캐릭터", to: "/character", enabled: true },
   { label: "패치노트", to: "/patch-notes", enabled: true },
 ];
 
@@ -18,10 +20,14 @@ const dropdownCloseMs = 100;
 export function AppShell({
   session,
   profile,
+  character,
+  onCharacterChange,
   onSignOut,
 }: {
   session: Session | null;
   profile: Profile | null;
+  character: Character | null;
+  onCharacterChange: (character: Character) => void;
   onSignOut: () => void;
 }) {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -31,7 +37,7 @@ export function AppShell({
   const location = useLocation();
   const navigate = useNavigate();
   const nickname = profile?.nickname ?? "UNKNOWN";
-  const currentNavLabel = location.pathname.startsWith("/patch-notes") ? "패치노트" : "대시보드";
+  const currentNavLabel = getCurrentNavLabel(location.pathname);
 
   function toggleAccountMenu() {
     if (isAccountOpen) {
@@ -79,10 +85,10 @@ export function AppShell({
       <main className="app-shell">
         <header className="mobile-shell-head">
           <div className="mobile-shell-row">
-            <div className="rail-brand compact">
+            <NavLink className="rail-brand compact" to="/">
               <span>TOWER://</span>
               <i aria-hidden="true" />
-            </div>
+            </NavLink>
             <button className="account-chip" type="button" onClick={toggleAccountMenu} aria-expanded={isAccountOpen}>
               {nickname}
             </button>
@@ -127,10 +133,10 @@ export function AppShell({
         </section>
 
         <aside className="rail" aria-label="주요 메뉴">
-          <div className="rail-brand">
+          <NavLink className="rail-brand" to="/">
             <span>TOWER://</span>
             <i aria-hidden="true" />
-          </div>
+          </NavLink>
           <nav className="nav-list" aria-label="게임 화면">
             {navItems.map((item) => (
               item.enabled ? (
@@ -159,7 +165,8 @@ export function AppShell({
 
           <div className="workspace-body route-frame" key={location.pathname}>
             <Routes>
-              <Route path="/" element={<DashboardScreen session={session} profile={profile} />} />
+              <Route path="/" element={<DashboardScreen session={session} profile={profile} character={character} />} />
+              <Route path="/character" element={<CharacterScreen character={character} onCharacterChange={onCharacterChange} />} />
               <Route path="/patch-notes" element={<PatchNotesArchive />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
@@ -168,4 +175,10 @@ export function AppShell({
       </main>
     </>
   );
+}
+
+function getCurrentNavLabel(pathname: string) {
+  if (pathname.startsWith("/character")) return "캐릭터";
+  if (pathname.startsWith("/patch-notes")) return "패치노트";
+  return "대시보드";
 }
