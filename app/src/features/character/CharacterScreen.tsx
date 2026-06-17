@@ -46,6 +46,12 @@ function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (chara
   const [messageType, setMessageType] = useState<"info" | "error">("info");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const requestIdRef = useRef(0);
+  const trimmedName = name.trim();
+  const nameValidationMessage = name ? getCharacterNameValidationMessage(name) : "";
+  const canSubmit = !isSubmitting
+    && trimmedName.length > 0
+    && !nameValidationMessage
+    && hintType !== "is-error";
 
   useEffect(() => {
     window.clearTimeout(requestIdRef.current);
@@ -76,7 +82,6 @@ function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (chara
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const trimmedName = name.trim();
 
     if (!validateCharacterName(trimmedName)) {
       setMessage(getCharacterNameValidationMessage(trimmedName));
@@ -136,7 +141,7 @@ function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (chara
             />
             <small className={`field-hint ${hintType}`} aria-live="polite">{hint}</small>
           </label>
-          <button className="btn primary" type="submit" disabled={isSubmitting}>
+          <button className="btn primary" type="submit" disabled={!canSubmit}>
             {isSubmitting ? "생성 중..." : "캐릭터 생성"}
           </button>
         </form>
