@@ -399,12 +399,17 @@ button:disabled {
   flex: 0 0 auto;
 }
 
-.toast {
+.toast-stack {
   position: fixed;
   right: 16px;
   bottom: 16px;
   z-index: 35;
+  display: grid;
+  gap: 8px;
   max-width: min(360px, calc(100vw - 32px));
+}
+
+.toast {
   border: 1px solid var(--acc-dim);
   background: color-mix(in srgb, var(--surf) 94%, black);
   color: var(--txt-bright);
@@ -898,7 +903,7 @@ button:disabled {
     overflow: visible;
   }
 
-  .toast {
+  .toast-stack {
     right: 12px;
     bottom: 12px;
     left: 12px;

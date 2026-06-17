@@ -186,7 +186,7 @@ function CharacterTrainingPanel({
     }
 
     onCharacterChange(result.character);
-    onToast(result.character.level > character.level ? "레벨이 올랐습니다." : "+10 EXP");
+    onToast(result.character.level > character.level ? "레벨이 올랐습니다." : "경험치를 획득했습니다.");
   }
 
   return (
@@ -196,7 +196,7 @@ function CharacterTrainingPanel({
         <h2>기초 훈련</h2>
       </div>
       <div className="panel-action-body">
-        <p className="panel-message">{isMaxLevel ? "최고 레벨에 도달했습니다." : "훈련을 실행하면 경험치 10을 획득합니다."}</p>
+        <p className="panel-message">{isMaxLevel ? "최고 레벨에 도달했습니다." : "훈련을 실행하면 경험치를 획득합니다."}</p>
         <button className="btn primary panel-primary-action" type="button" onClick={handleTrain} disabled={isSubmitting || isMaxLevel}>
           {isSubmitting ? "훈련 중..." : "훈련 실행"}
         </button>

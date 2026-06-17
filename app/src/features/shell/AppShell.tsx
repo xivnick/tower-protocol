@@ -7,6 +7,11 @@ import { CharacterScreen } from "../character/CharacterScreen";
 import { DashboardScreen } from "../dashboard/DashboardScreen";
 import { PatchNotesArchive } from "../patchNotes/PatchNotes";
 
+type ToastMessage = {
+  id: number;
+  message: string;
+};
+
 const navItems = [
   { label: "대시보드", to: "/", end: true, enabled: true },
   { label: "사냥", to: "/hunt", enabled: false },
@@ -17,6 +22,7 @@ const navItems = [
 
 const dropdownCloseMs = 100;
 const toastDurationMs = 3000;
+const maxToasts = 3;
 
 export function AppShell({
   session,
@@ -35,8 +41,8 @@ export function AppShell({
   const [isAccountClosing, setIsAccountClosing] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavClosing, setIsNavClosing] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const toastTimeoutRef = useRef(0);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const toastIdRef = useRef(0);
   const location = useLocation();
   const navigate = useNavigate();
   const nickname = profile?.nickname ?? "UNKNOWN";
@@ -83,10 +89,12 @@ export function AppShell({
   }
 
   function showToast(message: string) {
-    window.clearTimeout(toastTimeoutRef.current);
-    setToastMessage(message);
-    toastTimeoutRef.current = window.setTimeout(() => {
-      setToastMessage("");
+    const id = toastIdRef.current + 1;
+    toastIdRef.current = id;
+
+    setToasts((current) => [...current, { id, message }].slice(-maxToasts));
+    window.setTimeout(() => {
+      setToasts((current) => current.filter((toast) => toast.id !== id));
     }, toastDurationMs);
   }
 
@@ -184,9 +192,13 @@ export function AppShell({
           </div>
         </section>
       </main>
-      {toastMessage && (
-        <div className="toast" role="status">
-          {toastMessage}
+      {toasts.length > 0 && (
+        <div className="toast-stack" role="status" aria-live="polite">
+          {toasts.map((toast) => (
+            <div className="toast" key={toast.id}>
+              {toast.message}
+            </div>
+          ))}
         </div>
       )}
     </>
