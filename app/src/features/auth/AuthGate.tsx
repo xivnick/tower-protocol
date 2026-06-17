@@ -327,7 +327,7 @@ function AuthBody({
   onProfileComplete: (profile: Profile) => void;
 }) {
   if (state.status === "checking") {
-    return <p className="auth-copy">{state.message}</p>;
+    return <CheckingMessage message={state.message} />;
   }
 
   if (state.status === "config-error") {
@@ -353,6 +353,15 @@ function AuthBody({
   }
 
   return <EmailAuthForm state={state} patchState={patchState} enterApp={enterApp} />;
+}
+
+function CheckingMessage({ message }: { message: string }) {
+  return (
+    <p className="auth-copy checking-message">
+      <span>{message}</span>
+      <i aria-hidden="true" />
+    </p>
+  );
 }
 
 function EmailAuthForm({
