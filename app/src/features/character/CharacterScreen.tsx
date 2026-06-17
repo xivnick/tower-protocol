@@ -1,6 +1,6 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { createMyCharacter } from "../../api/characterApi";
+import { createMyCharacter, deleteMyCharacter } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
 import type { Character } from "../../types/character";
@@ -10,7 +10,7 @@ export function CharacterScreen({
   onCharacterChange,
 }: {
   character: Character | null;
-  onCharacterChange: (character: Character) => void;
+  onCharacterChange: (character: Character | null) => void;
 }) {
   useDocumentTitle("TOWER://CHARACTER");
 
@@ -27,6 +27,8 @@ export function CharacterScreen({
             <Kv label="상태" value="대기 중" />
           </div>
         </article>
+
+        <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} />
       </section>
     );
   }
@@ -102,6 +104,99 @@ function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (chara
         {message && <p className={`auth-message ${messageType === "error" ? "is-error" : ""}`} role="status">{message}</p>}
       </article>
     </section>
+  );
+}
+
+function CharacterDeletePanel({
+  character,
+  onCharacterChange,
+}: {
+  character: Character;
+  onCharacterChange: (character: Character | null) => void;
+}) {
+  const [confirmName, setConfirmName] = useState("");
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
+  const canDelete = confirmName.trim() === character.name && !isSubmitting;
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!canDelete) {
+      setMessage("캐릭터 이름을 정확히 입력해주세요.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setMessage("캐릭터 삭제 중...");
+
+    const result = await deleteMyCharacter(character.id);
+
+    setIsSubmitting(false);
+
+    if (!result.ok) {
+      setMessage(result.message);
+      return;
+    }
+
+    onCharacterChange(null);
+  }
+
+  return (
+    <article className="panel danger-panel">
+      <div className="panel-head">
+        <span>DANGER</span>
+        <h2>캐릭터 삭제</h2>
+      </div>
+
+      {isConfirming ? (
+        <form className="auth-form danger-form" onSubmit={handleSubmit} noValidate>
+          <label htmlFor="characterDeleteInput">
+            <span>캐릭터 이름 확인</span>
+            <input
+              id="characterDeleteInput"
+              name="characterDelete"
+              type="text"
+              autoComplete="off"
+              placeholder={character.name}
+              value={confirmName}
+              onChange={(event) => {
+                setConfirmName(event.target.value);
+                setMessage("");
+              }}
+              disabled={isSubmitting}
+            />
+            <small className="field-hint">삭제하려면 캐릭터 이름을 입력해주세요.</small>
+          </label>
+          <div className="button-row">
+            <button className="btn danger" type="submit" disabled={!canDelete}>
+              {isSubmitting ? "삭제 중..." : "캐릭터 삭제"}
+            </button>
+            <button
+              className="btn ghost"
+              type="button"
+              onClick={() => {
+                setIsConfirming(false);
+                setConfirmName("");
+                setMessage("");
+              }}
+              disabled={isSubmitting}
+            >
+              취소
+            </button>
+          </div>
+          {message && <p className="auth-message is-error" role="status">{message}</p>}
+        </form>
+      ) : (
+        <div className="panel-action-body">
+          <p className="panel-message">삭제 후 되돌릴 수 없습니다.</p>
+          <button className="btn danger panel-primary-action" type="button" onClick={() => setIsConfirming(true)}>
+            캐릭터 삭제
+          </button>
+        </div>
+      )}
+    </article>
   );
 }
 
