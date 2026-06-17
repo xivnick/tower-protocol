@@ -220,6 +220,7 @@ input {
   border-radius: 0;
   background: var(--bg-2);
   color: var(--txt-bright);
+  font-size: 16px;
   padding: 0 12px;
   outline: none;
 }
