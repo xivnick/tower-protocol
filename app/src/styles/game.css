@@ -20,6 +20,7 @@
   --disp: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --rail: 236px;
   --header: 60px;
+  --environment-banner: 22px;
 }
 
 * {
@@ -76,6 +77,34 @@ pre {
   mix-blend-mode: screen;
 }
 
+.app-root {
+  min-height: 100vh;
+}
+
+.environment-banner {
+  height: var(--environment-banner);
+  display: grid;
+  place-items: center;
+  border-bottom: 1px solid var(--line);
+  background: var(--surf-2);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.environment-banner.is-local {
+  border-color: #c99a12;
+  background: #ffd84d;
+  color: #151104;
+}
+
+.environment-banner.is-preview {
+  border-color: #25bf62;
+  background: #39ff7a;
+  color: #061207;
+}
+
 .auth-screen {
   min-height: 100vh;
   display: grid;
@@ -84,6 +113,10 @@ pre {
   background:
     linear-gradient(180deg, rgba(57, 255, 122, 0.08), transparent 34%),
     var(--bg);
+}
+
+.has-environment-banner .auth-screen {
+  min-height: calc(100vh - var(--environment-banner));
 }
 
 .auth-panel {
@@ -326,6 +359,10 @@ button:disabled {
   display: grid;
   grid-template-columns: var(--rail) minmax(0, 1fr);
   height: 100vh;
+}
+
+.has-environment-banner .app-shell {
+  height: calc(100vh - var(--environment-banner));
 }
 
 .mobile-shell-head {
