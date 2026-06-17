@@ -344,6 +344,7 @@ button:disabled {
   border-bottom: 1px solid var(--line);
   margin-bottom: 16px;
   position: relative;
+  text-decoration: none;
 }
 
 .rail-brand span {
@@ -436,6 +437,12 @@ button:disabled {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 14px;
+  padding: 14px;
+  overflow: auto;
+}
+
+.screen-panel {
+  min-height: 0;
   padding: 14px;
   overflow: auto;
 }

@@ -10,6 +10,10 @@ export function validateNickname(value: string) {
   return getNicknameValidationMessage(value) === "";
 }
 
+export function validateCharacterName(value: string) {
+  return getCharacterNameValidationMessage(value) === "";
+}
+
 export function getNicknameValidationMessage(value: string) {
   const nickname = value.trim();
 
@@ -19,6 +23,20 @@ export function getNicknameValidationMessage(value: string) {
 
   if (!/^[가-힣ㄱ-ㅎㅏ-ㅣA-Za-z0-9_]+$/.test(nickname)) {
     return "닉네임은 한글, 영문, 숫자, _만 사용할 수 있습니다.";
+  }
+
+  return "";
+}
+
+export function getCharacterNameValidationMessage(value: string) {
+  const name = value.trim();
+
+  if (name.length < 2 || name.length > 16) {
+    return "캐릭터 이름은 2~16자로 입력해주세요.";
+  }
+
+  if (!/^[가-힣ㄱ-ㅎㅏ-ㅣA-Za-z0-9_]+$/.test(name)) {
+    return "캐릭터 이름은 한글, 영문, 숫자, _만 사용할 수 있습니다.";
   }
 
   return "";
