@@ -510,6 +510,23 @@ button:disabled {
   color: var(--neg);
 }
 
+.panel-action-body {
+  display: grid;
+  gap: 12px;
+}
+
+.panel-action-body .panel-message {
+  margin-top: 0;
+}
+
+.panel-primary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  text-decoration: none;
+}
+
 .patch-list {
   list-style: none;
   display: grid;

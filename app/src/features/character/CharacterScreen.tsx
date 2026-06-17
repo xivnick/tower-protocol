@@ -25,7 +25,6 @@ export function CharacterScreen({
           <div className="kv-grid">
             <Kv label="이름" value={character.name} />
             <Kv label="상태" value="대기 중" />
-            <Kv label="다음 구현" value="캐릭터 성장" />
           </div>
         </article>
       </section>
