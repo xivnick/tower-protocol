@@ -628,6 +628,12 @@ function ProfileForm({
   const [hint, setHint] = useState("");
   const [hintType, setHintType] = useState<"is-ok" | "is-error" | "">("");
   const requestIdRef = useRef(0);
+  const trimmedNickname = nickname.trim();
+  const nicknameValidationMessage = nickname ? getNicknameValidationMessage(nickname) : "";
+  const canSubmit = !state.isSubmitting
+    && trimmedNickname.length > 0
+    && !nicknameValidationMessage
+    && hintType !== "is-error";
 
   useEffect(() => {
     window.clearTimeout(requestIdRef.current);
@@ -658,7 +664,6 @@ function ProfileForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const trimmedNickname = nickname.trim();
 
     if (!validateNickname(trimmedNickname)) {
       patchState({ status: "profile-required", message: getNicknameValidationMessage(trimmedNickname), messageType: "error" });
@@ -691,7 +696,7 @@ function ProfileForm({
           <input id="nicknameInput" name="nickname" type="text" autoComplete="nickname" maxLength={16} placeholder="닉네임을 입력해주세요" value={nickname} onChange={(event) => setNickname(event.target.value)} required disabled={state.isSubmitting} />
           <small className={`field-hint ${hintType}`} aria-live="polite">{hint}</small>
         </label>
-        <button className="btn primary" type="submit" disabled={state.isSubmitting}>{state.isSubmitting ? "생성 중..." : "프로필 생성"}</button>
+        <button className="btn primary" type="submit" disabled={!canSubmit}>{state.isSubmitting ? "생성 중..." : "프로필 생성"}</button>
       </form>
       <Message state={state} />
     </>
