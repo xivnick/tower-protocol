@@ -27,7 +27,7 @@ export function AppShell({
   session: Session | null;
   profile: Profile | null;
   character: Character | null;
-  onCharacterChange: (character: Character) => void;
+  onCharacterChange: (character: Character | null) => void;
   onSignOut: () => void;
 }) {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
