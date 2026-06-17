@@ -13,6 +13,7 @@ import {
   updatePassword,
 } from "../../api/authApi";
 import { checkNicknameAvailability, createMyProfile, getMyProfile } from "../../api/profileApi";
+import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { getNicknameValidationMessage, validateEmail, validateNickname, validatePassword } from "../../shared/validation";
 import type { AuthMode, AuthState } from "../../types/auth";
 import { AppShell } from "../shell/AppShell";
@@ -197,6 +198,9 @@ function AuthScreen({
   signOut: () => Promise<void>;
 }) {
   const canGoBack = state.mode === "reset-request" || state.mode === "reset-update";
+  const title = getAuthTitle(state);
+
+  useDocumentTitle(title);
 
   return (
     <>
@@ -217,6 +221,22 @@ function AuthScreen({
       </main>
     </>
   );
+}
+
+function getAuthTitle(state: AuthState) {
+  if (state.status === "profile-required") {
+    return "TOWER://PROFILE_SETUP";
+  }
+
+  if (state.mode === "reset-request") {
+    return "TOWER://PASSWORD_RECOVERY";
+  }
+
+  if (state.mode === "reset-update") {
+    return "TOWER://RESET_PASSWORD";
+  }
+
+  return "TOWER://ACCESS_GATE";
 }
 
 function AuthBody({
