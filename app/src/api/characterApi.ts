@@ -109,6 +109,22 @@ export async function checkCharacterNameAvailability(name: string): Promise<Char
   };
 }
 
+export async function trainMyCharacter(): Promise<CharacterResult> {
+  if (!supabase) return { ok: false, character: null, message: "Supabase 설정을 확인해주세요." };
+
+  const { data, error } = await supabase.rpc("train_my_character");
+
+  if (error) {
+    return {
+      ok: false,
+      character: null,
+      message: toKoreanAuthMessage(error.message, "훈련을 완료하지 못했습니다."),
+    };
+  }
+
+  return { ok: true, character: data, message: "경험치를 획득했습니다." };
+}
+
 export async function deleteMyCharacter(characterId: string): Promise<CharacterActionResult> {
   if (!supabase) return { ok: false, message: "Supabase 설정을 확인해주세요." };
 

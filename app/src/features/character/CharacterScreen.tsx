@@ -1,6 +1,6 @@
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter } from "../../api/characterApi";
+import { checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, trainMyCharacter } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
@@ -33,6 +33,7 @@ export function CharacterScreen({
           </div>
         </article>
 
+        <CharacterTrainingPanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
         <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
       </section>
     );
@@ -151,6 +152,57 @@ function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (chara
         {message && <p className={`auth-message ${messageType === "error" ? "is-error" : ""}`} role="status">{message}</p>}
       </article>
     </section>
+  );
+}
+
+function CharacterTrainingPanel({
+  character,
+  onCharacterChange,
+  onToast,
+}: {
+  character: Character;
+  onCharacterChange: (character: Character | null) => void;
+  onToast: (message: string) => void;
+}) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
+  const isMaxLevel = character.level >= 100;
+
+  async function handleTrain() {
+    if (isSubmitting || isMaxLevel) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setMessage("");
+
+    const result = await trainMyCharacter();
+
+    setIsSubmitting(false);
+
+    if (!result.ok || !result.character) {
+      setMessage(result.message);
+      return;
+    }
+
+    onCharacterChange(result.character);
+    onToast(result.character.level > character.level ? "레벨이 올랐습니다." : "+10 EXP");
+  }
+
+  return (
+    <article className="panel">
+      <div className="panel-head">
+        <span>TRAINING</span>
+        <h2>기초 훈련</h2>
+      </div>
+      <div className="panel-action-body">
+        <p className="panel-message">{isMaxLevel ? "최고 레벨에 도달했습니다." : "훈련을 실행하면 경험치 10을 획득합니다."}</p>
+        <button className="btn primary panel-primary-action" type="button" onClick={handleTrain} disabled={isSubmitting || isMaxLevel}>
+          {isSubmitting ? "훈련 중..." : "훈련 실행"}
+        </button>
+        {message && <p className="auth-message is-error" role="status">{message}</p>}
+      </div>
+    </article>
   );
 }
 
