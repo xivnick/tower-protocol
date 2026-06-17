@@ -179,6 +179,20 @@ pre {
   color: var(--mut);
 }
 
+.checking-message {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checking-message i {
+  width: 7px;
+  height: 14px;
+  background: var(--acc);
+  opacity: 0.45;
+  animation: cursor-blink 900ms steps(1, end) 3;
+}
+
 .auth-form {
   display: grid;
   gap: 14px;
@@ -922,7 +936,8 @@ button:disabled {
   .mobile-account-menu.is-closing,
   .mobile-nav-menu.is-closing,
   .rail-brand i,
-  .auth-logo i {
+  .auth-logo i,
+  .checking-message i {
     animation: none;
   }
 }
