@@ -147,12 +147,31 @@ pre {
   color: var(--acc);
 }
 
-.auth-panel h1 {
+.auth-logo {
   margin: 8px 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--txt-bright);
   font-family: var(--disp);
   font-size: 56px;
   line-height: 1;
+}
+
+.auth-logo span {
+  min-width: 0;
+}
+
+.auth-logo i {
+  width: 10px;
+  height: 38px;
+  background: var(--acc);
+  opacity: 0.45;
+  animation: cursor-blink 900ms steps(1, end) 3;
+}
+
+.auth-route-frame {
+  animation: auth-route-in 180ms ease-out;
 }
 
 .auth-copy {
@@ -282,14 +301,24 @@ button:disabled {
 }
 
 .tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 38px;
   font-weight: 800;
+  text-align: center;
+  text-decoration: none;
 }
 
 .tab.is-active {
   border-color: var(--acc);
   background: var(--acc-deep);
   color: var(--txt-bright);
+}
+
+.tab[aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .auth-message {
@@ -449,6 +478,18 @@ button:disabled {
 }
 
 @keyframes route-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes auth-route-in {
   from {
     opacity: 0;
     transform: translateY(4px);
@@ -864,18 +905,24 @@ button:disabled {
 }
 
 @media (max-width: 520px) {
-  .auth-panel h1 {
+  .auth-logo {
     font-size: 44px;
+  }
+
+  .auth-logo i {
+    height: 30px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .route-frame,
+  .auth-route-frame,
   .mobile-account-menu,
   .mobile-nav-menu,
   .mobile-account-menu.is-closing,
   .mobile-nav-menu.is-closing,
-  .rail-brand i {
+  .rail-brand i,
+  .auth-logo i {
     animation: none;
   }
 }
