@@ -81,6 +81,7 @@ export function AppShell({
           <div className="mobile-shell-row">
             <div className="rail-brand compact">
               <span>TOWER://</span>
+              <i aria-hidden="true" />
             </div>
             <button className="account-chip" type="button" onClick={toggleAccountMenu} aria-expanded={isAccountOpen}>
               {nickname}
@@ -128,6 +129,7 @@ export function AppShell({
         <aside className="rail" aria-label="주요 메뉴">
           <div className="rail-brand">
             <span>TOWER://</span>
+            <i aria-hidden="true" />
           </div>
           <nav className="nav-list" aria-label="게임 화면">
             {navItems.map((item) => (

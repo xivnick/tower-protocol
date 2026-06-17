@@ -333,7 +333,7 @@ button:disabled {
 .rail {
   border-right: 1px solid var(--line);
   background: var(--bg-2);
-  padding: 16px 12px;
+  padding: 0 12px 16px;
 }
 
 .rail-brand {
@@ -342,13 +342,22 @@ button:disabled {
   align-items: center;
   gap: 8px;
   border-bottom: 1px solid var(--line);
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  position: relative;
 }
 
 .rail-brand span {
   color: var(--txt-bright);
   font-size: 18px;
   font-weight: 900;
+}
+
+.rail-brand i {
+  width: 8px;
+  height: 16px;
+  background: var(--acc);
+  opacity: 0.45;
+  animation: cursor-blink 900ms steps(1, end) 3;
 }
 
 .rail-brand.compact {
@@ -425,7 +434,7 @@ button:disabled {
 .content-grid {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   padding: 14px;
   overflow: auto;
@@ -754,6 +763,18 @@ button:disabled {
   }
 }
 
+@keyframes cursor-blink {
+  0%,
+  49% {
+    opacity: 0;
+  }
+
+  50%,
+  100% {
+    opacity: 0.45;
+  }
+}
+
 @media (max-width: 520px) {
   .auth-panel h1 {
     font-size: 44px;
@@ -765,7 +786,8 @@ button:disabled {
   .mobile-account-menu,
   .mobile-nav-menu,
   .mobile-account-menu.is-closing,
-  .mobile-nav-menu.is-closing {
+  .mobile-nav-menu.is-closing,
+  .rail-brand i {
     animation: none;
   }
 }
