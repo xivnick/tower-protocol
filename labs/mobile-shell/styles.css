@@ -56,6 +56,25 @@ button {
   color: var(--mut);
 }
 
+.lab-section {
+  display: grid;
+  gap: 4px;
+  margin: 30px 0 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+
+.lab-section span {
+  color: var(--acc);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.lab-section strong {
+  color: var(--txt-bright);
+  font-size: 16px;
+}
+
 .variants {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -271,3 +290,186 @@ button {
   font-size: 18px;
 }
 
+.topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 12px 14px;
+}
+
+.topline > strong {
+  color: var(--txt-bright);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.topline.stack,
+.compact-line {
+  background: var(--surf);
+}
+
+.command-line {
+  background: #050806;
+}
+
+.split-line {
+  grid-template-columns: auto 1fr auto;
+}
+
+.account-chip,
+.nav-icon {
+  min-height: 32px;
+  padding: 6px 9px;
+}
+
+.quiet-chip {
+  border-color: transparent;
+}
+
+.account-menu {
+  display: grid;
+  gap: 7px;
+  margin: 10px 14px;
+  border: 1px solid var(--line);
+  background: var(--surf);
+  padding: 12px;
+}
+
+.account-menu span,
+.account-drawer span,
+.account-sheet span,
+.status-line,
+.select-shell span,
+.overlay-menu span {
+  color: var(--mut-2);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.account-menu strong,
+.account-drawer strong,
+.account-sheet strong {
+  color: var(--txt-bright);
+}
+
+.account-menu button,
+.account-drawer button,
+.account-sheet button {
+  justify-self: start;
+}
+
+.command-menu {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.command-menu a {
+  border: 1px solid var(--line);
+  color: var(--mut);
+  padding: 7px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.account-drawer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surf);
+  padding: 10px 14px;
+}
+
+.status-line {
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 8px 14px;
+}
+
+.account-popover {
+  display: flex;
+  gap: 8px;
+  margin: 10px 14px;
+}
+
+.account-sheet {
+  display: grid;
+  gap: 6px;
+  margin: 12px 14px 0;
+  border: 1px solid var(--line-2);
+  background: var(--surf);
+  padding: 12px;
+}
+
+.nav-trigger {
+  width: calc(100% - 28px);
+  margin: 12px 14px 0;
+  text-align: left;
+}
+
+.command-trigger {
+  color: var(--acc-2);
+}
+
+.dropdown,
+.drawer-menu,
+.overlay-menu {
+  display: grid;
+  gap: 0;
+  margin: 8px 14px 0;
+  border: 1px solid var(--line);
+  background: var(--surf);
+}
+
+.dropdown a,
+.drawer-menu a,
+.overlay-menu a {
+  border-bottom: 1px solid var(--line);
+  color: var(--mut);
+  padding: 10px 12px;
+  text-decoration: none;
+}
+
+.dropdown a:last-child,
+.drawer-menu a:last-child,
+.overlay-menu a:last-child {
+  border-bottom: 0;
+}
+
+.dropdown .active,
+.drawer-menu .active,
+.overlay-menu .active {
+  color: var(--txt-bright);
+  background: #0f3d23;
+}
+
+.command-dropdown a {
+  font-size: 12px;
+}
+
+.select-shell {
+  display: grid;
+  gap: 6px;
+  margin: 12px 14px 0;
+}
+
+.select-shell select {
+  min-height: 40px;
+  border: 1px solid var(--line-2);
+  background: var(--surf);
+  color: var(--txt-bright);
+  padding: 0 10px;
+  font: inherit;
+}
+
+.overlay-menu {
+  margin-top: 12px;
+}
+
+.overlay-menu span {
+  border-bottom: 1px solid var(--line);
+  padding: 10px 12px;
+}
