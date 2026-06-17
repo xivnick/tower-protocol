@@ -92,7 +92,7 @@ export async function checkNicknameAvailability(nickname: string): Promise<Nickn
     return { ok: true, available: false, message: validationMessage };
   }
 
-  const { data, error } = await supabase.rpc("is_nickname_available", { candidate });
+  const { data, error } = await supabase.rpc("is_profile_name_available", { candidate });
 
   if (error) {
     return {
@@ -105,6 +105,6 @@ export async function checkNicknameAvailability(nickname: string): Promise<Nickn
   return {
     ok: true,
     available: Boolean(data),
-    message: data ? "사용 가능한 닉네임입니다." : "이미 사용 중인 닉네임입니다.",
+    message: data ? "사용 가능한 닉네임입니다." : "이미 사용 중인 이름입니다.",
   };
 }

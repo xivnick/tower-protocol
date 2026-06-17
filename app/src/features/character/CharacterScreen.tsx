@@ -1,6 +1,6 @@
 import type { FormEvent } from "react";
-import { useState } from "react";
-import { createMyCharacter, deleteMyCharacter } from "../../api/characterApi";
+import { useEffect, useRef, useState } from "react";
+import { checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
 import type { Character } from "../../types/character";
@@ -38,10 +38,39 @@ export function CharacterScreen({
 
 function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (character: Character) => void }) {
   const [name, setName] = useState("");
+  const [hint, setHint] = useState("");
+  const [hintType, setHintType] = useState<"is-ok" | "is-error" | "">("");
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"info" | "error">("info");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const validationMessage = name ? getCharacterNameValidationMessage(name) : "";
+  const requestIdRef = useRef(0);
+
+  useEffect(() => {
+    window.clearTimeout(requestIdRef.current);
+
+    if (!name) {
+      setHint("");
+      setHintType("");
+      return;
+    }
+
+    if (!validateCharacterName(name)) {
+      setHint(getCharacterNameValidationMessage(name));
+      setHintType("is-error");
+      return;
+    }
+
+    const requestId = window.setTimeout(async () => {
+      setHint("캐릭터 이름 확인 중...");
+      setHintType("");
+      const result = await checkCharacterNameAvailability(name);
+      setHint(result.message);
+      setHintType(result.ok && result.available ? "is-ok" : "is-error");
+    }, 350);
+
+    requestIdRef.current = requestId;
+    return () => window.clearTimeout(requestId);
+  }, [name]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -49,6 +78,14 @@ function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (chara
 
     if (!validateCharacterName(trimmedName)) {
       setMessage(getCharacterNameValidationMessage(trimmedName));
+      setMessageType("error");
+      return;
+    }
+
+    const availability = await checkCharacterNameAvailability(trimmedName);
+
+    if (!availability.ok || !availability.available) {
+      setMessage(availability.message);
       setMessageType("error");
       return;
     }
@@ -95,7 +132,7 @@ function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (chara
               required
               disabled={isSubmitting}
             />
-            <small className={`field-hint ${validationMessage ? "is-error" : ""}`} aria-live="polite">{validationMessage}</small>
+            <small className={`field-hint ${hintType}`} aria-live="polite">{hint}</small>
           </label>
           <button className="btn primary" type="submit" disabled={isSubmitting}>
             {isSubmitting ? "생성 중..." : "캐릭터 생성"}

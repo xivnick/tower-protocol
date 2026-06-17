@@ -14,6 +14,8 @@ const AUTH_ERROR_MESSAGES: Array<[RegExp, string]> = [
   [/row-level security/i, "프로필 권한 설정을 확인해주세요."],
   [/profiles_nickname_format_check/i, "닉네임은 한글, 영문, 숫자, _만 사용할 수 있습니다."],
   [/profiles_nickname_unique_idx/i, "이미 사용 중인 닉네임입니다."],
+  [/characters_name_unique_idx/i, "이미 사용 중인 캐릭터 이름입니다."],
+  [/shared_name_conflict/i, "이미 사용 중인 이름입니다."],
   [/duplicate key value/i, "이미 사용 중인 값입니다."],
 ];
 
