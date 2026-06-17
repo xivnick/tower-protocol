@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
 import { DashboardScreen } from "../dashboard/DashboardScreen";
 import { PatchNotesArchive } from "../patchNotes/PatchNotes";
@@ -13,6 +13,8 @@ const navItems = [
   { label: "패치노트", to: "/patch-notes", enabled: true },
 ];
 
+const dropdownCloseMs = 100;
+
 export function AppShell({
   session,
   profile,
@@ -23,19 +25,52 @@ export function AppShell({
   onSignOut: () => void;
 }) {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isAccountClosing, setIsAccountClosing] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
+  const [isNavClosing, setIsNavClosing] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const nickname = profile?.nickname ?? "UNKNOWN";
   const currentNavLabel = location.pathname.startsWith("/patch-notes") ? "패치노트" : "대시보드";
 
   function toggleAccountMenu() {
-    setIsAccountOpen((isOpen) => !isOpen);
-    setIsNavOpen(false);
+    if (isAccountOpen) {
+      closeAccountMenu();
+      return;
+    }
+
+    setIsAccountClosing(false);
+    setIsAccountOpen(true);
   }
 
   function toggleNavMenu() {
-    setIsNavOpen((isOpen) => !isOpen);
-    setIsAccountOpen(false);
+    if (isNavOpen) {
+      closeNavMenu();
+      return;
+    }
+
+    setIsNavClosing(false);
+    setIsNavOpen(true);
+  }
+
+  function closeAccountMenu() {
+    setIsAccountClosing(true);
+    window.setTimeout(() => {
+      setIsAccountOpen(false);
+      setIsAccountClosing(false);
+    }, dropdownCloseMs);
+  }
+
+  function closeNavMenu(nextPath?: string) {
+    setIsNavClosing(true);
+    window.setTimeout(() => {
+      setIsNavOpen(false);
+      setIsNavClosing(false);
+
+      if (nextPath && nextPath !== location.pathname) {
+        navigate(nextPath);
+      }
+    }, dropdownCloseMs);
   }
 
   return (
@@ -52,9 +87,11 @@ export function AppShell({
             </button>
           </div>
           {isAccountOpen && (
-            <div className="mobile-account-menu">
-              <span>SESSION</span>
-              <strong>{nickname}</strong>
+            <div className={`mobile-account-menu ${isAccountClosing ? "is-closing" : ""}`}>
+              <div>
+                <span>SESSION</span>
+                <strong>{nickname}</strong>
+              </div>
               <button className="btn ghost" type="button" onClick={onSignOut}>
                 로그아웃
               </button>
@@ -67,20 +104,19 @@ export function AppShell({
             {currentNavLabel} ▾
           </button>
           {isNavOpen && (
-            <nav className="mobile-nav-menu" aria-label="게임 화면">
+            <nav className={`mobile-nav-menu ${isNavClosing ? "is-closing" : ""}`} aria-label="게임 화면">
               {navItems.map((item) => (
                 item.enabled ? (
-                  <NavLink
-                    className={({ isActive }) => `mobile-nav-item ${isActive ? "is-active" : ""}`}
-                    to={item.to}
-                    end={item.end}
+                  <button
+                    className={`nav-item mobile-nav-item ${item.to === location.pathname ? "is-active" : ""}`}
+                    type="button"
                     key={item.label}
-                    onClick={() => setIsNavOpen(false)}
+                    onClick={() => closeNavMenu(item.to)}
                   >
                     {item.label}
-                  </NavLink>
+                  </button>
                 ) : (
-                  <button className="mobile-nav-item" type="button" disabled key={item.label}>
+                  <button className="nav-item mobile-nav-item" type="button" disabled key={item.label}>
                     {item.label}
                   </button>
                 )
@@ -119,7 +155,7 @@ export function AppShell({
             </button>
           </header>
 
-          <div className="workspace-body">
+          <div className="workspace-body route-frame" key={location.pathname}>
             <Routes>
               <Route path="/" element={<DashboardScreen session={session} profile={profile} />} />
               <Route path="/patch-notes" element={<PatchNotesArchive />} />

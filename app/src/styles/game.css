@@ -391,6 +391,22 @@ button:disabled {
   min-height: 0;
 }
 
+.route-frame {
+  animation: route-in 200ms ease-out;
+}
+
+@keyframes route-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .topbar {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) auto;
@@ -583,8 +599,7 @@ button:disabled {
   }
 
   .account-chip,
-  .mobile-nav-trigger,
-  .mobile-nav-item {
+  .mobile-nav-trigger {
     border: 1px solid var(--line-2);
     border-radius: 0;
     background: transparent;
@@ -604,26 +619,31 @@ button:disabled {
   }
 
   .mobile-account-menu {
-    display: grid;
-    gap: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     border: 1px solid var(--line);
     background: var(--surf);
-    padding: 12px;
+    padding: 10px 12px;
+    animation: dropdown-in 120ms ease-out;
   }
 
   .mobile-account-menu span {
-    color: var(--mut-2);
+    display: block;
+    color: var(--acc);
     font-size: 10px;
     font-weight: 800;
   }
 
   .mobile-account-menu strong {
+    display: block;
     color: var(--txt-bright);
     font-size: 13px;
   }
 
   .mobile-account-menu .btn {
-    justify-self: start;
+    flex: 0 0 auto;
     min-height: 34px;
   }
 
@@ -645,19 +665,23 @@ button:disabled {
 
   .mobile-nav-menu {
     display: grid;
-    border: 1px solid var(--line);
     background: var(--bg-2);
+    animation: dropdown-in 120ms ease-out;
+  }
+
+  .mobile-account-menu.is-closing,
+  .mobile-nav-menu.is-closing {
+    pointer-events: none;
+    animation: dropdown-out 100ms ease-in forwards;
   }
 
   .mobile-nav-item {
-    display: block;
+    width: 100%;
     min-height: 40px;
     border: 0;
     border-bottom: 1px solid var(--line);
-    padding: 10px 12px;
-    color: var(--mut);
-    text-align: left;
-    text-decoration: none;
+    background: transparent;
+    padding: 0 12px;
   }
 
   .mobile-nav-item:last-child {
@@ -665,14 +689,19 @@ button:disabled {
   }
 
   .mobile-nav-item.is-active {
-    background: var(--acc-deep);
-    color: var(--txt-bright);
+    border-color: var(--line);
   }
 
-  .mobile-nav-item:disabled {
-    cursor: not-allowed;
-    color: var(--mut-2);
-    opacity: 1;
+  .mobile-nav-item:hover {
+    border-color: var(--line);
+  }
+
+  .mobile-nav-item.is-active:last-child {
+    border-color: transparent;
+  }
+
+  .mobile-nav-item:last-child:hover {
+    border-color: transparent;
   }
 
   .rail {
@@ -701,8 +730,42 @@ button:disabled {
   }
 }
 
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dropdown-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
 @media (max-width: 520px) {
   .auth-panel h1 {
     font-size: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-frame,
+  .mobile-account-menu,
+  .mobile-nav-menu,
+  .mobile-account-menu.is-closing,
+  .mobile-nav-menu.is-closing {
+    animation: none;
   }
 }
