@@ -753,6 +753,56 @@ button:disabled {
   color: var(--txt);
 }
 
+.ranking-list {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.ranking-list.is-compact {
+  margin-top: 14px;
+}
+
+.ranking-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto minmax(140px, auto);
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 10px 12px;
+}
+
+.ranking-list.is-compact .ranking-row {
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+}
+
+.ranking-row strong {
+  color: var(--acc);
+  font-size: 12px;
+}
+
+.ranking-row span {
+  min-width: 0;
+  color: var(--txt-bright);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.ranking-row em {
+  color: var(--txt-bright);
+  font-style: normal;
+  font-weight: 800;
+}
+
+.ranking-row small {
+  color: var(--mut);
+  font-size: 12px;
+  text-align: right;
+}
+
 .archive-view {
   min-height: 0;
   overflow: auto;
@@ -937,6 +987,15 @@ button:disabled {
 
   .archive-view {
     overflow: visible;
+  }
+
+  .ranking-row {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+
+  .ranking-row small {
+    grid-column: 2 / -1;
+    text-align: left;
   }
 
   .toast-stack {
