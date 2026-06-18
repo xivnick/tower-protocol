@@ -179,7 +179,7 @@ function CharacterTrainingPanel({
 
     const [result] = await Promise.all([
       trainMyCharacter(),
-      wait(1000),
+      wait(400),
     ]);
 
     setIsSubmitting(false);
