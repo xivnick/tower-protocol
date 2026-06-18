@@ -1,6 +1,7 @@
 import type { Character } from "../types/character";
 
 export const STAT_POINTS_PER_LEVEL = 5;
+export const BASE_PRIMARY_STAT = 10;
 
 export type PrimaryStatKey = "strength" | "agility" | "dexterity" | "vitality" | "endurance" | "intelligence" | "wisdom";
 
@@ -21,15 +22,36 @@ export const PRIMARY_STATS: PrimaryStatDefinition[] = [
 ];
 
 export function calculateCombatStats(character: Character) {
+  const maxHp = 100 + character.level * 20 + character.vitality * 10;
+  const attackSpeed = 100 + character.agility;
+  const accuracy = 100 + character.dexterity;
+  const evasion = character.agility;
+  const criticalChance = Math.min(character.dexterity, 100);
+  const physicalDefense = character.endurance;
+  const magicDefense = character.wisdom;
+  const finalDefense = physicalDefense + magicDefense;
+  const cooldown = character.wisdom;
+  const cooldownReduction = cooldown / (cooldown + 300);
+  const regeneration = character.endurance;
+  const hpRegenPerSecond = maxHp * (regeneration / 10000);
+
   return {
-    physicalAttack: 10 + character.strength * 2 + character.agility,
-    magicAttack: 10 + character.intelligence * 2 + character.wisdom,
-    defense: 5 + character.endurance * 2 + character.vitality,
-    maxHp: 100 + character.vitality * 12 + character.endurance * 6,
-    accuracy: 90 + character.dexterity * 2,
-    evasion: character.agility * 1.5,
-    criticalChance: 5 + character.dexterity * 0.5,
+    physicalAttack: character.strength,
+    magicAttack: character.intelligence,
+    physicalDefense,
+    magicDefense,
+    finalDefense,
+    maxHp,
+    attackSpeed,
+    attacksPerSecond: Math.sqrt(attackSpeed / 100),
+    accuracy,
+    evasion,
+    missChanceAgainstSelfAccuracy: evasion / (evasion + accuracy),
+    criticalChance,
     criticalDamage: 150,
-    attackSpeed: 1 + character.agility * 0.005,
+    cooldown,
+    cooldownReduction,
+    regeneration,
+    hpRegenPerSecond,
   };
 }

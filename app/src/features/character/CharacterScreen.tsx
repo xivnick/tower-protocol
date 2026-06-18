@@ -4,7 +4,7 @@ import { allocateCharacterStats, checkCharacterNameAvailability, createMyCharact
 import type { CharacterStatAllocation, TrainingRewardTier } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
-import { calculateCombatStats, PRIMARY_STATS } from "../../shared/stats";
+import { BASE_PRIMARY_STAT, calculateCombatStats, PRIMARY_STATS } from "../../shared/stats";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
 import type { Character } from "../../types/character";
 import type { ToastInput, ToastTone } from "../../types/toast";
@@ -288,13 +288,20 @@ function CharacterStatsPanel({
       <div className="combat-stat-grid">
         <CombatStat label="물리 공격력" current={currentCombatStats.physicalAttack} preview={previewCombatStats.physicalAttack} />
         <CombatStat label="마법 공격력" current={currentCombatStats.magicAttack} preview={previewCombatStats.magicAttack} />
-        <CombatStat label="방어력" current={currentCombatStats.defense} preview={previewCombatStats.defense} />
+        <CombatStat label="물리 방어" current={currentCombatStats.physicalDefense} preview={previewCombatStats.physicalDefense} />
+        <CombatStat label="마법 방어" current={currentCombatStats.magicDefense} preview={previewCombatStats.magicDefense} />
+        <CombatStat label="최종 방어" current={currentCombatStats.finalDefense} preview={previewCombatStats.finalDefense} />
         <CombatStat label="최대 체력" current={currentCombatStats.maxHp} preview={previewCombatStats.maxHp} />
+        <CombatStat label="공격속도" current={currentCombatStats.attackSpeed} preview={previewCombatStats.attackSpeed} />
+        <CombatStat label="초당 공격" current={currentCombatStats.attacksPerSecond} preview={previewCombatStats.attacksPerSecond} digits={2} />
         <CombatStat label="명중" current={currentCombatStats.accuracy} preview={previewCombatStats.accuracy} />
-        <CombatStat label="회피" current={currentCombatStats.evasion} preview={previewCombatStats.evasion} digits={1} />
+        <CombatStat label="회피" current={currentCombatStats.evasion} preview={previewCombatStats.evasion} />
         <CombatStat label="치명타 확률" current={currentCombatStats.criticalChance} preview={previewCombatStats.criticalChance} suffix="%" digits={1} />
         <CombatStat label="치명타 피해" current={currentCombatStats.criticalDamage} preview={previewCombatStats.criticalDamage} suffix="%" />
-        <CombatStat label="공격속도" current={currentCombatStats.attackSpeed} preview={previewCombatStats.attackSpeed} digits={3} />
+        <CombatStat label="쿨타임 수치" current={currentCombatStats.cooldown} preview={previewCombatStats.cooldown} />
+        <CombatStat label="쿨타임 감소" current={currentCombatStats.cooldownReduction * 100} preview={previewCombatStats.cooldownReduction * 100} suffix="%" digits={1} />
+        <CombatStat label="재생" current={currentCombatStats.regeneration} preview={previewCombatStats.regeneration} />
+        <CombatStat label="초당 회복" current={currentCombatStats.hpRegenPerSecond} preview={previewCombatStats.hpRegenPerSecond} digits={2} />
       </div>
       <div className="stat-reset-area">
         <button className="btn ghost" type="button" onClick={handleResetStats} disabled={!canReset}>
@@ -417,7 +424,7 @@ function applyPendingStats(character: Character, pendingStats: CharacterStatAllo
 }
 
 function hasAllocatedStats(character: Character) {
-  return PRIMARY_STATS.some((stat) => character[stat.key] > 1);
+  return PRIMARY_STATS.some((stat) => character[stat.key] > BASE_PRIMARY_STAT);
 }
 
 function CombatStat({
