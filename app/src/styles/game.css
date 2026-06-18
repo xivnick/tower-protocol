@@ -424,35 +424,30 @@ button:disabled {
 }
 
 .toast.is-common {
-  color: var(--txt-bright);
+  border-color: var(--acc-dim);
 }
 
 .toast.is-uncommon {
   border-color: #39ff7a;
-  color: #7affc8;
   box-shadow: 0 0 0 1px rgba(57, 255, 122, 0.16), 0 18px 60px rgba(0, 0, 0, 0.36);
 }
 
 .toast.is-rare {
   border-color: #ffd84d;
-  color: #ffe680;
   box-shadow: 0 0 0 1px rgba(255, 216, 77, 0.18), 0 18px 60px rgba(0, 0, 0, 0.36);
 }
 
 .toast.is-epic {
   border-color: #7affff;
-  color: #a9ffff;
   box-shadow: 0 0 0 1px rgba(122, 255, 255, 0.18), 0 18px 60px rgba(0, 0, 0, 0.36);
 }
 
 .toast.is-system {
   border-color: var(--line-3);
-  color: var(--txt);
 }
 
 .toast.is-error {
   border-color: var(--neg);
-  color: #ff9b9b;
   box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.16), 0 18px 60px rgba(0, 0, 0, 0.36);
 }
 
