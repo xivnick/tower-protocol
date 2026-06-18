@@ -537,6 +537,7 @@ button:disabled {
 
 .workspace {
   min-width: 0;
+  min-height: 0;
   display: grid;
   grid-template-rows: var(--header) minmax(0, 1fr);
 }
@@ -544,6 +545,7 @@ button:disabled {
 .workspace-body {
   min-height: 0;
   display: grid;
+  grid-template-rows: minmax(0, 1fr);
   overflow: hidden;
 }
 
