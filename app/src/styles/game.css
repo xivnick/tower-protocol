@@ -543,6 +543,12 @@ button:disabled {
 
 .workspace-body {
   min-height: 0;
+  display: grid;
+  overflow: hidden;
+}
+
+.workspace-body > * {
+  min-height: 0;
 }
 
 .route-frame {
