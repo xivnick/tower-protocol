@@ -406,12 +406,13 @@ button:disabled {
   z-index: 35;
   display: grid;
   gap: 8px;
-  width: min(260px, calc(100vw - 32px));
+  justify-items: end;
 }
 
 .toast {
   box-sizing: border-box;
-  width: 100%;
+  width: max-content;
+  max-width: min(280px, calc(100vw - 32px));
   border: 1px solid var(--acc-dim);
   background: color-mix(in srgb, var(--surf) 94%, black);
   color: var(--txt-bright);
@@ -914,7 +915,7 @@ button:disabled {
     right: 12px;
     bottom: 12px;
     left: 12px;
-    width: auto;
+    justify-items: end;
   }
 }
 
