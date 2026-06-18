@@ -194,7 +194,7 @@ function CharacterTrainingPanel({
     onToast(formatTrainingToast(result.gainedExperience, result.rewardTier));
 
     if (result.levelAfter > result.levelBefore) {
-      onToast({ message: `${formatCharacterLevel(result.levelAfter)} 도달`, tone: "epic" });
+      onToast({ message: `레벨업! -> LV.${result.levelAfter}`, tone: "epic" });
     }
   }
 
