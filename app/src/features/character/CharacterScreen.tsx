@@ -1,6 +1,7 @@
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, trainMyCharacter } from "../../api/characterApi";
+import type { TrainingRewardTier } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
@@ -186,7 +187,11 @@ function CharacterTrainingPanel({
     }
 
     onCharacterChange(result.character);
-    onToast(result.character.level > character.level ? "레벨이 올랐습니다." : "경험치를 획득했습니다.");
+    onToast(formatTrainingToast(result.gainedExperience, result.rewardTier));
+
+    if (result.levelAfter > result.levelBefore) {
+      onToast(`${formatCharacterLevel(result.levelAfter)} 도달`);
+    }
   }
 
   return (
@@ -204,6 +209,11 @@ function CharacterTrainingPanel({
       </div>
     </article>
   );
+}
+
+function formatTrainingToast(gainedExperience: number, rewardTier: TrainingRewardTier) {
+  const prefix = rewardTier === "great" ? "대성공 " : rewardTier === "good" ? "성공 " : "";
+  return `${prefix}+${gainedExperience.toLocaleString()} EXP`;
 }
 
 function CharacterDeletePanel({

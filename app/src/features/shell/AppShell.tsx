@@ -10,6 +10,7 @@ import { PatchNotesArchive } from "../patchNotes/PatchNotes";
 type ToastMessage = {
   id: number;
   message: string;
+  isClosing: boolean;
 };
 
 const navItems = [
@@ -22,6 +23,7 @@ const navItems = [
 
 const dropdownCloseMs = 100;
 const toastDurationMs = 3000;
+const toastCloseMs = 180;
 const maxToasts = 3;
 
 export function AppShell({
@@ -92,9 +94,12 @@ export function AppShell({
     const id = toastIdRef.current + 1;
     toastIdRef.current = id;
 
-    setToasts((current) => [...current, { id, message }].slice(-maxToasts));
+    setToasts((current) => [...current, { id, message, isClosing: false }].slice(-maxToasts));
     window.setTimeout(() => {
-      setToasts((current) => current.filter((toast) => toast.id !== id));
+      setToasts((current) => current.map((toast) => toast.id === id ? { ...toast, isClosing: true } : toast));
+      window.setTimeout(() => {
+        setToasts((current) => current.filter((toast) => toast.id !== id));
+      }, toastCloseMs);
     }, toastDurationMs);
   }
 
@@ -195,7 +200,7 @@ export function AppShell({
       {toasts.length > 0 && (
         <div className="toast-stack" role="status" aria-live="polite">
           {toasts.map((toast) => (
-            <div className="toast" key={toast.id}>
+            <div className={`toast ${toast.isClosing ? "is-closing" : ""}`} key={toast.id}>
               {toast.message}
             </div>
           ))}

@@ -420,6 +420,11 @@ button:disabled {
   animation: toast-in 160ms ease-out;
 }
 
+.toast.is-closing {
+  pointer-events: none;
+  animation: toast-out 180ms ease-in forwards;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: var(--rail) minmax(0, 1fr);
@@ -944,6 +949,18 @@ button:disabled {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(6px);
   }
 }
 

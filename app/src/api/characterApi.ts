@@ -20,6 +20,26 @@ type CharacterNameAvailabilityResult = {
   message: string;
 };
 
+export type TrainingRewardTier = "normal" | "good" | "great" | "max";
+
+type TrainingResult = {
+  ok: boolean;
+  character: Character | null;
+  gainedExperience: number;
+  rewardTier: TrainingRewardTier;
+  levelBefore: number;
+  levelAfter: number;
+  message: string;
+};
+
+type TrainingPayload = {
+  character?: Character;
+  gained_experience?: number;
+  reward_tier?: TrainingRewardTier;
+  level_before?: number;
+  level_after?: number;
+};
+
 export async function getMyCharacter(): Promise<CharacterResult> {
   if (!supabase) return { ok: false, character: null, message: "Supabase 설정을 확인해주세요." };
 
@@ -109,8 +129,18 @@ export async function checkCharacterNameAvailability(name: string): Promise<Char
   };
 }
 
-export async function trainMyCharacter(): Promise<CharacterResult> {
-  if (!supabase) return { ok: false, character: null, message: "Supabase 설정을 확인해주세요." };
+export async function trainMyCharacter(): Promise<TrainingResult> {
+  if (!supabase) {
+    return {
+      ok: false,
+      character: null,
+      gainedExperience: 0,
+      rewardTier: "normal",
+      levelBefore: 0,
+      levelAfter: 0,
+      message: "Supabase 설정을 확인해주세요.",
+    };
+  }
 
   const { data, error } = await supabase.rpc("train_my_character");
 
@@ -118,11 +148,25 @@ export async function trainMyCharacter(): Promise<CharacterResult> {
     return {
       ok: false,
       character: null,
+      gainedExperience: 0,
+      rewardTier: "normal",
+      levelBefore: 0,
+      levelAfter: 0,
       message: toKoreanAuthMessage(error.message, "훈련을 완료하지 못했습니다."),
     };
   }
 
-  return { ok: true, character: data, message: "경험치를 획득했습니다." };
+  const payload = data as TrainingPayload;
+
+  return {
+    ok: Boolean(payload.character),
+    character: payload.character ?? null,
+    gainedExperience: payload.gained_experience ?? 0,
+    rewardTier: payload.reward_tier ?? "normal",
+    levelBefore: payload.level_before ?? payload.character?.level ?? 0,
+    levelAfter: payload.level_after ?? payload.character?.level ?? 0,
+    message: "경험치를 획득했습니다.",
+  };
 }
 
 export async function deleteMyCharacter(characterId: string): Promise<CharacterActionResult> {
