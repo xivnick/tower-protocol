@@ -3,9 +3,17 @@ import type { Session } from "@supabase/supabase-js";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
 import type { Character } from "../../types/character";
+import type { ToastInput, ToastTone } from "../../types/toast";
 import { CharacterScreen } from "../character/CharacterScreen";
 import { DashboardScreen } from "../dashboard/DashboardScreen";
 import { PatchNotesArchive } from "../patchNotes/PatchNotes";
+
+type ToastMessage = {
+  id: number;
+  message: string;
+  tone: ToastTone;
+  isClosing: boolean;
+};
 
 const navItems = [
   { label: "대시보드", to: "/", end: true, enabled: true },
@@ -17,6 +25,8 @@ const navItems = [
 
 const dropdownCloseMs = 100;
 const toastDurationMs = 3000;
+const toastCloseMs = 180;
+const maxToasts = 3;
 
 export function AppShell({
   session,
@@ -35,8 +45,9 @@ export function AppShell({
   const [isAccountClosing, setIsAccountClosing] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavClosing, setIsNavClosing] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const toastTimeoutRef = useRef(0);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const toastsRef = useRef<ToastMessage[]>([]);
+  const toastIdRef = useRef(0);
   const location = useLocation();
   const navigate = useNavigate();
   const nickname = profile?.nickname ?? "UNKNOWN";
@@ -82,12 +93,40 @@ export function AppShell({
     }, dropdownCloseMs);
   }
 
-  function showToast(message: string) {
-    window.clearTimeout(toastTimeoutRef.current);
-    setToastMessage(message);
-    toastTimeoutRef.current = window.setTimeout(() => {
-      setToastMessage("");
-    }, toastDurationMs);
+  function showToast(input: ToastInput) {
+    const id = toastIdRef.current + 1;
+    toastIdRef.current = id;
+    const tone = input.tone ?? "common";
+
+    function appendToast() {
+      updateToasts((current) => [...current, { id, message: input.message, tone, isClosing: false }]);
+      window.setTimeout(() => {
+        closeToast(id);
+      }, toastDurationMs);
+    }
+
+    const openToasts = toastsRef.current.filter((toast) => !toast.isClosing);
+
+    if (openToasts.length >= maxToasts) {
+      closeToast(openToasts[0].id);
+      window.setTimeout(appendToast, toastCloseMs);
+      return;
+    }
+
+    appendToast();
+  }
+
+  function closeToast(id: number) {
+    updateToasts((current) => current.map((toast) => toast.id === id ? { ...toast, isClosing: true } : toast));
+    window.setTimeout(() => {
+      updateToasts((current) => current.filter((toast) => toast.id !== id));
+    }, toastCloseMs);
+  }
+
+  function updateToasts(updater: (current: ToastMessage[]) => ToastMessage[]) {
+    const nextToasts = updater(toastsRef.current);
+    toastsRef.current = nextToasts;
+    setToasts(nextToasts);
   }
 
   return (
@@ -184,9 +223,13 @@ export function AppShell({
           </div>
         </section>
       </main>
-      {toastMessage && (
-        <div className="toast" role="status">
-          {toastMessage}
+      {toasts.length > 0 && (
+        <div className="toast-stack" role="status" aria-live="polite">
+          {toasts.map((toast) => (
+            <div className={`toast is-${toast.tone} ${toast.isClosing ? "is-closing" : ""}`} key={toast.id}>
+              {toast.message}
+            </div>
+          ))}
         </div>
       )}
     </>

@@ -399,12 +399,20 @@ button:disabled {
   flex: 0 0 auto;
 }
 
-.toast {
+.toast-stack {
   position: fixed;
   right: 16px;
   bottom: 16px;
   z-index: 35;
-  max-width: min(360px, calc(100vw - 32px));
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.toast {
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(280px, calc(100vw - 32px));
   border: 1px solid var(--acc-dim);
   background: color-mix(in srgb, var(--surf) 94%, black);
   color: var(--txt-bright);
@@ -413,6 +421,39 @@ button:disabled {
   font-weight: 800;
   box-shadow: 0 0 0 1px rgba(57, 255, 122, 0.08), 0 18px 60px rgba(0, 0, 0, 0.36);
   animation: toast-in 160ms ease-out;
+}
+
+.toast.is-common {
+  border-color: var(--acc-dim);
+}
+
+.toast.is-uncommon {
+  border-color: #39ff7a;
+  box-shadow: 0 0 0 1px rgba(57, 255, 122, 0.16), 0 18px 60px rgba(0, 0, 0, 0.36);
+}
+
+.toast.is-rare {
+  border-color: #ffd84d;
+  box-shadow: 0 0 0 1px rgba(255, 216, 77, 0.18), 0 18px 60px rgba(0, 0, 0, 0.36);
+}
+
+.toast.is-epic {
+  border-color: #7affff;
+  box-shadow: 0 0 0 1px rgba(122, 255, 255, 0.18), 0 18px 60px rgba(0, 0, 0, 0.36);
+}
+
+.toast.is-system {
+  border-color: var(--line-3);
+}
+
+.toast.is-error {
+  border-color: var(--neg);
+  box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.16), 0 18px 60px rgba(0, 0, 0, 0.36);
+}
+
+.toast.is-closing {
+  pointer-events: none;
+  animation: toast-out 180ms ease-in forwards;
 }
 
 .app-shell {
@@ -898,11 +939,11 @@ button:disabled {
     overflow: visible;
   }
 
-  .toast {
+  .toast-stack {
     right: 12px;
     bottom: 12px;
     left: 12px;
-    max-width: none;
+    justify-items: end;
   }
 }
 
@@ -939,6 +980,18 @@ button:disabled {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(6px);
   }
 }
 

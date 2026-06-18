@@ -20,6 +20,26 @@ type CharacterNameAvailabilityResult = {
   message: string;
 };
 
+export type TrainingRewardTier = "normal" | "good" | "great" | "max";
+
+type TrainingResult = {
+  ok: boolean;
+  character: Character | null;
+  gainedExperience: number;
+  rewardTier: TrainingRewardTier;
+  levelBefore: number;
+  levelAfter: number;
+  message: string;
+};
+
+type TrainingPayload = {
+  character?: Character;
+  gained_experience?: number;
+  reward_tier?: TrainingRewardTier;
+  level_before?: number;
+  level_after?: number;
+};
+
 export async function getMyCharacter(): Promise<CharacterResult> {
   if (!supabase) return { ok: false, character: null, message: "Supabase 설정을 확인해주세요." };
 
@@ -35,7 +55,7 @@ export async function getMyCharacter(): Promise<CharacterResult> {
 
   const { data, error } = await supabase
     .from("characters")
-    .select("id,user_id,name,created_at,updated_at")
+    .select("id,user_id,name,level,experience,created_at,updated_at")
     .eq("user_id", userResult.user.id)
     .maybeSingle();
 
@@ -72,7 +92,7 @@ export async function createMyCharacter(name: string): Promise<CharacterResult> 
       user_id: userResult.user.id,
       name: trimmedName,
     })
-    .select("id,user_id,name,created_at,updated_at")
+    .select("id,user_id,name,level,experience,created_at,updated_at")
     .single();
 
   if (error) {
@@ -106,6 +126,46 @@ export async function checkCharacterNameAvailability(name: string): Promise<Char
     ok: true,
     available: Boolean(data),
     message: data ? "사용 가능한 캐릭터 이름입니다." : "이미 사용 중인 이름입니다.",
+  };
+}
+
+export async function trainMyCharacter(): Promise<TrainingResult> {
+  if (!supabase) {
+    return {
+      ok: false,
+      character: null,
+      gainedExperience: 0,
+      rewardTier: "normal",
+      levelBefore: 0,
+      levelAfter: 0,
+      message: "Supabase 설정을 확인해주세요.",
+    };
+  }
+
+  const { data, error } = await supabase.rpc("train_my_character");
+
+  if (error) {
+    return {
+      ok: false,
+      character: null,
+      gainedExperience: 0,
+      rewardTier: "normal",
+      levelBefore: 0,
+      levelAfter: 0,
+      message: toKoreanAuthMessage(error.message, "훈련을 완료하지 못했습니다."),
+    };
+  }
+
+  const payload = data as TrainingPayload;
+
+  return {
+    ok: Boolean(payload.character),
+    character: payload.character ?? null,
+    gainedExperience: payload.gained_experience ?? 0,
+    rewardTier: payload.reward_tier ?? "normal",
+    levelBefore: payload.level_before ?? payload.character?.level ?? 0,
+    levelAfter: payload.level_after ?? payload.character?.level ?? 0,
+    message: "경험치를 획득했습니다.",
   };
 }
 

@@ -1,9 +1,12 @@
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter } from "../../api/characterApi";
+import { checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, trainMyCharacter } from "../../api/characterApi";
+import type { TrainingRewardTier } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
+import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
 import type { Character } from "../../types/character";
+import type { ToastInput, ToastTone } from "../../types/toast";
 
 export function CharacterScreen({
   character,
@@ -12,7 +15,7 @@ export function CharacterScreen({
 }: {
   character: Character | null;
   onCharacterChange: (character: Character | null) => void;
-  onToast: (message: string) => void;
+  onToast: (toast: ToastInput) => void;
 }) {
   useDocumentTitle("TOWER://CHARACTER");
 
@@ -26,10 +29,13 @@ export function CharacterScreen({
           </div>
           <div className="kv-grid">
             <Kv label="이름" value={character.name} />
+            <Kv label="레벨" value={formatCharacterLevel(character.level)} />
+            <Kv label="경험치" value={formatCharacterExperience(character.level, character.experience)} />
             <Kv label="상태" value="대기 중" />
           </div>
         </article>
 
+        <CharacterTrainingPanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
         <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
       </section>
     );
@@ -151,6 +157,86 @@ function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (chara
   );
 }
 
+function CharacterTrainingPanel({
+  character,
+  onCharacterChange,
+  onToast,
+}: {
+  character: Character;
+  onCharacterChange: (character: Character | null) => void;
+  onToast: (toast: ToastInput) => void;
+}) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
+  const isMaxLevel = character.level >= 100;
+
+  async function handleTrain() {
+    if (isSubmitting || isMaxLevel) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setMessage("");
+
+    const [result] = await Promise.all([
+      trainMyCharacter(),
+      wait(400),
+    ]);
+
+    setIsSubmitting(false);
+
+    if (!result.ok || !result.character) {
+      setMessage(result.message);
+      return;
+    }
+
+    onCharacterChange(result.character);
+    onToast(formatTrainingToast(result.gainedExperience, result.rewardTier));
+
+    if (result.levelAfter > result.levelBefore) {
+      window.setTimeout(() => {
+        onToast({ message: `레벨업! -> LV.${result.levelAfter}`, tone: "epic" });
+      }, 300);
+    }
+  }
+
+  return (
+    <article className="panel">
+      <div className="panel-head">
+        <span>TRAINING</span>
+        <h2>기초 훈련</h2>
+      </div>
+      <div className="panel-action-body">
+        <p className="panel-message">{isMaxLevel ? "최고 레벨에 도달했습니다." : "훈련을 실행하면 경험치를 획득합니다."}</p>
+        <button className="btn primary panel-primary-action" type="button" onClick={handleTrain} disabled={isSubmitting || isMaxLevel}>
+          {isSubmitting ? "훈련 중..." : "훈련 실행"}
+        </button>
+        {message && <p className="auth-message is-error" role="status">{message}</p>}
+      </div>
+    </article>
+  );
+}
+
+function formatTrainingToast(gainedExperience: number, rewardTier: TrainingRewardTier): ToastInput {
+  const label = rewardTier === "great" ? "훈련 대성공" : rewardTier === "good" ? "훈련 성공" : "훈련 완료";
+  return {
+    message: `${label} +${gainedExperience.toLocaleString()} EXP`,
+    tone: getTrainingRewardTone(rewardTier),
+  };
+}
+
+function getTrainingRewardTone(rewardTier: TrainingRewardTier): ToastTone {
+  if (rewardTier === "great") return "rare";
+  if (rewardTier === "good") return "uncommon";
+  return "common";
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
 function CharacterDeletePanel({
   character,
   onCharacterChange,
@@ -158,7 +244,7 @@ function CharacterDeletePanel({
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
-  onToast: (message: string) => void;
+  onToast: (toast: ToastInput) => void;
 }) {
   const [confirmName, setConfirmName] = useState("");
   const [isConfirming, setIsConfirming] = useState(false);
@@ -187,7 +273,7 @@ function CharacterDeletePanel({
     }
 
     onCharacterChange(null);
-    onToast("캐릭터를 삭제했습니다.");
+    onToast({ message: "캐릭터를 삭제했습니다.", tone: "system" });
   }
 
   return (
