@@ -704,6 +704,87 @@ button:disabled {
   gap: 8px;
 }
 
+.stat-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.stat-list {
+  display: grid;
+  gap: 8px;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px 44px auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 10px;
+}
+
+.stat-row div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.stat-row strong {
+  color: var(--txt-bright);
+  font-size: 13px;
+}
+
+.stat-row span {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.stat-row em {
+  color: var(--txt-bright);
+  font-style: normal;
+  font-weight: 800;
+  text-align: right;
+}
+
+.stat-row small {
+  min-height: 18px;
+  color: var(--acc);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.stat-controls {
+  display: grid;
+  grid-template-columns: repeat(2, 34px);
+  gap: 6px;
+}
+
+.icon-button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line-2);
+  background: var(--surf-2);
+  color: var(--txt-bright);
+  font-weight: 900;
+}
+
+.icon-button:hover {
+  border-color: var(--acc);
+}
+
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.stat-actions {
+  margin-top: 12px;
+}
+
 .patch-list {
   list-style: none;
   display: grid;
@@ -996,6 +1077,24 @@ button:disabled {
   .ranking-row small {
     grid-column: 2 / -1;
     text-align: left;
+  }
+
+  .stat-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-row {
+    grid-template-columns: minmax(0, 1fr) 46px 36px auto;
+    gap: 8px;
+  }
+
+  .stat-controls {
+    grid-template-columns: repeat(2, 32px);
+  }
+
+  .icon-button {
+    width: 32px;
+    height: 32px;
   }
 
   .toast-stack {
