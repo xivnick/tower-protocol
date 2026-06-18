@@ -3,6 +3,7 @@ import type { Session } from "@supabase/supabase-js";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
 import type { Character } from "../../types/character";
+import type { ToastInput, ToastTone } from "../../types/toast";
 import { CharacterScreen } from "../character/CharacterScreen";
 import { DashboardScreen } from "../dashboard/DashboardScreen";
 import { PatchNotesArchive } from "../patchNotes/PatchNotes";
@@ -10,6 +11,7 @@ import { PatchNotesArchive } from "../patchNotes/PatchNotes";
 type ToastMessage = {
   id: number;
   message: string;
+  tone: ToastTone;
   isClosing: boolean;
 };
 
@@ -91,12 +93,13 @@ export function AppShell({
     }, dropdownCloseMs);
   }
 
-  function showToast(message: string) {
+  function showToast(input: ToastInput) {
     const id = toastIdRef.current + 1;
     toastIdRef.current = id;
+    const tone = input.tone ?? "common";
 
     function appendToast() {
-      updateToasts((current) => [...current, { id, message, isClosing: false }]);
+      updateToasts((current) => [...current, { id, message: input.message, tone, isClosing: false }]);
       window.setTimeout(() => {
         closeToast(id);
       }, toastDurationMs);
@@ -223,7 +226,7 @@ export function AppShell({
       {toasts.length > 0 && (
         <div className="toast-stack" role="status" aria-live="polite">
           {toasts.map((toast) => (
-            <div className={`toast ${toast.isClosing ? "is-closing" : ""}`} key={toast.id}>
+            <div className={`toast is-${toast.tone} ${toast.isClosing ? "is-closing" : ""}`} key={toast.id}>
               {toast.message}
             </div>
           ))}

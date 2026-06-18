@@ -6,6 +6,7 @@ import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
 import type { Character } from "../../types/character";
+import type { ToastInput, ToastTone } from "../../types/toast";
 
 export function CharacterScreen({
   character,
@@ -14,7 +15,7 @@ export function CharacterScreen({
 }: {
   character: Character | null;
   onCharacterChange: (character: Character | null) => void;
-  onToast: (message: string) => void;
+  onToast: (toast: ToastInput) => void;
 }) {
   useDocumentTitle("TOWER://CHARACTER");
 
@@ -163,7 +164,7 @@ function CharacterTrainingPanel({
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
-  onToast: (message: string) => void;
+  onToast: (toast: ToastInput) => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -193,7 +194,7 @@ function CharacterTrainingPanel({
     onToast(formatTrainingToast(result.gainedExperience, result.rewardTier));
 
     if (result.levelAfter > result.levelBefore) {
-      onToast(`${formatCharacterLevel(result.levelAfter)} 도달`);
+      onToast({ message: `${formatCharacterLevel(result.levelAfter)} 도달`, tone: "epic" });
     }
   }
 
@@ -214,9 +215,18 @@ function CharacterTrainingPanel({
   );
 }
 
-function formatTrainingToast(gainedExperience: number, rewardTier: TrainingRewardTier) {
+function formatTrainingToast(gainedExperience: number, rewardTier: TrainingRewardTier): ToastInput {
   const label = rewardTier === "great" ? "훈련 대성공" : rewardTier === "good" ? "훈련 성공" : "훈련 완료";
-  return `${label} +${gainedExperience.toLocaleString()} EXP`;
+  return {
+    message: `${label} +${gainedExperience.toLocaleString()} EXP`,
+    tone: getTrainingRewardTone(rewardTier),
+  };
+}
+
+function getTrainingRewardTone(rewardTier: TrainingRewardTier): ToastTone {
+  if (rewardTier === "great") return "rare";
+  if (rewardTier === "good") return "uncommon";
+  return "common";
 }
 
 function wait(ms: number) {
@@ -232,7 +242,7 @@ function CharacterDeletePanel({
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
-  onToast: (message: string) => void;
+  onToast: (toast: ToastInput) => void;
 }) {
   const [confirmName, setConfirmName] = useState("");
   const [isConfirming, setIsConfirming] = useState(false);
@@ -261,7 +271,7 @@ function CharacterDeletePanel({
     }
 
     onCharacterChange(null);
-    onToast("캐릭터를 삭제했습니다.");
+    onToast({ message: "캐릭터를 삭제했습니다.", tone: "system" });
   }
 
   return (
