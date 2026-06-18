@@ -5,6 +5,7 @@ import { formatCharacterExperience, formatCharacterLevel } from "../../shared/pr
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import type { Character } from "../../types/character";
 import { PatchNotesSummary } from "../patchNotes/PatchNotes";
+import { RankingSummary } from "../ranking/Ranking";
 
 export function DashboardScreen({
   session,
@@ -56,6 +57,7 @@ export function DashboardScreen({
       </article>
 
       <PatchNotesSummary />
+      <RankingSummary />
     </section>
   );
 }
