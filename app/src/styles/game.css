@@ -712,16 +712,20 @@ button:disabled {
   gap: 8px;
 }
 
-.stat-summary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 12px;
+.stat-meter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 8px;
+  padding-bottom: 10px;
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .stat-list {
   display: grid;
-  gap: 8px;
 }
 
 .stat-row {
@@ -729,9 +733,8 @@ button:disabled {
   grid-template-columns: minmax(0, 1fr) 56px 44px auto;
   align-items: center;
   gap: 10px;
-  border: 1px solid var(--line);
-  background: var(--bg-2);
-  padding: 10px;
+  border-bottom: 1px solid var(--line);
+  padding: 8px 0;
 }
 
 .stat-row div:first-child {
@@ -791,6 +794,61 @@ button:disabled {
 
 .stat-actions {
   margin-top: 12px;
+}
+
+.combat-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+  border-top: 1px solid var(--line);
+  margin-top: 14px;
+  padding-top: 8px;
+}
+
+.combat-stat {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+  padding: 8px 0;
+}
+
+.combat-stat span {
+  min-width: 0;
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.combat-stat strong {
+  color: var(--txt-bright);
+  font-size: 13px;
+}
+
+.combat-stat small {
+  min-width: 44px;
+  color: var(--mut-2);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.combat-stat.is-changed strong,
+.combat-stat.is-changed small {
+  color: var(--acc-2);
+}
+
+.stat-reset-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.stat-reset-area small {
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .patch-list {
@@ -1087,13 +1145,19 @@ button:disabled {
     text-align: left;
   }
 
-  .stat-summary {
-    grid-template-columns: 1fr;
-  }
-
   .stat-row {
     grid-template-columns: minmax(0, 1fr) 46px 36px auto;
     gap: 8px;
+  }
+
+  .combat-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-reset-area {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .stat-controls {

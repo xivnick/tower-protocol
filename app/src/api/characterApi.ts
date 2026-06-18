@@ -127,6 +127,18 @@ export async function allocateCharacterStats(allocation: CharacterStatAllocation
   return { ok: true, character: data as Character, message: "스탯을 적용했습니다." };
 }
 
+export async function resetCharacterStats(): Promise<CharacterResult> {
+  if (!supabase) return { ok: false, character: null, message: "Supabase 설정을 확인해주세요." };
+
+  const { data, error } = await supabase.rpc("reset_character_stats");
+
+  if (error) {
+    return { ok: false, character: null, message: toKoreanAuthMessage(error.message, "스탯을 초기화하지 못했습니다.") };
+  }
+
+  return { ok: true, character: data as Character, message: "스탯을 초기화했습니다." };
+}
+
 export async function checkCharacterNameAvailability(name: string): Promise<CharacterNameAvailabilityResult> {
   if (!supabase) return { ok: false, available: false, message: "Supabase 설정을 확인해주세요." };
 

@@ -1,6 +1,6 @@
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { allocateCharacterStats, checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, trainMyCharacter } from "../../api/characterApi";
+import { allocateCharacterStats, checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, resetCharacterStats, trainMyCharacter } from "../../api/characterApi";
 import type { CharacterStatAllocation, TrainingRewardTier } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
@@ -32,12 +32,10 @@ export function CharacterScreen({
             <Kv label="이름" value={character.name} />
             <Kv label="레벨" value={formatCharacterLevel(character.level)} />
             <Kv label="경험치" value={formatCharacterExperience(character.level, character.experience)} />
-            <Kv label="상태" value="대기 중" />
           </div>
         </article>
 
         <CharacterStatsPanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
-        <CharacterCombatStatsPanel character={character} />
         <CharacterTrainingPanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
         <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
       </section>
@@ -171,10 +169,15 @@ function CharacterStatsPanel({
 }) {
   const [pendingStats, setPendingStats] = useState<CharacterStatAllocation>(createEmptyStatAllocation());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [message, setMessage] = useState("");
   const pendingTotal = getPendingTotal(pendingStats);
   const remainingPoints = character.stat_points - pendingTotal;
-  const canApply = pendingTotal > 0 && !isSubmitting;
+  const previewCharacter = applyPendingStats(character, pendingStats);
+  const currentCombatStats = calculateCombatStats(character);
+  const previewCombatStats = calculateCombatStats(previewCharacter);
+  const canApply = pendingTotal > 0 && !isSubmitting && !isResetting;
+  const canReset = hasAllocatedStats(character) && !isSubmitting && !isResetting;
 
   useEffect(() => {
     setPendingStats(createEmptyStatAllocation());
@@ -219,15 +222,36 @@ function CharacterStatsPanel({
     onToast({ message: `스탯 적용 -${pendingTotal}P`, tone: "system" });
   }
 
+  async function handleResetStats() {
+    if (!canReset) {
+      return;
+    }
+
+    setIsResetting(true);
+    setMessage("");
+
+    const result = await resetCharacterStats();
+
+    setIsResetting(false);
+
+    if (!result.ok || !result.character) {
+      setMessage(result.message);
+      return;
+    }
+
+    onCharacterChange(result.character);
+    onToast({ message: "스탯 초기화", tone: "system" });
+  }
+
   return (
     <article className="panel">
       <div className="panel-head">
         <span>STATS</span>
-        <h2>1차 스탯</h2>
+        <h2>스탯</h2>
       </div>
-      <div className="stat-summary">
-        <Kv label="미분배 포인트" value={`${remainingPoints.toLocaleString()}P`} />
-        <Kv label="배분 예정" value={`${pendingTotal.toLocaleString()}P`} />
+      <div className="stat-meter-row">
+        <span>미분배 {remainingPoints.toLocaleString()}P</span>
+        <span>예정 {pendingTotal.toLocaleString()}P</span>
       </div>
       <div className="stat-list">
         {PRIMARY_STATS.map((stat) => {
@@ -241,10 +265,10 @@ function CharacterStatsPanel({
               <em>{(character[stat.key] + pendingValue).toLocaleString()}</em>
               <small>{pendingValue > 0 ? `+${pendingValue}` : ""}</small>
               <div className="stat-controls">
-                <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, -1)} disabled={isSubmitting || pendingValue <= 0}>
+                <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, -1)} disabled={isSubmitting || isResetting || pendingValue <= 0}>
                   -
                 </button>
-                <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, 1)} disabled={isSubmitting || remainingPoints <= 0}>
+                <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, 1)} disabled={isSubmitting || isResetting || remainingPoints <= 0}>
                   +
                 </button>
               </div>
@@ -253,38 +277,32 @@ function CharacterStatsPanel({
         })}
       </div>
       <div className="button-row stat-actions">
-        <button className="btn ghost" type="button" onClick={() => setPendingStats(createEmptyStatAllocation())} disabled={isSubmitting || pendingTotal === 0}>
-          초기화
+        <button className="btn ghost" type="button" onClick={() => setPendingStats(createEmptyStatAllocation())} disabled={isSubmitting || isResetting || pendingTotal === 0}>
+          배분 취소
         </button>
         <button className="btn primary" type="button" onClick={handleApply} disabled={!canApply}>
           {isSubmitting ? "적용 중..." : "적용"}
         </button>
       </div>
+
+      <div className="combat-stat-grid">
+        <CombatStat label="물리 공격력" current={currentCombatStats.physicalAttack} preview={previewCombatStats.physicalAttack} />
+        <CombatStat label="마법 공격력" current={currentCombatStats.magicAttack} preview={previewCombatStats.magicAttack} />
+        <CombatStat label="방어력" current={currentCombatStats.defense} preview={previewCombatStats.defense} />
+        <CombatStat label="최대 체력" current={currentCombatStats.maxHp} preview={previewCombatStats.maxHp} />
+        <CombatStat label="명중" current={currentCombatStats.accuracy} preview={previewCombatStats.accuracy} />
+        <CombatStat label="회피" current={currentCombatStats.evasion} preview={previewCombatStats.evasion} digits={1} />
+        <CombatStat label="치명타 확률" current={currentCombatStats.criticalChance} preview={previewCombatStats.criticalChance} suffix="%" digits={1} />
+        <CombatStat label="치명타 피해" current={currentCombatStats.criticalDamage} preview={previewCombatStats.criticalDamage} suffix="%" />
+        <CombatStat label="공격속도" current={currentCombatStats.attackSpeed} preview={previewCombatStats.attackSpeed} digits={3} />
+      </div>
+      <div className="stat-reset-area">
+        <button className="btn ghost" type="button" onClick={handleResetStats} disabled={!canReset}>
+          {isResetting ? "초기화 중..." : "스탯 초기화"}
+        </button>
+        <small>비용 무료</small>
+      </div>
       {message && <p className="auth-message is-error" role="status">{message}</p>}
-    </article>
-  );
-}
-
-function CharacterCombatStatsPanel({ character }: { character: Character }) {
-  const combatStats = calculateCombatStats(character);
-
-  return (
-    <article className="panel">
-      <div className="panel-head">
-        <span>COMBAT</span>
-        <h2>전투 스탯</h2>
-      </div>
-      <div className="kv-grid">
-        <Kv label="물리 공격력" value={combatStats.physicalAttack.toLocaleString()} />
-        <Kv label="마법 공격력" value={combatStats.magicAttack.toLocaleString()} />
-        <Kv label="방어력" value={combatStats.defense.toLocaleString()} />
-        <Kv label="최대 체력" value={combatStats.maxHp.toLocaleString()} />
-        <Kv label="명중" value={combatStats.accuracy.toLocaleString()} />
-        <Kv label="회피" value={combatStats.evasion.toFixed(1)} />
-        <Kv label="치명타 확률" value={`${combatStats.criticalChance.toFixed(1)}%`} />
-        <Kv label="치명타 피해" value={`${combatStats.criticalDamage}%`} />
-        <Kv label="공격속도" value={combatStats.attackSpeed.toFixed(3)} />
-      </div>
     </article>
   );
 }
@@ -383,6 +401,52 @@ function createEmptyStatAllocation(): CharacterStatAllocation {
 
 function getPendingTotal(stats: CharacterStatAllocation) {
   return Object.values(stats).reduce((total, value) => total + value, 0);
+}
+
+function applyPendingStats(character: Character, pendingStats: CharacterStatAllocation): Character {
+  return {
+    ...character,
+    strength: character.strength + pendingStats.strength,
+    agility: character.agility + pendingStats.agility,
+    dexterity: character.dexterity + pendingStats.dexterity,
+    vitality: character.vitality + pendingStats.vitality,
+    endurance: character.endurance + pendingStats.endurance,
+    intelligence: character.intelligence + pendingStats.intelligence,
+    wisdom: character.wisdom + pendingStats.wisdom,
+  };
+}
+
+function hasAllocatedStats(character: Character) {
+  return PRIMARY_STATS.some((stat) => character[stat.key] > 1);
+}
+
+function CombatStat({
+  label,
+  current,
+  preview,
+  suffix = "",
+  digits = 0,
+}: {
+  label: string;
+  current: number;
+  preview: number;
+  suffix?: string;
+  digits?: number;
+}) {
+  const isChanged = current !== preview;
+  const delta = preview - current;
+
+  return (
+    <div className={`combat-stat ${isChanged ? "is-changed" : ""}`}>
+      <span>{label}</span>
+      <strong>{formatStatNumber(preview, digits)}{suffix}</strong>
+      {isChanged && <small>+{formatStatNumber(delta, digits)}{suffix}</small>}
+    </div>
+  );
+}
+
+function formatStatNumber(value: number, digits: number) {
+  return digits > 0 ? value.toFixed(digits) : Math.round(value).toLocaleString();
 }
 
 function CharacterDeletePanel({
