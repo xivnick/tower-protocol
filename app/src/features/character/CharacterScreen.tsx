@@ -177,7 +177,10 @@ function CharacterTrainingPanel({
     setIsSubmitting(true);
     setMessage("");
 
-    const result = await trainMyCharacter();
+    const [result] = await Promise.all([
+      trainMyCharacter(),
+      wait(1000),
+    ]);
 
     setIsSubmitting(false);
 
@@ -212,8 +215,14 @@ function CharacterTrainingPanel({
 }
 
 function formatTrainingToast(gainedExperience: number, rewardTier: TrainingRewardTier) {
-  const prefix = rewardTier === "great" ? "대성공 " : rewardTier === "good" ? "성공 " : "";
-  return `${prefix}+${gainedExperience.toLocaleString()} EXP`;
+  const label = rewardTier === "great" ? "훈련 대성공" : rewardTier === "good" ? "훈련 성공" : "훈련 완료";
+  return `${label} +${gainedExperience.toLocaleString()} EXP`;
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
 }
 
 function CharacterDeletePanel({

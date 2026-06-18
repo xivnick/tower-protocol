@@ -44,6 +44,7 @@ export function AppShell({
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavClosing, setIsNavClosing] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const toastsRef = useRef<ToastMessage[]>([]);
   const toastIdRef = useRef(0);
   const location = useLocation();
   const navigate = useNavigate();
@@ -94,13 +95,35 @@ export function AppShell({
     const id = toastIdRef.current + 1;
     toastIdRef.current = id;
 
-    setToasts((current) => [...current, { id, message, isClosing: false }].slice(-maxToasts));
-    window.setTimeout(() => {
-      setToasts((current) => current.map((toast) => toast.id === id ? { ...toast, isClosing: true } : toast));
+    function appendToast() {
+      updateToasts((current) => [...current, { id, message, isClosing: false }]);
       window.setTimeout(() => {
-        setToasts((current) => current.filter((toast) => toast.id !== id));
-      }, toastCloseMs);
-    }, toastDurationMs);
+        closeToast(id);
+      }, toastDurationMs);
+    }
+
+    const openToasts = toastsRef.current.filter((toast) => !toast.isClosing);
+
+    if (openToasts.length >= maxToasts) {
+      closeToast(openToasts[0].id);
+      window.setTimeout(appendToast, toastCloseMs);
+      return;
+    }
+
+    appendToast();
+  }
+
+  function closeToast(id: number) {
+    updateToasts((current) => current.map((toast) => toast.id === id ? { ...toast, isClosing: true } : toast));
+    window.setTimeout(() => {
+      updateToasts((current) => current.filter((toast) => toast.id !== id));
+    }, toastCloseMs);
+  }
+
+  function updateToasts(updater: (current: ToastMessage[]) => ToastMessage[]) {
+    const nextToasts = updater(toastsRef.current);
+    toastsRef.current = nextToasts;
+    setToasts(nextToasts);
   }
 
   return (
