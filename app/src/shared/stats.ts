@@ -21,6 +21,10 @@ export const PRIMARY_STATS: PrimaryStatDefinition[] = [
   { key: "wisdom", label: "지혜", shortLabel: "정신" },
 ];
 
+export function calculateEvasionRate(evasion: number, opponentAccuracy: number) {
+  return evasion / (evasion + opponentAccuracy);
+}
+
 export function calculateCombatStats(character: Character) {
   const maxHp = 100 + character.level * 20 + character.vitality * 10;
   const attackSpeed = 100 + character.agility;
@@ -46,7 +50,7 @@ export function calculateCombatStats(character: Character) {
     attacksPerSecond: Math.sqrt(attackSpeed / 100),
     accuracy,
     evasion,
-    missChanceAgainstSelfAccuracy: evasion / (evasion + accuracy),
+    evasionRateAgainstAccuracy100: calculateEvasionRate(evasion, 100),
     criticalChance,
     criticalDamage: 150,
     cooldown,

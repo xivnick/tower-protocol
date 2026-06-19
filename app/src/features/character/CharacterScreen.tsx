@@ -301,7 +301,7 @@ function CharacterStatsPanel({
         <CombatStat label="공속" current={currentCombatStats.attacksPerSecond} preview={previewCombatStats.attacksPerSecond} digits={2} />
         <CombatStat label="쿨타임 감소" shortLabel="쿨감" current={currentCombatStats.cooldownReduction * 100} preview={previewCombatStats.cooldownReduction * 100} suffix="%" digits={1} />
         <CombatStat label="명중" shortLabel="명중" current={currentCombatStats.accuracy} preview={previewCombatStats.accuracy} />
-        <CombatStat label="회피" shortLabel="회피" current={currentCombatStats.evasion} preview={previewCombatStats.evasion} />
+        <CombatStat label="회피율" shortLabel="회피" current={currentCombatStats.evasionRateAgainstAccuracy100 * 100} preview={previewCombatStats.evasionRateAgainstAccuracy100 * 100} suffix="%" digits={1} />
         <CombatStat label="치명타 확률" shortLabel="치확" current={currentCombatStats.criticalChance} preview={previewCombatStats.criticalChance} suffix="%" digits={1} />
         <CombatStat label="치명타 피해" shortLabel="치피" current={currentCombatStats.criticalDamage} preview={previewCombatStats.criticalDamage} suffix="%" />
       </div>
