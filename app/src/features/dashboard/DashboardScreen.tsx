@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Link } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
@@ -46,7 +47,21 @@ export function DashboardScreen({
         <div className="kv-grid">
           <Kv label="닉네임" value={nickname} />
           <Kv label="계정" value={email} />
-          <Kv label="캐릭터" value={character?.name ?? "없음"} />
+          <Kv
+            label="캐릭터"
+            value={
+              character ? (
+                <Link className="character-link" to="/character" aria-label={`${character.name} 캐릭터 정보 보기`}>
+                  <span>{character.name}</span>
+                  <svg aria-hidden="true" viewBox="0 0 16 16">
+                    <path d="M6.5 3.5h6v6M12.5 3.5 7 9m3 3.5H3.5v-6" />
+                  </svg>
+                </Link>
+              ) : (
+                "없음"
+              )
+            }
+          />
           {character && (
             <>
               <Kv label="레벨" value={formatCharacterLevel(character.level)} />
@@ -56,13 +71,13 @@ export function DashboardScreen({
         </div>
       </article>
 
-      <PatchNotesSummary />
       <RankingSummary />
+      <PatchNotesSummary />
     </section>
   );
 }
 
-function Kv({ label, value }: { label: string; value: string }) {
+function Kv({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="kv">
       <span>{label}</span>
