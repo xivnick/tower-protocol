@@ -807,10 +807,15 @@ button:disabled {
 .stat-value {
   display: flex;
   align-items: baseline;
-  justify-content: flex-end;
-  gap: 5px;
+  justify-content: center;
+  gap: 0;
   padding: 0 8px;
   color: var(--txt-bright);
+}
+
+.stat-value.is-changed {
+  justify-content: flex-end;
+  gap: 5px;
 }
 
 .stat-previous {
@@ -1268,14 +1273,7 @@ button:disabled {
 
   .stat-value {
     min-width: 38px;
-    justify-content: center;
     padding: 0 4px;
-    gap: 0;
-  }
-
-  .stat-value.is-changed {
-    justify-content: flex-end;
-    gap: 5px;
   }
 
   .adjust-label-mobile {
