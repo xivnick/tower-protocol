@@ -298,7 +298,7 @@ function CharacterStatsPanel({
         <CombatStat label="최종 방어" shortLabel="방어" current={currentCombatStats.finalDefense} preview={previewCombatStats.finalDefense} />
         <CombatStat label="최대 체력" shortLabel="체력" current={currentCombatStats.maxHp} preview={previewCombatStats.maxHp} />
         <CombatStat label="공격속도" shortLabel="공속" current={currentCombatStats.attackSpeed} preview={previewCombatStats.attackSpeed} />
-        <CombatStat label="초당 공격" shortLabel="초공" current={currentCombatStats.attacksPerSecond} preview={previewCombatStats.attacksPerSecond} digits={2} />
+        <CombatStat label="공격 빈도" shortLabel="빈도" current={currentCombatStats.attacksPerSecond} preview={previewCombatStats.attacksPerSecond} digits={2} />
         <CombatStat label="명중" shortLabel="명중" current={currentCombatStats.accuracy} preview={previewCombatStats.accuracy} />
         <CombatStat label="회피" shortLabel="회피" current={currentCombatStats.evasion} preview={previewCombatStats.evasion} />
         <CombatStat label="치명타 확률" shortLabel="치확" current={currentCombatStats.criticalChance} preview={previewCombatStats.criticalChance} suffix="%" digits={1} />

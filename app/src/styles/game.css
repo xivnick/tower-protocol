@@ -1156,13 +1156,12 @@ button:disabled {
   }
 
   .stat-row {
-    grid-template-columns: minmax(0, 1fr) 46px 36px;
+    grid-template-columns: minmax(0, 1fr) 42px 28px 74px;
     gap: 8px;
   }
 
   .stat-controls {
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 34px);
   }
 
   .combat-stat-grid {
@@ -1201,7 +1200,7 @@ button:disabled {
   }
 
   .icon-button {
-    width: 100%;
+    width: 34px;
     height: 32px;
   }
 
