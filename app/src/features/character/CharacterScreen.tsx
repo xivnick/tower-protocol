@@ -176,6 +176,7 @@ function CharacterStatsPanel({
   const skipStatClickRef = useRef(false);
   const pendingTotal = getPendingTotal(pendingStats);
   const remainingPoints = character.stat_points - pendingTotal;
+  const isPendingComplete = remainingPoints === 0 && pendingTotal >= 0;
   const previewCharacter = applyPendingStats(character, pendingStats);
   const currentCombatStats = calculateCombatStats(character);
   const previewCombatStats = calculateCombatStats(previewCharacter);
@@ -306,7 +307,7 @@ function CharacterStatsPanel({
       </div>
       <div className="stat-meter-row">
         <span className={remainingPoints > 0 ? "is-unspent" : "is-empty"}>미분배 {remainingPoints.toLocaleString()}P</span>
-        <span className={pendingTotal > 0 ? "is-pending" : ""}>예정 {pendingTotal.toLocaleString()}P</span>
+        <span className={isPendingComplete ? "is-pending" : ""}>예정 {pendingTotal.toLocaleString()}P</span>
       </div>
       <div className="stat-list">
         {PRIMARY_STATS.map((stat) => {
