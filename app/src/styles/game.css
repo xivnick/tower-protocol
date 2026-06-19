@@ -667,7 +667,7 @@ button:disabled {
   padding: 10px;
 }
 
-.kv span {
+.kv > span {
   color: var(--mut);
 }
 
