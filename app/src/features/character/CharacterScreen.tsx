@@ -275,7 +275,7 @@ function CharacterStatsPanel({
     }
 
     onCharacterChange(result.character);
-    onToast({ message: `스탯 적용 -${pendingTotal}P`, tone: "system" });
+    onToast({ message: "능력치를 적용했습니다.", tone: "system" });
   }
 
   async function handleResetStats() {
@@ -296,7 +296,7 @@ function CharacterStatsPanel({
     }
 
     onCharacterChange(result.character);
-    onToast({ message: "스탯 초기화", tone: "system" });
+    onToast({ message: "능력치를 초기화했습니다.", tone: "system" });
   }
 
   return (
