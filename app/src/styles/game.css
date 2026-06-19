@@ -1257,14 +1257,18 @@ button:disabled {
   }
 
   .stat-controls {
-    grid-template-columns: repeat(2, 34px);
+    grid-template-columns: 38px minmax(38px, auto) 38px;
     gap: 6px;
   }
 
-  .stat-value,
   .step-wide,
   .adjust-label-wide {
     display: none;
+  }
+
+  .stat-value {
+    min-width: 38px;
+    padding: 0 4px;
   }
 
   .adjust-label-mobile {
