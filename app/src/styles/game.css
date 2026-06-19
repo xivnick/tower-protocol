@@ -1268,7 +1268,14 @@ button:disabled {
 
   .stat-value {
     min-width: 38px;
+    justify-content: center;
     padding: 0 4px;
+    gap: 0;
+  }
+
+  .stat-value.is-changed {
+    justify-content: flex-end;
+    gap: 5px;
   }
 
   .adjust-label-mobile {
