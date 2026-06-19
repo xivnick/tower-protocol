@@ -49,6 +49,7 @@ export function AppShell({
   const [isAccountClosing, setIsAccountClosing] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavClosing, setIsNavClosing] = useState(false);
+  const [routeRefreshKey, setRouteRefreshKey] = useState(0);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const toastsRef = useRef<ToastMessage[]>([]);
   const toastIdRef = useRef(0);
@@ -96,6 +97,12 @@ export function AppShell({
         navigate(nextPath);
       }
     }, dropdownCloseMs);
+  }
+
+  function refreshCurrentRoute(nextPath: string) {
+    if (nextPath === location.pathname) {
+      setRouteRefreshKey((current) => current + 1);
+    }
   }
 
   function showToast(input: ToastInput) {
@@ -176,9 +183,7 @@ export function AppShell({
                     type="button"
                     key={item.label}
                     onClick={() => {
-                      if (item.to === "/character") {
-                        void onCharacterRefresh();
-                      }
+                      refreshCurrentRoute(item.to);
                       closeNavMenu(item.to);
                     }}
                     aria-label={item.to === "/character" && hasUnspentStatPoints ? "캐릭터, 미분배 스탯 포인트 있음" : item.label}
@@ -204,7 +209,7 @@ export function AppShell({
           <nav className="nav-list" aria-label="게임 화면">
             {navItems.map((item) => (
               item.enabled ? (
-                <NavLink className={({ isActive }) => `nav-item ${isActive ? "is-active" : ""}`} to={item.to} end={item.end} key={item.label} onClick={item.to === "/character" ? () => void onCharacterRefresh() : undefined} aria-label={item.to === "/character" && hasUnspentStatPoints ? "캐릭터, 미분배 스탯 포인트 있음" : item.label}>
+                <NavLink className={({ isActive }) => `nav-item ${isActive ? "is-active" : ""}`} to={item.to} end={item.end} key={item.label} onClick={() => refreshCurrentRoute(item.to)} aria-label={item.to === "/character" && hasUnspentStatPoints ? "캐릭터, 미분배 스탯 포인트 있음" : item.label}>
                   {item.label}
                   {item.to === "/character" && hasUnspentStatPoints && <span className="nav-notice" aria-hidden="true" />}
                 </NavLink>
@@ -228,7 +233,7 @@ export function AppShell({
             </button>
           </header>
 
-          <div className="workspace-body route-frame" key={location.pathname}>
+          <div className="workspace-body route-frame" key={`${location.pathname}:${routeRefreshKey}`}>
             <Routes>
               <Route path="/" element={<DashboardScreen session={session} profile={profile} character={character} />} />
               <Route path="/character" element={<CharacterScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={showToast} />} />
