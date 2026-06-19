@@ -730,7 +730,7 @@ button:disabled {
 
 .stat-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 56px 44px auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   border-bottom: 1px solid var(--line);
@@ -746,25 +746,37 @@ button:disabled {
   font-size: 13px;
 }
 
-.stat-row em {
-  color: var(--txt-bright);
-  font-style: normal;
-  font-weight: 800;
-  text-align: right;
-}
-
-.stat-row small {
-  min-height: 18px;
-  color: var(--acc);
-  font-size: 12px;
-  font-weight: 800;
-  text-align: right;
-}
-
 .stat-controls {
   display: grid;
-  grid-template-columns: repeat(4, 34px);
+  grid-template-columns: 34px minmax(96px, auto) 34px;
+  align-items: center;
   gap: 6px;
+}
+
+.stat-value {
+  display: flex;
+  min-width: 96px;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  color: var(--txt-bright);
+}
+
+.stat-value b {
+  min-width: 24px;
+  text-align: right;
+}
+
+.stat-value small,
+.stat-value i {
+  color: var(--mut);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.stat-value.is-changed b {
+  color: var(--acc);
 }
 
 .icon-button {
@@ -774,10 +786,6 @@ button:disabled {
   background: var(--surf-2);
   color: var(--txt-bright);
   font-weight: 900;
-}
-
-.icon-button.wide {
-  font-size: 11px;
 }
 
 .icon-button:hover {
@@ -1156,12 +1164,23 @@ button:disabled {
   }
 
   .stat-row {
-    grid-template-columns: minmax(0, 1fr) 42px 28px 74px;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px;
   }
 
   .stat-controls {
-    grid-template-columns: repeat(2, 34px);
+    grid-template-columns: 34px minmax(74px, auto) 34px;
+    gap: 4px;
+  }
+
+  .stat-value {
+    min-width: 74px;
+    gap: 4px;
+  }
+
+  .stat-value small,
+  .stat-value i {
+    font-size: 11px;
   }
 
   .combat-stat-grid {
@@ -1173,8 +1192,7 @@ button:disabled {
     gap: 6px;
   }
 
-  .combat-label-full,
-  .step-wide {
+  .combat-label-full {
     display: none;
   }
 

@@ -256,25 +256,24 @@ function CharacterStatsPanel({
       <div className="stat-list">
         {PRIMARY_STATS.map((stat) => {
           const pendingValue = pendingStats[stat.key];
+          const currentValue = character[stat.key];
+          const previewValue = currentValue + pendingValue;
           return (
             <div className="stat-row" key={stat.key}>
               <div>
                 <strong>{stat.label}</strong>
               </div>
-              <em>{(character[stat.key] + pendingValue).toLocaleString()}</em>
-              <small>{pendingValue > 0 ? `+${pendingValue}` : ""}</small>
               <div className="stat-controls">
-                <button className="icon-button wide step-wide" type="button" onClick={() => changePendingStat(stat.key, -5)} disabled={isSubmitting || isResetting || pendingValue < 5}>
-                  -5
-                </button>
-                <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, -1)} disabled={isSubmitting || isResetting || pendingValue <= 0}>
+                <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, -1)} disabled={isSubmitting || isResetting || pendingValue <= 0} aria-label={`${stat.label} 1 감소`}>
                   -1
                 </button>
-                <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, 1)} disabled={isSubmitting || isResetting || remainingPoints < 1}>
+                <span className={`stat-value ${pendingValue > 0 ? "is-changed" : ""}`}>
+                  {pendingValue > 0 ? <small>{currentValue.toLocaleString()}</small> : null}
+                  {pendingValue > 0 ? <i aria-hidden="true">-&gt;</i> : null}
+                  <b>{previewValue.toLocaleString()}</b>
+                </span>
+                <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, 1)} disabled={isSubmitting || isResetting || remainingPoints < 1} aria-label={`${stat.label} 1 증가`}>
                   +1
-                </button>
-                <button className="icon-button wide step-wide" type="button" onClick={() => changePendingStat(stat.key, 5)} disabled={isSubmitting || isResetting || remainingPoints < 5}>
-                  +5
                 </button>
               </div>
             </div>
