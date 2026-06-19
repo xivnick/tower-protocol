@@ -297,14 +297,12 @@ function CharacterStatsPanel({
         <CombatStat label="마법 방어" shortLabel="마방" current={currentCombatStats.magicDefense} preview={previewCombatStats.magicDefense} />
         <CombatStat label="최종 방어" shortLabel="방어" current={currentCombatStats.finalDefense} preview={previewCombatStats.finalDefense} />
         <CombatStat label="최대 체력" shortLabel="체력" current={currentCombatStats.maxHp} preview={previewCombatStats.maxHp} />
-        <CombatStat label="공격속도" shortLabel="공속" current={currentCombatStats.attackSpeed} preview={previewCombatStats.attackSpeed} />
-        <CombatStat label="공격 빈도" shortLabel="빈도" current={currentCombatStats.attacksPerSecond} preview={previewCombatStats.attacksPerSecond} digits={2} />
+        <CombatStat label="공속" current={currentCombatStats.attacksPerSecond} preview={previewCombatStats.attacksPerSecond} digits={2} />
+        <CombatStat label="쿨타임 감소" shortLabel="쿨감" current={currentCombatStats.cooldownReduction * 100} preview={previewCombatStats.cooldownReduction * 100} suffix="%" digits={1} />
         <CombatStat label="명중" shortLabel="명중" current={currentCombatStats.accuracy} preview={previewCombatStats.accuracy} />
         <CombatStat label="회피" shortLabel="회피" current={currentCombatStats.evasion} preview={previewCombatStats.evasion} />
         <CombatStat label="치명타 확률" shortLabel="치확" current={currentCombatStats.criticalChance} preview={previewCombatStats.criticalChance} suffix="%" digits={1} />
         <CombatStat label="치명타 피해" shortLabel="치피" current={currentCombatStats.criticalDamage} preview={previewCombatStats.criticalDamage} suffix="%" />
-        <CombatStat label="쿨타임 수치" shortLabel="쿨타임" current={currentCombatStats.cooldown} preview={previewCombatStats.cooldown} />
-        <CombatStat label="쿨타임 감소" shortLabel="쿨감" current={currentCombatStats.cooldownReduction * 100} preview={previewCombatStats.cooldownReduction * 100} suffix="%" digits={1} />
         <CombatStat label="재생" shortLabel="재생" current={currentCombatStats.regeneration} preview={previewCombatStats.regeneration} />
         <CombatStat label="초당 회복" shortLabel="회복" current={currentCombatStats.hpRegenPerSecond} preview={previewCombatStats.hpRegenPerSecond} digits={2} />
       </div>
