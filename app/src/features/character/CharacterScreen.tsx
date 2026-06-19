@@ -263,7 +263,7 @@ function CharacterStatsPanel({
               <div>
                 <strong>{stat.label}</strong>
               </div>
-              <div className="stat-controls">
+              <div className={`stat-controls ${pendingValue > 0 ? "is-changed" : ""}`}>
                 <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, -1)} disabled={isSubmitting || isResetting || pendingValue <= 0} aria-label={`${stat.label} 1 감소`}>
                   -1
                 </button>

@@ -748,22 +748,25 @@ button:disabled {
 
 .stat-controls {
   display: grid;
-  grid-template-columns: 34px minmax(96px, auto) 34px;
+  grid-template-columns: 34px auto 34px;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+}
+
+.stat-controls.is-changed {
+  animation: stat-controls-expand 160ms ease-out;
 }
 
 .stat-value {
   display: flex;
-  min-width: 96px;
   align-items: baseline;
   justify-content: flex-end;
   gap: 5px;
+  padding: 0 8px;
   color: var(--txt-bright);
 }
 
 .stat-value b {
-  min-width: 24px;
   text-align: right;
 }
 
@@ -777,6 +780,16 @@ button:disabled {
 
 .stat-value.is-changed b {
   color: var(--acc);
+}
+
+@keyframes stat-controls-expand {
+  from {
+    transform: translateX(24px);
+  }
+
+  to {
+    transform: translateX(0);
+  }
 }
 
 .icon-button {
@@ -1169,13 +1182,13 @@ button:disabled {
   }
 
   .stat-controls {
-    grid-template-columns: 34px minmax(74px, auto) 34px;
-    gap: 4px;
+    grid-template-columns: 34px auto 34px;
+    gap: 6px;
   }
 
   .stat-value {
-    min-width: 74px;
     gap: 4px;
+    padding: 0 6px;
   }
 
   .stat-value small,
@@ -1321,6 +1334,10 @@ button:disabled {
   .rail-brand i,
   .auth-logo i,
   .checking-message i {
+    animation: none;
+  }
+
+  .stat-controls.is-changed {
     animation: none;
   }
 }
