@@ -1070,10 +1070,12 @@ button:disabled {
   }
 
   .app-shell {
+    display: block;
     grid-template-columns: 1fr;
     grid-template-rows: auto auto minmax(0, 1fr);
     height: auto;
     min-height: 100vh;
+    min-height: 100svh;
   }
 
   .mobile-shell-head {
@@ -1224,10 +1226,16 @@ button:disabled {
   .workspace-body {
     order: 3;
     min-width: 0;
+    overflow: visible;
   }
 
   .content-grid {
     grid-template-columns: 1fr;
+  }
+
+  .content-grid,
+  .screen-panel {
+    overflow: visible;
   }
 
   .archive-view {
