@@ -161,7 +161,9 @@ export function AppShell({
 
         <section className="mobile-nav-panel" aria-label="모바일 메뉴">
           <button className="mobile-nav-trigger" type="button" onClick={toggleNavMenu} aria-expanded={isNavOpen}>
-            {currentNavLabel} ▾
+            <span>{currentNavLabel}</span>
+            {currentNavLabel === "캐릭터" && hasUnspentStatPoints && <span className="nav-notice" aria-hidden="true" />}
+            <span className="mobile-nav-icon" aria-hidden="true">▾</span>
           </button>
           {isNavOpen && (
             <nav className={`mobile-nav-menu ${isNavClosing ? "is-closing" : ""}`} aria-label="게임 화면">

@@ -538,7 +538,7 @@ button:disabled {
 .nav-notice {
   width: 6px;
   height: 6px;
-  margin-left: auto;
+  margin-left: 6px;
   border-radius: 50%;
   background: var(--neg);
   box-shadow: 0 0 8px color-mix(in srgb, var(--neg) 70%, transparent);
@@ -1112,10 +1112,16 @@ button:disabled {
   }
 
   .mobile-nav-trigger {
+    display: flex;
+    align-items: center;
     min-height: 40px;
     width: 100%;
     padding: 0 12px;
     text-align: left;
+  }
+
+  .mobile-nav-icon {
+    margin-left: auto;
   }
 
   .mobile-nav-menu {
