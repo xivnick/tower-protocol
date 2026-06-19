@@ -250,7 +250,7 @@ function CharacterStatsPanel({
         <h2>스탯</h2>
       </div>
       <div className="stat-meter-row">
-        <span>미분배 {remainingPoints.toLocaleString()}P</span>
+        <span className="is-unspent">미분배 {remainingPoints.toLocaleString()}P</span>
         <span>예정 {pendingTotal.toLocaleString()}P</span>
       </div>
       <div className="stat-list">

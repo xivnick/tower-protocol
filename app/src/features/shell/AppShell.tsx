@@ -54,6 +54,7 @@ export function AppShell({
   const navigate = useNavigate();
   const nickname = profile?.nickname ?? "UNKNOWN";
   const currentNavLabel = getCurrentNavLabel(location.pathname);
+  const hasUnspentStatPoints = Boolean(character && character.stat_points > 0);
 
   function toggleAccountMenu() {
     if (isAccountOpen) {
@@ -171,8 +172,10 @@ export function AppShell({
                     type="button"
                     key={item.label}
                     onClick={() => closeNavMenu(item.to)}
+                    aria-label={item.to === "/character" && hasUnspentStatPoints ? "캐릭터, 미분배 스탯 포인트 있음" : item.label}
                   >
                     {item.label}
+                    {item.to === "/character" && hasUnspentStatPoints && <span className="nav-notice" aria-hidden="true" />}
                   </button>
                 ) : (
                   <button className="nav-item mobile-nav-item" type="button" disabled key={item.label}>
@@ -192,8 +195,9 @@ export function AppShell({
           <nav className="nav-list" aria-label="게임 화면">
             {navItems.map((item) => (
               item.enabled ? (
-                <NavLink className={({ isActive }) => `nav-item ${isActive ? "is-active" : ""}`} to={item.to} end={item.end} key={item.label}>
+                <NavLink className={({ isActive }) => `nav-item ${isActive ? "is-active" : ""}`} to={item.to} end={item.end} key={item.label} aria-label={item.to === "/character" && hasUnspentStatPoints ? "캐릭터, 미분배 스탯 포인트 있음" : item.label}>
                   {item.label}
+                  {item.to === "/character" && hasUnspentStatPoints && <span className="nav-notice" aria-hidden="true" />}
                 </NavLink>
               ) : (
                 <button className="nav-item" type="button" disabled key={item.label}>

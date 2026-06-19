@@ -535,6 +535,15 @@ button:disabled {
   color: var(--mut-2);
 }
 
+.nav-notice {
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--neg);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--neg) 70%, transparent);
+}
+
 .workspace {
   min-width: 0;
   min-height: 0;
@@ -722,6 +731,10 @@ button:disabled {
   color: var(--mut);
   font-size: 12px;
   font-weight: 800;
+}
+
+.stat-meter-row .is-unspent {
+  color: var(--acc);
 }
 
 .stat-list {
@@ -1230,12 +1243,6 @@ button:disabled {
   .combat-stat strong small,
   .combat-stat strong i {
     font-size: 11px;
-  }
-
-  .stat-reset-area {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 6px;
   }
 
   .icon-button {
