@@ -228,6 +228,16 @@ export function AuthGate() {
     });
   }
 
+  async function refreshCharacter() {
+    const result = await getMyCharacter();
+
+    if (result.ok) {
+      patchState({ character: result.character });
+    }
+
+    return result.ok;
+  }
+
   function patchState(patch: Partial<AuthState>) {
     setState((current) => ({ ...current, ...patch }));
   }
@@ -239,6 +249,7 @@ export function AuthGate() {
         profile={state.profile}
         character={state.character}
         onCharacterChange={(character) => patchState({ character })}
+        onCharacterRefresh={refreshCharacter}
         onSignOut={handleSignOut}
       />
     );

@@ -12,13 +12,19 @@ import type { ToastInput, ToastTone } from "../../types/toast";
 export function CharacterScreen({
   character,
   onCharacterChange,
+  onCharacterRefresh,
   onToast,
 }: {
   character: Character | null;
   onCharacterChange: (character: Character | null) => void;
+  onCharacterRefresh: () => Promise<boolean>;
   onToast: (toast: ToastInput) => void;
 }) {
   useDocumentTitle("TOWER://CHARACTER");
+
+  useEffect(() => {
+    void onCharacterRefresh();
+  }, []);
 
   if (character) {
     return (
@@ -35,17 +41,48 @@ export function CharacterScreen({
           </div>
         </article>
 
-        <CharacterStatsPanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
-        <CharacterTrainingPanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
-        <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
+        <CharacterStatsPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
+        <CharacterTrainingPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
+        <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
       </section>
     );
   }
 
-  return <CharacterCreatePanel onCharacterChange={onCharacterChange} />;
+  return <CharacterCreatePanel onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />;
 }
 
-function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (character: Character) => void }) {
+function handleCharacterActionFailure({
+  message,
+  setMessage,
+  onCharacterRefresh,
+  onToast,
+}: {
+  message: string;
+  setMessage: (message: string) => void;
+  onCharacterRefresh: () => Promise<boolean>;
+  onToast: (toast: ToastInput) => void;
+}) {
+  setMessage(message);
+  onToast({ message, tone: "error" });
+
+  void onCharacterRefresh()
+    .then((isRefreshed) => {
+      if (isRefreshed) {
+        onToast({ message: "최신 캐릭터 정보를 반영했습니다.", tone: "system" });
+      }
+    })
+    .catch(() => {});
+}
+
+function CharacterCreatePanel({
+  onCharacterChange,
+  onCharacterRefresh,
+  onToast,
+}: {
+  onCharacterChange: (character: Character) => void;
+  onCharacterRefresh: () => Promise<boolean>;
+  onToast: (toast: ToastInput) => void;
+}) {
   const [name, setName] = useState("");
   const [hint, setHint] = useState("");
   const [hintType, setHintType] = useState<"is-ok" | "is-error" | "">("");
@@ -113,7 +150,7 @@ function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (chara
     setIsSubmitting(false);
 
     if (!result.ok || !result.character) {
-      setMessage(result.message);
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
       setMessageType("error");
       return;
     }
@@ -161,10 +198,12 @@ function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (chara
 function CharacterStatsPanel({
   character,
   onCharacterChange,
+  onCharacterRefresh,
   onToast,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
+  onCharacterRefresh: () => Promise<boolean>;
   onToast: (toast: ToastInput) => void;
 }) {
   const [pendingStats, setPendingStats] = useState<CharacterStatAllocation>(createEmptyStatAllocation());
@@ -270,7 +309,7 @@ function CharacterStatsPanel({
     setIsSubmitting(false);
 
     if (!result.ok || !result.character) {
-      setMessage(result.message);
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
       return;
     }
 
@@ -291,7 +330,7 @@ function CharacterStatsPanel({
     setIsResetting(false);
 
     if (!result.ok || !result.character) {
-      setMessage(result.message);
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
       return;
     }
 
@@ -413,10 +452,12 @@ function CharacterStatsPanel({
 function CharacterTrainingPanel({
   character,
   onCharacterChange,
+  onCharacterRefresh,
   onToast,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
+  onCharacterRefresh: () => Promise<boolean>;
   onToast: (toast: ToastInput) => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -439,7 +480,7 @@ function CharacterTrainingPanel({
     setIsSubmitting(false);
 
     if (!result.ok || !result.character) {
-      setMessage(result.message);
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
       return;
     }
 
@@ -566,10 +607,12 @@ function formatStatNumber(value: number, digits: number) {
 function CharacterDeletePanel({
   character,
   onCharacterChange,
+  onCharacterRefresh,
   onToast,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
+  onCharacterRefresh: () => Promise<boolean>;
   onToast: (toast: ToastInput) => void;
 }) {
   const [confirmName, setConfirmName] = useState("");
@@ -594,7 +637,7 @@ function CharacterDeletePanel({
     setIsSubmitting(false);
 
     if (!result.ok) {
-      setMessage(result.message);
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
       return;
     }
 
