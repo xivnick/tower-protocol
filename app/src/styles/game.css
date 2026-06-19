@@ -822,20 +822,25 @@ button:disabled {
   align-items: baseline;
   justify-content: flex-end;
   gap: 6px;
-  min-width: 96px;
+  min-width: 124px;
   color: var(--txt-bright);
   font-size: 13px;
   text-align: right;
 }
 
-.combat-stat strong small {
+.combat-stat strong b {
+  font: inherit;
+}
+
+.combat-stat strong small,
+.combat-stat strong i {
   color: var(--mut-2);
   font-size: 12px;
   font-weight: 800;
+  font-style: normal;
 }
 
-.combat-stat.is-changed strong,
-.combat-stat.is-changed strong small {
+.combat-stat.is-changed strong b {
   color: var(--acc-2);
 }
 

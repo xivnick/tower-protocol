@@ -446,14 +446,18 @@ function CombatStat({
   digits?: number;
 }) {
   const isChanged = current !== preview;
-  const delta = preview - current;
 
   return (
     <div className={`combat-stat ${isChanged ? "is-changed" : ""}`}>
       <span>{label}</span>
       <strong>
-        {formatStatNumber(preview, digits)}{suffix}
-        {isChanged && <small>+{formatStatNumber(delta, digits)}{suffix}</small>}
+        {isChanged ? (
+          <>
+            <small>{formatStatNumber(current, digits)}{suffix}</small>
+            <i aria-hidden="true">-&gt;</i>
+          </>
+        ) : null}
+        <b>{formatStatNumber(preview, digits)}{suffix}</b>
       </strong>
     </div>
   );
