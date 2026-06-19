@@ -44,15 +44,40 @@ export function CharacterScreen({
     );
   }
 
-  return <CharacterCreatePanel onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />;
+  return <CharacterCreatePanel onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />;
+}
+
+function handleCharacterActionFailure({
+  message,
+  setMessage,
+  onCharacterRefresh,
+  onToast,
+}: {
+  message: string;
+  setMessage: (message: string) => void;
+  onCharacterRefresh: () => Promise<boolean>;
+  onToast: (toast: ToastInput) => void;
+}) {
+  setMessage(message);
+  onToast({ message, tone: "error" });
+
+  void onCharacterRefresh()
+    .then((isRefreshed) => {
+      if (isRefreshed) {
+        onToast({ message: "최신 캐릭터 정보를 반영했습니다.", tone: "system" });
+      }
+    })
+    .catch(() => {});
 }
 
 function CharacterCreatePanel({
   onCharacterChange,
   onCharacterRefresh,
+  onToast,
 }: {
   onCharacterChange: (character: Character) => void;
   onCharacterRefresh: () => Promise<boolean>;
+  onToast: (toast: ToastInput) => void;
 }) {
   const [name, setName] = useState("");
   const [hint, setHint] = useState("");
@@ -121,9 +146,8 @@ function CharacterCreatePanel({
     setIsSubmitting(false);
 
     if (!result.ok || !result.character) {
-      setMessage(result.message);
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
       setMessageType("error");
-      await onCharacterRefresh();
       return;
     }
 
@@ -281,8 +305,7 @@ function CharacterStatsPanel({
     setIsSubmitting(false);
 
     if (!result.ok || !result.character) {
-      setMessage(result.message);
-      await onCharacterRefresh();
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
       return;
     }
 
@@ -303,8 +326,7 @@ function CharacterStatsPanel({
     setIsResetting(false);
 
     if (!result.ok || !result.character) {
-      setMessage(result.message);
-      await onCharacterRefresh();
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
       return;
     }
 
@@ -454,8 +476,7 @@ function CharacterTrainingPanel({
     setIsSubmitting(false);
 
     if (!result.ok || !result.character) {
-      setMessage(result.message);
-      await onCharacterRefresh();
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
       return;
     }
 
@@ -612,8 +633,7 @@ function CharacterDeletePanel({
     setIsSubmitting(false);
 
     if (!result.ok) {
-      setMessage(result.message);
-      await onCharacterRefresh();
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
       return;
     }
 
