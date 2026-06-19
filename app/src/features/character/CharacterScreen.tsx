@@ -303,7 +303,7 @@ function CharacterStatsPanel({
     <article className="panel">
       <div className="panel-head">
         <span>STATS</span>
-        <h2>스탯</h2>
+        <h2>능력치</h2>
       </div>
       <div className="stat-meter-row">
         <span className={remainingPoints > 0 ? "is-unspent" : "is-empty"}>미분배 {remainingPoints.toLocaleString()}P</span>
