@@ -320,6 +320,15 @@ function CharacterStatsPanel({
               </div>
               <div className={`stat-controls ${pendingValue > 0 ? "is-changed" : ""}`}>
                 <button
+                  className="icon-button step-wide"
+                  type="button"
+                  onClick={() => handleStatClick(stat.key, -5)}
+                  disabled={isSubmitting || isResetting || pendingValue < 5}
+                  aria-label={`${stat.label} 5 감소`}
+                >
+                  -5
+                </button>
+                <button
                   className="icon-button"
                   type="button"
                   onPointerDown={(event) => handleStatPointerDown(event, stat.key, -1)}
@@ -329,7 +338,8 @@ function CharacterStatsPanel({
                   disabled={isSubmitting || isResetting || pendingValue <= 0}
                   aria-label={`${stat.label} 1 감소`}
                 >
-                  -1
+                  <span className="adjust-label-wide">-1</span>
+                  <span className="adjust-label-mobile">-</span>
                 </button>
                 <span className={`stat-value ${pendingValue > 0 ? "is-changed" : ""}`}>
                   <span className="stat-previous">
@@ -348,7 +358,17 @@ function CharacterStatsPanel({
                   disabled={isSubmitting || isResetting || remainingPoints < 1}
                   aria-label={`${stat.label} 1 증가`}
                 >
-                  +1
+                  <span className="adjust-label-wide">+1</span>
+                  <span className="adjust-label-mobile">+</span>
+                </button>
+                <button
+                  className="icon-button step-wide"
+                  type="button"
+                  onClick={() => handleStatClick(stat.key, 5)}
+                  disabled={isSubmitting || isResetting || remainingPoints < 5}
+                  aria-label={`${stat.label} 5 증가`}
+                >
+                  +5
                 </button>
               </div>
             </div>

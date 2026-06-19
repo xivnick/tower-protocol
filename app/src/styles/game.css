@@ -769,9 +769,13 @@ button:disabled {
 
 .stat-controls {
   display: grid;
-  grid-template-columns: 34px auto 34px;
+  grid-template-columns: repeat(2, 34px) auto repeat(2, 34px);
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+}
+
+.adjust-label-mobile {
+  display: none;
 }
 
 .stat-value {
@@ -1219,22 +1223,22 @@ button:disabled {
   }
 
   .stat-controls {
-    grid-template-columns: 34px auto 34px;
+    grid-template-columns: repeat(2, 34px);
     gap: 6px;
   }
 
-  .stat-value {
-    gap: 4px;
-    padding: 0 6px;
+  .stat-value,
+  .step-wide,
+  .adjust-label-wide {
+    display: none;
   }
 
-  .stat-previous {
-    gap: 4px;
+  .adjust-label-mobile {
+    display: inline;
   }
 
-  .stat-previous small,
-  .stat-previous i {
-    font-size: 11px;
+  .stat-controls .icon-button {
+    width: 38px;
   }
 
   .combat-stat-grid {
