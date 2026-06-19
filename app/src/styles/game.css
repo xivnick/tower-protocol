@@ -737,6 +737,14 @@ button:disabled {
   color: var(--acc);
 }
 
+.stat-meter-row .is-empty {
+  color: var(--mut);
+}
+
+.stat-meter-row .is-pending {
+  color: var(--acc);
+}
+
 .stat-list {
   display: grid;
 }
@@ -816,6 +824,12 @@ button:disabled {
   background: var(--surf-2);
   color: var(--txt-bright);
   font-weight: 900;
+}
+
+.stat-controls .icon-button {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .icon-button:hover {

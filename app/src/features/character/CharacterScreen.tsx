@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import type { FormEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { allocateCharacterStats, checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, resetCharacterStats, trainMyCharacter } from "../../api/characterApi";
 import type { CharacterStatAllocation, TrainingRewardTier } from "../../api/characterApi";
@@ -171,6 +171,9 @@ function CharacterStatsPanel({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [message, setMessage] = useState("");
+  const statRepeatDelayRef = useRef<number | null>(null);
+  const statRepeatIntervalRef = useRef<number | null>(null);
+  const skipStatClickRef = useRef(false);
   const pendingTotal = getPendingTotal(pendingStats);
   const remainingPoints = character.stat_points - pendingTotal;
   const previewCharacter = applyPendingStats(character, pendingStats);
@@ -183,6 +186,8 @@ function CharacterStatsPanel({
     setPendingStats(createEmptyStatAllocation());
     setMessage("");
   }, [character.id, character.stat_points]);
+
+  useEffect(() => () => stopStatRepeat(), []);
 
   function changePendingStat(statKey: keyof CharacterStatAllocation, amount: number) {
     setMessage("");
@@ -199,6 +204,56 @@ function CharacterStatsPanel({
 
       return { ...current, [statKey]: nextValue };
     });
+  }
+
+  function stopStatRepeat() {
+    if (statRepeatDelayRef.current !== null) {
+      window.clearTimeout(statRepeatDelayRef.current);
+      statRepeatDelayRef.current = null;
+    }
+
+    if (statRepeatIntervalRef.current !== null) {
+      window.clearInterval(statRepeatIntervalRef.current);
+      statRepeatIntervalRef.current = null;
+    }
+  }
+
+  function handleStatPointerDown(event: ReactPointerEvent<HTMLButtonElement>, statKey: keyof CharacterStatAllocation, amount: number) {
+    if (event.pointerType !== "touch") {
+      return;
+    }
+
+    event.preventDefault();
+    skipStatClickRef.current = true;
+    changePendingStat(statKey, amount);
+    stopStatRepeat();
+
+    statRepeatDelayRef.current = window.setTimeout(() => {
+      statRepeatIntervalRef.current = window.setInterval(() => {
+        changePendingStat(statKey, amount);
+      }, 90);
+    }, 360);
+  }
+
+  function handleStatClick(statKey: keyof CharacterStatAllocation, amount: number) {
+    if (skipStatClickRef.current) {
+      skipStatClickRef.current = false;
+      return;
+    }
+
+    changePendingStat(statKey, amount);
+  }
+
+  function handleStatPointerUp() {
+    stopStatRepeat();
+    window.setTimeout(() => {
+      skipStatClickRef.current = false;
+    }, 0);
+  }
+
+  function handleStatPointerCancel() {
+    stopStatRepeat();
+    skipStatClickRef.current = false;
   }
 
   async function handleApply() {
@@ -250,8 +305,8 @@ function CharacterStatsPanel({
         <h2>스탯</h2>
       </div>
       <div className="stat-meter-row">
-        <span className="is-unspent">미분배 {remainingPoints.toLocaleString()}P</span>
-        <span>예정 {pendingTotal.toLocaleString()}P</span>
+        <span className={remainingPoints > 0 ? "is-unspent" : "is-empty"}>미분배 {remainingPoints.toLocaleString()}P</span>
+        <span className={pendingTotal > 0 ? "is-pending" : ""}>예정 {pendingTotal.toLocaleString()}P</span>
       </div>
       <div className="stat-list">
         {PRIMARY_STATS.map((stat) => {
@@ -264,7 +319,16 @@ function CharacterStatsPanel({
                 <strong>{stat.label}</strong>
               </div>
               <div className={`stat-controls ${pendingValue > 0 ? "is-changed" : ""}`}>
-                <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, -1)} disabled={isSubmitting || isResetting || pendingValue <= 0} aria-label={`${stat.label} 1 감소`}>
+                <button
+                  className="icon-button"
+                  type="button"
+                  onPointerDown={(event) => handleStatPointerDown(event, stat.key, -1)}
+                  onPointerUp={handleStatPointerUp}
+                  onPointerCancel={handleStatPointerCancel}
+                  onClick={() => handleStatClick(stat.key, -1)}
+                  disabled={isSubmitting || isResetting || pendingValue <= 0}
+                  aria-label={`${stat.label} 1 감소`}
+                >
                   -1
                 </button>
                 <span className={`stat-value ${pendingValue > 0 ? "is-changed" : ""}`}>
@@ -274,7 +338,16 @@ function CharacterStatsPanel({
                   </span>
                   <b>{previewValue.toLocaleString()}</b>
                 </span>
-                <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, 1)} disabled={isSubmitting || isResetting || remainingPoints < 1} aria-label={`${stat.label} 1 증가`}>
+                <button
+                  className="icon-button"
+                  type="button"
+                  onPointerDown={(event) => handleStatPointerDown(event, stat.key, 1)}
+                  onPointerUp={handleStatPointerUp}
+                  onPointerCancel={handleStatPointerCancel}
+                  onClick={() => handleStatClick(stat.key, 1)}
+                  disabled={isSubmitting || isResetting || remainingPoints < 1}
+                  aria-label={`${stat.label} 1 증가`}
+                >
                   +1
                 </button>
               </div>
