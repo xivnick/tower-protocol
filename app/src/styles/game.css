@@ -678,26 +678,29 @@ button:disabled {
 }
 
 .character-link {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  color: var(--acc-2);
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  color: inherit;
   text-decoration: none;
-}
-
-.character-link:hover {
-  color: var(--txt-bright);
 }
 
 .character-link svg {
   width: 14px;
   height: 14px;
   flex: none;
+  color: var(--mut);
   fill: none;
   stroke: currentColor;
   stroke-linecap: square;
   stroke-linejoin: miter;
   stroke-width: 1.5;
+}
+
+.character-link:hover svg {
+  color: var(--acc-2);
 }
 
 .panel-message {
