@@ -275,7 +275,7 @@ function CharacterStatsPanel({
     }
 
     onCharacterChange(result.character);
-    onToast({ message: `스탯 적용 -${pendingTotal}P`, tone: "system" });
+    onToast({ message: "능력치를 적용했습니다.", tone: "system" });
   }
 
   async function handleResetStats() {
@@ -296,14 +296,14 @@ function CharacterStatsPanel({
     }
 
     onCharacterChange(result.character);
-    onToast({ message: "스탯 초기화", tone: "system" });
+    onToast({ message: "능력치를 초기화했습니다.", tone: "system" });
   }
 
   return (
     <article className="panel">
       <div className="panel-head">
         <span>STATS</span>
-        <h2>스탯</h2>
+        <h2>능력치</h2>
       </div>
       <div className="stat-meter-row">
         <span className={remainingPoints > 0 ? "is-unspent" : "is-empty"}>미분배 {remainingPoints.toLocaleString()}P</span>
