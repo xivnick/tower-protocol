@@ -260,7 +260,6 @@ function CharacterStatsPanel({
             <div className="stat-row" key={stat.key}>
               <div>
                 <strong>{stat.label}</strong>
-                <span>{stat.shortLabel}</span>
               </div>
               <em>{(character[stat.key] + pendingValue).toLocaleString()}</em>
               <small>{pendingValue > 0 ? `+${pendingValue}` : ""}</small>
@@ -452,8 +451,10 @@ function CombatStat({
   return (
     <div className={`combat-stat ${isChanged ? "is-changed" : ""}`}>
       <span>{label}</span>
-      <strong>{formatStatNumber(preview, digits)}{suffix}</strong>
-      <small>{isChanged ? `+${formatStatNumber(delta, digits)}${suffix}` : ""}</small>
+      <strong>
+        {formatStatNumber(preview, digits)}{suffix}
+        {isChanged && <small>+{formatStatNumber(delta, digits)}{suffix}</small>}
+      </strong>
     </div>
   );
 }
