@@ -1,9 +1,10 @@
-import type { FormEvent } from "react";
+import type { FormEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, trainMyCharacter } from "../../api/characterApi";
-import type { TrainingRewardTier } from "../../api/characterApi";
+import { allocateCharacterStats, checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, resetCharacterStats, trainMyCharacter } from "../../api/characterApi";
+import type { CharacterStatAllocation, TrainingRewardTier } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
+import { BASE_PRIMARY_STAT, calculateCombatStats, PRIMARY_STATS } from "../../shared/stats";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
 import type { Character } from "../../types/character";
 import type { ToastInput, ToastTone } from "../../types/toast";
@@ -31,10 +32,10 @@ export function CharacterScreen({
             <Kv label="이름" value={character.name} />
             <Kv label="레벨" value={formatCharacterLevel(character.level)} />
             <Kv label="경험치" value={formatCharacterExperience(character.level, character.experience)} />
-            <Kv label="상태" value="대기 중" />
           </div>
         </article>
 
+        <CharacterStatsPanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
         <CharacterTrainingPanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
         <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
       </section>
@@ -157,6 +158,257 @@ function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (chara
   );
 }
 
+function CharacterStatsPanel({
+  character,
+  onCharacterChange,
+  onToast,
+}: {
+  character: Character;
+  onCharacterChange: (character: Character | null) => void;
+  onToast: (toast: ToastInput) => void;
+}) {
+  const [pendingStats, setPendingStats] = useState<CharacterStatAllocation>(createEmptyStatAllocation());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [message, setMessage] = useState("");
+  const statRepeatDelayRef = useRef<number | null>(null);
+  const statRepeatIntervalRef = useRef<number | null>(null);
+  const skipStatClickRef = useRef(false);
+  const pendingTotal = getPendingTotal(pendingStats);
+  const remainingPoints = character.stat_points - pendingTotal;
+  const previewCharacter = applyPendingStats(character, pendingStats);
+  const currentCombatStats = calculateCombatStats(character);
+  const previewCombatStats = calculateCombatStats(previewCharacter);
+  const canApply = pendingTotal > 0 && !isSubmitting && !isResetting;
+  const canReset = hasAllocatedStats(character) && !isSubmitting && !isResetting;
+
+  useEffect(() => {
+    setPendingStats(createEmptyStatAllocation());
+    setMessage("");
+  }, [character.id, character.stat_points]);
+
+  useEffect(() => () => stopStatRepeat(), []);
+
+  function changePendingStat(statKey: keyof CharacterStatAllocation, amount: number) {
+    setMessage("");
+    setPendingStats((current) => {
+      const nextValue = current[statKey] + amount;
+
+      if (nextValue < 0) {
+        return current;
+      }
+
+      if (amount > 0 && getPendingTotal(current) + amount > character.stat_points) {
+        return current;
+      }
+
+      return { ...current, [statKey]: nextValue };
+    });
+  }
+
+  function stopStatRepeat() {
+    if (statRepeatDelayRef.current !== null) {
+      window.clearTimeout(statRepeatDelayRef.current);
+      statRepeatDelayRef.current = null;
+    }
+
+    if (statRepeatIntervalRef.current !== null) {
+      window.clearInterval(statRepeatIntervalRef.current);
+      statRepeatIntervalRef.current = null;
+    }
+  }
+
+  function handleStatPointerDown(event: ReactPointerEvent<HTMLButtonElement>, statKey: keyof CharacterStatAllocation, amount: number) {
+    if (event.pointerType !== "touch") {
+      return;
+    }
+
+    event.preventDefault();
+    skipStatClickRef.current = true;
+    changePendingStat(statKey, amount);
+    stopStatRepeat();
+
+    statRepeatDelayRef.current = window.setTimeout(() => {
+      statRepeatIntervalRef.current = window.setInterval(() => {
+        changePendingStat(statKey, amount);
+      }, 90);
+    }, 360);
+  }
+
+  function handleStatClick(statKey: keyof CharacterStatAllocation, amount: number) {
+    if (skipStatClickRef.current) {
+      skipStatClickRef.current = false;
+      return;
+    }
+
+    changePendingStat(statKey, amount);
+  }
+
+  function handleStatPointerUp() {
+    stopStatRepeat();
+    window.setTimeout(() => {
+      skipStatClickRef.current = false;
+    }, 0);
+  }
+
+  function handleStatPointerCancel() {
+    stopStatRepeat();
+    skipStatClickRef.current = false;
+  }
+
+  async function handleApply() {
+    if (!canApply) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setMessage("");
+
+    const result = await allocateCharacterStats(pendingStats);
+
+    setIsSubmitting(false);
+
+    if (!result.ok || !result.character) {
+      setMessage(result.message);
+      return;
+    }
+
+    onCharacterChange(result.character);
+    onToast({ message: `스탯 적용 -${pendingTotal}P`, tone: "system" });
+  }
+
+  async function handleResetStats() {
+    if (!canReset) {
+      return;
+    }
+
+    setIsResetting(true);
+    setMessage("");
+
+    const result = await resetCharacterStats();
+
+    setIsResetting(false);
+
+    if (!result.ok || !result.character) {
+      setMessage(result.message);
+      return;
+    }
+
+    onCharacterChange(result.character);
+    onToast({ message: "스탯 초기화", tone: "system" });
+  }
+
+  return (
+    <article className="panel">
+      <div className="panel-head">
+        <span>STATS</span>
+        <h2>스탯</h2>
+      </div>
+      <div className="stat-meter-row">
+        <span className={remainingPoints > 0 ? "is-unspent" : "is-empty"}>미분배 {remainingPoints.toLocaleString()}P</span>
+        <span className={pendingTotal > 0 ? "is-pending" : ""}>예정 {pendingTotal.toLocaleString()}P</span>
+      </div>
+      <div className="stat-list">
+        {PRIMARY_STATS.map((stat) => {
+          const pendingValue = pendingStats[stat.key];
+          const currentValue = character[stat.key];
+          const previewValue = currentValue + pendingValue;
+          return (
+            <div className="stat-row" key={stat.key}>
+              <div>
+                <strong>{stat.label}</strong>
+              </div>
+              <div className={`stat-controls ${pendingValue > 0 ? "is-changed" : ""}`}>
+                <button
+                  className="icon-button step-wide"
+                  type="button"
+                  onClick={() => handleStatClick(stat.key, -5)}
+                  disabled={isSubmitting || isResetting || pendingValue < 5}
+                  aria-label={`${stat.label} 5 감소`}
+                >
+                  -5
+                </button>
+                <button
+                  className="icon-button"
+                  type="button"
+                  onPointerDown={(event) => handleStatPointerDown(event, stat.key, -1)}
+                  onPointerUp={handleStatPointerUp}
+                  onPointerCancel={handleStatPointerCancel}
+                  onClick={() => handleStatClick(stat.key, -1)}
+                  disabled={isSubmitting || isResetting || pendingValue <= 0}
+                  aria-label={`${stat.label} 1 감소`}
+                >
+                  <span className="adjust-label-wide">-1</span>
+                  <span className="adjust-label-mobile">-</span>
+                </button>
+                <span className={`stat-value ${pendingValue > 0 ? "is-changed" : ""}`}>
+                  <span className="stat-previous">
+                    <small>{currentValue.toLocaleString()}</small>
+                    <i aria-hidden="true">-&gt;</i>
+                  </span>
+                  <b>{previewValue.toLocaleString()}</b>
+                </span>
+                <button
+                  className="icon-button"
+                  type="button"
+                  onPointerDown={(event) => handleStatPointerDown(event, stat.key, 1)}
+                  onPointerUp={handleStatPointerUp}
+                  onPointerCancel={handleStatPointerCancel}
+                  onClick={() => handleStatClick(stat.key, 1)}
+                  disabled={isSubmitting || isResetting || remainingPoints < 1}
+                  aria-label={`${stat.label} 1 증가`}
+                >
+                  <span className="adjust-label-wide">+1</span>
+                  <span className="adjust-label-mobile">+</span>
+                </button>
+                <button
+                  className="icon-button step-wide"
+                  type="button"
+                  onClick={() => handleStatClick(stat.key, 5)}
+                  disabled={isSubmitting || isResetting || remainingPoints < 5}
+                  aria-label={`${stat.label} 5 증가`}
+                >
+                  +5
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="button-row stat-actions">
+        <button className="btn ghost" type="button" onClick={() => setPendingStats(createEmptyStatAllocation())} disabled={isSubmitting || isResetting || pendingTotal === 0}>
+          배분 취소
+        </button>
+        <button className="btn primary" type="button" onClick={handleApply} disabled={!canApply}>
+          {isSubmitting ? "적용 중..." : "적용"}
+        </button>
+      </div>
+
+      <div className="combat-stat-grid">
+        <CombatStat label="물리 공격력" shortLabel="물공" current={currentCombatStats.physicalAttack} preview={previewCombatStats.physicalAttack} />
+        <CombatStat label="마법 공격력" shortLabel="마공" current={currentCombatStats.magicAttack} preview={previewCombatStats.magicAttack} />
+        <CombatStat label="물리 방어" shortLabel="물방" current={currentCombatStats.physicalDefense} preview={previewCombatStats.physicalDefense} />
+        <CombatStat label="마법 방어" shortLabel="마방" current={currentCombatStats.magicDefense} preview={previewCombatStats.magicDefense} />
+        <CombatStat label="최대 체력" shortLabel="체력" current={currentCombatStats.maxHp} preview={previewCombatStats.maxHp} />
+        <CombatStat label="재생" current={currentCombatStats.hpRegenPerSecond} preview={previewCombatStats.hpRegenPerSecond} digits={2} />
+        <CombatStat label="공속" current={currentCombatStats.attacksPerSecond} preview={previewCombatStats.attacksPerSecond} digits={2} />
+        <CombatStat label="쿨타임 감소" shortLabel="쿨감" current={currentCombatStats.cooldownReduction * 100} preview={previewCombatStats.cooldownReduction * 100} suffix="%" digits={1} />
+        <CombatStat label="명중" shortLabel="명중" current={currentCombatStats.accuracy} preview={previewCombatStats.accuracy} />
+        <CombatStat label="회피율" shortLabel="회피" current={currentCombatStats.evasionRateAgainstAccuracy100 * 100} preview={previewCombatStats.evasionRateAgainstAccuracy100 * 100} suffix="%" digits={1} />
+        <CombatStat label="치명타 확률" shortLabel="치확" current={currentCombatStats.criticalChance} preview={previewCombatStats.criticalChance} suffix="%" digits={1} />
+        <CombatStat label="치명타 피해" shortLabel="치피" current={currentCombatStats.criticalDamage} preview={previewCombatStats.criticalDamage} suffix="%" />
+      </div>
+      <div className="stat-reset-area">
+        <button className="btn ghost" type="button" onClick={handleResetStats} disabled={!canReset}>
+          {isResetting ? "초기화 중..." : "스탯 초기화"}
+        </button>
+        <small>비용 무료</small>
+      </div>
+      {message && <p className="auth-message is-error" role="status">{message}</p>}
+    </article>
+  );
+}
+
 function CharacterTrainingPanel({
   character,
   onCharacterChange,
@@ -235,6 +487,79 @@ function wait(ms: number) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
   });
+}
+
+function createEmptyStatAllocation(): CharacterStatAllocation {
+  return {
+    strength: 0,
+    agility: 0,
+    dexterity: 0,
+    vitality: 0,
+    endurance: 0,
+    intelligence: 0,
+    wisdom: 0,
+  };
+}
+
+function getPendingTotal(stats: CharacterStatAllocation) {
+  return Object.values(stats).reduce((total, value) => total + value, 0);
+}
+
+function applyPendingStats(character: Character, pendingStats: CharacterStatAllocation): Character {
+  return {
+    ...character,
+    strength: character.strength + pendingStats.strength,
+    agility: character.agility + pendingStats.agility,
+    dexterity: character.dexterity + pendingStats.dexterity,
+    vitality: character.vitality + pendingStats.vitality,
+    endurance: character.endurance + pendingStats.endurance,
+    intelligence: character.intelligence + pendingStats.intelligence,
+    wisdom: character.wisdom + pendingStats.wisdom,
+  };
+}
+
+function hasAllocatedStats(character: Character) {
+  return PRIMARY_STATS.some((stat) => character[stat.key] > BASE_PRIMARY_STAT);
+}
+
+function CombatStat({
+  label,
+  shortLabel,
+  current,
+  preview,
+  suffix = "",
+  digits = 0,
+}: {
+  label: string;
+  shortLabel?: string;
+  current: number;
+  preview: number;
+  suffix?: string;
+  digits?: number;
+}) {
+  const isChanged = current !== preview;
+
+  return (
+    <div className={`combat-stat ${isChanged ? "is-changed" : ""}`}>
+      <span className="combat-label">
+        <span className="combat-label-full">{label}</span>
+        <span className="combat-label-short">{shortLabel ?? label}</span>
+      </span>
+      <strong>
+        {isChanged ? (
+          <>
+            <small>{formatStatNumber(current, digits)}{suffix}</small>
+            <i aria-hidden="true">-&gt;</i>
+          </>
+        ) : null}
+        <b>{formatStatNumber(preview, digits)}{suffix}</b>
+      </strong>
+    </div>
+  );
+}
+
+function formatStatNumber(value: number, digits: number) {
+  return digits > 0 ? value.toFixed(digits) : Math.round(value).toLocaleString();
 }
 
 function CharacterDeletePanel({

@@ -4,6 +4,15 @@ export type Character = {
   name: string;
   level: number;
   experience: number;
+  strength: number;
+  agility: number;
+  dexterity: number;
+  vitality: number;
+  endurance: number;
+  intelligence: number;
+  wisdom: number;
+  stat_points: number;
+  bonus_stat_points: number;
   created_at: string;
   updated_at: string;
 };

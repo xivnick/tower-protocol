@@ -18,7 +18,12 @@ const AUTH_ERROR_MESSAGES: Array<[RegExp, string]> = [
   [/characters_level_check/i, "캐릭터 레벨 값을 확인해주세요."],
   [/characters_experience_check/i, "캐릭터 경험치 값을 확인해주세요."],
   [/characters_progression_check/i, "캐릭터 성장 값을 확인해주세요."],
+  [/characters_stats_min_check/i, "스탯 값을 확인해주세요."],
+  [/characters_stats_total_check/i, "스탯 포인트 값을 확인해주세요."],
   [/character_not_found/i, "캐릭터를 찾을 수 없습니다."],
+  [/invalid_stat_delta/i, "스탯 배분 값을 확인해주세요."],
+  [/empty_stat_delta/i, "배분할 스탯을 선택해주세요."],
+  [/insufficient_stat_points/i, "스탯 포인트가 부족합니다."],
   [/shared_name_conflict/i, "이미 사용 중인 이름입니다."],
   [/duplicate key value/i, "이미 사용 중인 값입니다."],
 ];

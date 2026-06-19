@@ -3,6 +3,9 @@ import { toKoreanAuthMessage } from "../shared/authMessages";
 import { getCharacterNameValidationMessage } from "../shared/validation";
 import type { Character } from "../types/character";
 
+export type CharacterStatKey = "strength" | "agility" | "dexterity" | "vitality" | "endurance" | "intelligence" | "wisdom";
+export type CharacterStatAllocation = Record<CharacterStatKey, number>;
+
 type CharacterResult = {
   ok: boolean;
   character: Character | null;
@@ -40,6 +43,8 @@ type TrainingPayload = {
   level_after?: number;
 };
 
+const characterSelectFields = "id,user_id,name,level,experience,strength,agility,dexterity,vitality,endurance,intelligence,wisdom,stat_points,bonus_stat_points,created_at,updated_at";
+
 export async function getMyCharacter(): Promise<CharacterResult> {
   if (!supabase) return { ok: false, character: null, message: "Supabase 설정을 확인해주세요." };
 
@@ -55,7 +60,7 @@ export async function getMyCharacter(): Promise<CharacterResult> {
 
   const { data, error } = await supabase
     .from("characters")
-    .select("id,user_id,name,level,experience,created_at,updated_at")
+    .select(characterSelectFields)
     .eq("user_id", userResult.user.id)
     .maybeSingle();
 
@@ -92,7 +97,7 @@ export async function createMyCharacter(name: string): Promise<CharacterResult> 
       user_id: userResult.user.id,
       name: trimmedName,
     })
-    .select("id,user_id,name,level,experience,created_at,updated_at")
+    .select(characterSelectFields)
     .single();
 
   if (error) {
@@ -100,6 +105,38 @@ export async function createMyCharacter(name: string): Promise<CharacterResult> 
   }
 
   return { ok: true, character: data, message: "" };
+}
+
+export async function allocateCharacterStats(allocation: CharacterStatAllocation): Promise<CharacterResult> {
+  if (!supabase) return { ok: false, character: null, message: "Supabase 설정을 확인해주세요." };
+
+  const { data, error } = await supabase.rpc("allocate_character_stats", {
+    strength_delta: allocation.strength,
+    agility_delta: allocation.agility,
+    dexterity_delta: allocation.dexterity,
+    vitality_delta: allocation.vitality,
+    endurance_delta: allocation.endurance,
+    intelligence_delta: allocation.intelligence,
+    wisdom_delta: allocation.wisdom,
+  });
+
+  if (error) {
+    return { ok: false, character: null, message: toKoreanAuthMessage(error.message, "스탯을 적용하지 못했습니다.") };
+  }
+
+  return { ok: true, character: data as Character, message: "스탯을 적용했습니다." };
+}
+
+export async function resetCharacterStats(): Promise<CharacterResult> {
+  if (!supabase) return { ok: false, character: null, message: "Supabase 설정을 확인해주세요." };
+
+  const { data, error } = await supabase.rpc("reset_character_stats");
+
+  if (error) {
+    return { ok: false, character: null, message: toKoreanAuthMessage(error.message, "스탯을 초기화하지 못했습니다.") };
+  }
+
+  return { ok: true, character: data as Character, message: "스탯을 초기화했습니다." };
 }
 
 export async function checkCharacterNameAvailability(name: string): Promise<CharacterNameAvailabilityResult> {
