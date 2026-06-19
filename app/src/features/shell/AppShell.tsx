@@ -35,12 +35,14 @@ export function AppShell({
   profile,
   character,
   onCharacterChange,
+  onCharacterRefresh,
   onSignOut,
 }: {
   session: Session | null;
   profile: Profile | null;
   character: Character | null;
   onCharacterChange: (character: Character | null) => void;
+  onCharacterRefresh: () => Promise<boolean>;
   onSignOut: () => void;
 }) {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -224,7 +226,7 @@ export function AppShell({
           <div className="workspace-body route-frame" key={location.pathname}>
             <Routes>
               <Route path="/" element={<DashboardScreen session={session} profile={profile} character={character} />} />
-              <Route path="/character" element={<CharacterScreen character={character} onCharacterChange={onCharacterChange} onToast={showToast} />} />
+              <Route path="/character" element={<CharacterScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={showToast} />} />
               <Route path="/ranking" element={<RankingScreen />} />
               <Route path="/patch-notes" element={<PatchNotesArchive />} />
               <Route path="*" element={<Navigate to="/" replace />} />

@@ -12,10 +12,12 @@ import type { ToastInput, ToastTone } from "../../types/toast";
 export function CharacterScreen({
   character,
   onCharacterChange,
+  onCharacterRefresh,
   onToast,
 }: {
   character: Character | null;
   onCharacterChange: (character: Character | null) => void;
+  onCharacterRefresh: () => Promise<boolean>;
   onToast: (toast: ToastInput) => void;
 }) {
   useDocumentTitle("TOWER://CHARACTER");
@@ -35,17 +37,23 @@ export function CharacterScreen({
           </div>
         </article>
 
-        <CharacterStatsPanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
-        <CharacterTrainingPanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
-        <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
+        <CharacterStatsPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
+        <CharacterTrainingPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
+        <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
       </section>
     );
   }
 
-  return <CharacterCreatePanel onCharacterChange={onCharacterChange} />;
+  return <CharacterCreatePanel onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />;
 }
 
-function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (character: Character) => void }) {
+function CharacterCreatePanel({
+  onCharacterChange,
+  onCharacterRefresh,
+}: {
+  onCharacterChange: (character: Character) => void;
+  onCharacterRefresh: () => Promise<boolean>;
+}) {
   const [name, setName] = useState("");
   const [hint, setHint] = useState("");
   const [hintType, setHintType] = useState<"is-ok" | "is-error" | "">("");
@@ -115,6 +123,7 @@ function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (chara
     if (!result.ok || !result.character) {
       setMessage(result.message);
       setMessageType("error");
+      await onCharacterRefresh();
       return;
     }
 
@@ -161,10 +170,12 @@ function CharacterCreatePanel({ onCharacterChange }: { onCharacterChange: (chara
 function CharacterStatsPanel({
   character,
   onCharacterChange,
+  onCharacterRefresh,
   onToast,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
+  onCharacterRefresh: () => Promise<boolean>;
   onToast: (toast: ToastInput) => void;
 }) {
   const [pendingStats, setPendingStats] = useState<CharacterStatAllocation>(createEmptyStatAllocation());
@@ -271,6 +282,7 @@ function CharacterStatsPanel({
 
     if (!result.ok || !result.character) {
       setMessage(result.message);
+      await onCharacterRefresh();
       return;
     }
 
@@ -292,6 +304,7 @@ function CharacterStatsPanel({
 
     if (!result.ok || !result.character) {
       setMessage(result.message);
+      await onCharacterRefresh();
       return;
     }
 
@@ -413,10 +426,12 @@ function CharacterStatsPanel({
 function CharacterTrainingPanel({
   character,
   onCharacterChange,
+  onCharacterRefresh,
   onToast,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
+  onCharacterRefresh: () => Promise<boolean>;
   onToast: (toast: ToastInput) => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -440,6 +455,7 @@ function CharacterTrainingPanel({
 
     if (!result.ok || !result.character) {
       setMessage(result.message);
+      await onCharacterRefresh();
       return;
     }
 
@@ -566,10 +582,12 @@ function formatStatNumber(value: number, digits: number) {
 function CharacterDeletePanel({
   character,
   onCharacterChange,
+  onCharacterRefresh,
   onToast,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
+  onCharacterRefresh: () => Promise<boolean>;
   onToast: (toast: ToastInput) => void;
 }) {
   const [confirmName, setConfirmName] = useState("");
@@ -595,6 +613,7 @@ function CharacterDeletePanel({
 
     if (!result.ok) {
       setMessage(result.message);
+      await onCharacterRefresh();
       return;
     }
 
