@@ -811,10 +811,14 @@ button:disabled {
   padding: 8px 0;
 }
 
-.combat-stat span {
+.combat-label {
   min-width: 0;
   color: var(--mut);
   font-size: 12px;
+}
+
+.combat-label-short {
+  display: none;
 }
 
 .combat-stat strong {
@@ -1158,11 +1162,36 @@ button:disabled {
 
   .stat-controls {
     grid-column: 1 / -1;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .combat-stat-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 12px;
+  }
+
+  .combat-stat {
+    gap: 6px;
+  }
+
+  .combat-label-full,
+  .step-wide {
+    display: none;
+  }
+
+  .combat-label-short {
+    display: inline;
+  }
+
+  .combat-stat strong {
+    min-width: 70px;
+    gap: 4px;
+    font-size: 12px;
+  }
+
+  .combat-stat strong small,
+  .combat-stat strong i {
+    font-size: 11px;
   }
 
   .stat-reset-area {
@@ -1181,6 +1210,16 @@ button:disabled {
     bottom: 12px;
     left: 12px;
     justify-items: end;
+  }
+}
+
+@media (max-width: 380px) {
+  .combat-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .combat-stat strong {
+    min-width: 96px;
   }
 }
 
