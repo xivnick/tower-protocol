@@ -22,6 +22,10 @@ export function CharacterScreen({
 }) {
   useDocumentTitle("TOWER://CHARACTER");
 
+  useEffect(() => {
+    void onCharacterRefresh();
+  }, []);
+
   if (character) {
     return (
       <section className="screen-panel">
