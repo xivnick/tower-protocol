@@ -770,7 +770,7 @@ button:disabled {
 
 .stat-controls {
   display: grid;
-  grid-template-columns: repeat(2, 34px);
+  grid-template-columns: repeat(4, 34px);
   gap: 6px;
 }
 
@@ -781,6 +781,10 @@ button:disabled {
   background: var(--surf-2);
   color: var(--txt-bright);
   font-weight: 900;
+}
+
+.icon-button.wide {
+  font-size: 11px;
 }
 
 .icon-button:hover {
@@ -807,7 +811,7 @@ button:disabled {
 
 .combat-stat {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) minmax(72px, auto) 64px;
   align-items: center;
   gap: 8px;
   border-bottom: 1px solid var(--line);
@@ -823,10 +827,10 @@ button:disabled {
 .combat-stat strong {
   color: var(--txt-bright);
   font-size: 13px;
+  text-align: right;
 }
 
 .combat-stat small {
-  min-width: 44px;
   color: var(--mut-2);
   font-size: 12px;
   font-weight: 800;
@@ -1146,8 +1150,13 @@ button:disabled {
   }
 
   .stat-row {
-    grid-template-columns: minmax(0, 1fr) 46px 36px auto;
+    grid-template-columns: minmax(0, 1fr) 46px 36px;
     gap: 8px;
+  }
+
+  .stat-controls {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .combat-stat-grid {
@@ -1160,12 +1169,8 @@ button:disabled {
     gap: 6px;
   }
 
-  .stat-controls {
-    grid-template-columns: repeat(2, 32px);
-  }
-
   .icon-button {
-    width: 32px;
+    width: 100%;
     height: 32px;
   }
 

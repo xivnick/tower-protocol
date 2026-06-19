@@ -193,7 +193,7 @@ function CharacterStatsPanel({
         return current;
       }
 
-      if (amount > 0 && getPendingTotal(current) >= character.stat_points) {
+      if (amount > 0 && getPendingTotal(current) + amount > character.stat_points) {
         return current;
       }
 
@@ -265,11 +265,17 @@ function CharacterStatsPanel({
               <em>{(character[stat.key] + pendingValue).toLocaleString()}</em>
               <small>{pendingValue > 0 ? `+${pendingValue}` : ""}</small>
               <div className="stat-controls">
-                <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, -1)} disabled={isSubmitting || isResetting || pendingValue <= 0}>
-                  -
+                <button className="icon-button wide" type="button" onClick={() => changePendingStat(stat.key, -5)} disabled={isSubmitting || isResetting || pendingValue < 5}>
+                  -5
                 </button>
-                <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, 1)} disabled={isSubmitting || isResetting || remainingPoints <= 0}>
-                  +
+                <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, -1)} disabled={isSubmitting || isResetting || pendingValue <= 0}>
+                  -1
+                </button>
+                <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, 1)} disabled={isSubmitting || isResetting || remainingPoints < 1}>
+                  +1
+                </button>
+                <button className="icon-button wide" type="button" onClick={() => changePendingStat(stat.key, 5)} disabled={isSubmitting || isResetting || remainingPoints < 5}>
+                  +5
                 </button>
               </div>
             </div>
@@ -447,7 +453,7 @@ function CombatStat({
     <div className={`combat-stat ${isChanged ? "is-changed" : ""}`}>
       <span>{label}</span>
       <strong>{formatStatNumber(preview, digits)}{suffix}</strong>
-      {isChanged && <small>+{formatStatNumber(delta, digits)}{suffix}</small>}
+      <small>{isChanged ? `+${formatStatNumber(delta, digits)}${suffix}` : ""}</small>
     </div>
   );
 }
