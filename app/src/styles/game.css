@@ -753,10 +753,6 @@ button:disabled {
   gap: 10px;
 }
 
-.stat-controls.is-changed {
-  animation: stat-controls-expand 160ms ease-out;
-}
-
 .stat-value {
   display: flex;
   align-items: baseline;
@@ -766,12 +762,30 @@ button:disabled {
   color: var(--txt-bright);
 }
 
+.stat-previous {
+  display: flex;
+  max-width: 0;
+  align-items: baseline;
+  gap: 5px;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: max-width 180ms ease, opacity 120ms ease, transform 180ms ease;
+  white-space: nowrap;
+}
+
+.stat-value.is-changed .stat-previous {
+  max-width: 10ch;
+  opacity: 1;
+  transform: translateX(0);
+}
+
 .stat-value b {
   text-align: right;
 }
 
-.stat-value small,
-.stat-value i {
+.stat-previous small,
+.stat-previous i {
   color: var(--mut);
   font-size: 12px;
   font-style: normal;
@@ -780,16 +794,6 @@ button:disabled {
 
 .stat-value.is-changed b {
   color: var(--acc);
-}
-
-@keyframes stat-controls-expand {
-  from {
-    transform: translateX(24px);
-  }
-
-  to {
-    transform: translateX(0);
-  }
 }
 
 .icon-button {
@@ -1191,8 +1195,12 @@ button:disabled {
     padding: 0 6px;
   }
 
-  .stat-value small,
-  .stat-value i {
+  .stat-previous {
+    gap: 4px;
+  }
+
+  .stat-previous small,
+  .stat-previous i {
     font-size: 11px;
   }
 
@@ -1337,7 +1345,7 @@ button:disabled {
     animation: none;
   }
 
-  .stat-controls.is-changed {
-    animation: none;
+  .stat-previous {
+    transition: none;
   }
 }

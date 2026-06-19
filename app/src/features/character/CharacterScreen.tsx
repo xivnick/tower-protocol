@@ -268,8 +268,10 @@ function CharacterStatsPanel({
                   -1
                 </button>
                 <span className={`stat-value ${pendingValue > 0 ? "is-changed" : ""}`}>
-                  {pendingValue > 0 ? <small>{currentValue.toLocaleString()}</small> : null}
-                  {pendingValue > 0 ? <i aria-hidden="true">-&gt;</i> : null}
+                  <span className="stat-previous">
+                    <small>{currentValue.toLocaleString()}</small>
+                    <i aria-hidden="true">-&gt;</i>
+                  </span>
                   <b>{previewValue.toLocaleString()}</b>
                 </span>
                 <button className="icon-button" type="button" onClick={() => changePendingStat(stat.key, 1)} disabled={isSubmitting || isResetting || remainingPoints < 1} aria-label={`${stat.label} 1 증가`}>
