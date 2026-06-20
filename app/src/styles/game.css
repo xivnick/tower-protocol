@@ -919,6 +919,7 @@ button:disabled {
 }
 
 .hunt-location-strip {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -928,27 +929,22 @@ button:disabled {
   padding: 10px 14px;
 }
 
-.hunt-location-strip span {
-  color: var(--mut);
-  font-size: 11px;
-  font-weight: 800;
-}
-
 .hunt-location-strip strong {
-  margin-left: 8px;
   color: var(--txt-bright);
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .hunt-ground-selector {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + 6px);
+  right: 0;
   display: grid;
-  gap: 10px;
-}
-
-.hunt-ground-selector > span {
-  color: var(--mut);
-  font-size: 12px;
-  font-weight: 800;
+  width: min(280px, calc(100vw - 56px));
+  border: 1px solid var(--line-2);
+  background: var(--surf);
+  padding: 8px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
 }
 
 .hunt-ground-selector button {
