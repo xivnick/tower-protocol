@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { huntTrainingDummy } from "../../api/characterApi";
 import type { HuntLogEntry, HuntResult } from "../../api/characterApi";
-import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
+import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats } from "../../shared/stats";
 import type { Character } from "../../types/character";
 import type { ToastInput } from "../../types/toast";
@@ -65,6 +65,7 @@ function TrainingDummyGround({
   const [now, setNow] = useState(Date.now());
   const [playbackTenths, setPlaybackTenths] = useState(0);
   const logRef = useRef<HTMLOListElement>(null);
+  const completedResultRef = useRef<HuntResult | null>(null);
   const availableAt = character.hunt_available_at ? Date.parse(character.hunt_available_at) : 0;
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
   const combatStats = calculateCombatStats(character);
@@ -72,6 +73,8 @@ function TrainingDummyGround({
   const targetHp = visibleLogs.length > 0 ? visibleLogs[visibleLogs.length - 1].targetHp : trainingDummy.maxHp;
   const isPlaybackComplete = Boolean(result && playbackTenths >= result.durationTicks);
   const canHunt = !isSubmitting && remainingTenths === 0 && (!result || isPlaybackComplete);
+  const requiredExperience = getRequiredExperienceForLevel(character.level + 1) ?? 1;
+  const experiencePercent = character.level >= 100 ? 100 : (character.experience / requiredExperience) * 100;
 
   useEffect(() => {
     if (remainingTenths === 0) return;
@@ -96,6 +99,17 @@ function TrainingDummyGround({
     }
   }, [visibleLogs.length]);
 
+  useEffect(() => {
+    if (!result || !isPlaybackComplete || completedResultRef.current === result) return;
+
+    completedResultRef.current = result;
+    onToast({ message: `전투 완료 · 경험치 +${result.gainedExperience}`, tone: "system" });
+
+    if (result.levelAfter > result.levelBefore) {
+      onToast({ message: `레벨업! -> LV.${result.levelAfter}`, tone: "epic" });
+    }
+  }, [isPlaybackComplete, onToast, result]);
+
   async function handleHunt() {
     if (!canHunt) return;
 
@@ -113,13 +127,9 @@ function TrainingDummyGround({
       return;
     }
 
+    completedResultRef.current = null;
     onCharacterChange(nextResult.character);
     setResult(nextResult);
-    onToast({ message: `허수아비 격파 · 경험치 +${nextResult.gainedExperience}`, tone: "system" });
-
-    if (nextResult.levelAfter > nextResult.levelBefore) {
-      onToast({ message: `레벨업! -> LV.${nextResult.levelAfter}`, tone: "epic" });
-    }
   }
 
   return (
@@ -136,43 +146,47 @@ function TrainingDummyGround({
             <h2>내 상태</h2>
           </div>
           <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
-            {isSubmitting ? "시뮬레이션 중..." : remainingTenths > 0 ? `재정비 ${formatTime(remainingTenths)}` : result && !isPlaybackComplete ? "기록 재생 중..." : "전투 시뮬레이션"}
+            {isSubmitting || remainingTenths > 0 || (result && !isPlaybackComplete) ? "전투 중..." : "전투 시작"}
           </button>
         </div>
         <div className="hunt-status-grid">
           <Kv label="캐릭터" value={character.name} />
           <Kv label="레벨" value={formatCharacterLevel(character.level)} />
-          <Kv label="체력" value={`${combatStats.maxHp.toLocaleString()} HP`} />
-          <Kv label="경험치" value={formatCharacterExperience(character.level, character.experience)} />
+          <StatusMeter label="체력" value={`${combatStats.maxHp.toLocaleString()} / ${combatStats.maxHp.toLocaleString()} HP`} percent={100} />
+          <StatusMeter label="경험치" value={`${character.experience.toLocaleString()} / ${requiredExperience.toLocaleString()} EXP`} percent={experiencePercent} />
         </div>
         {message && !result && <p className="panel-message is-error" role="status">{message}</p>}
       </article>
 
-      {result && (
-        <article className="panel combat-record-panel">
+      <article className="panel combat-record-panel">
           <div className="panel-head compact">
             <div>
               <span>COMBAT</span>
-              <h2>허수아비</h2>
+              <h2>전투 상황</h2>
             </div>
           </div>
           <div className="combat-hp-grid">
             <CombatHpCard label="PLAYER" name={character.name} currentHp={combatStats.maxHp} maxHp={combatStats.maxHp} />
-            <CombatHpCard label="ENEMY" name="허수아비" currentHp={targetHp} maxHp={trainingDummy.maxHp} />
+            <CombatHpCard label="ENEMY" name={result ? "허수아비" : "???"} currentHp={result ? targetHp : null} maxHp={result ? trainingDummy.maxHp : null} />
           </div>
           {message && <p className="panel-message is-error" role="status">{message}</p>}
           <ol className="combat-log" aria-label="전투 로그" ref={logRef}>
-            <li className="is-encounter"><time>[0.0s]</time><span>허수아비와 조우했습니다.</span></li>
-            {visibleLogs.map((entry, index) => (
-              <li className={`is-${entry.kind}`} key={`${entry.timeTenths}-${entry.kind}-${index}`}>
-                <time>[{formatTime(entry.timeTenths)}]</time>
-                <span>{formatLogEntry(entry)}</span>
-              </li>
-            ))}
+            {result ? (
+              <>
+                <li className="is-encounter"><time>[0.0s]</time><span>허수아비와 조우했습니다.</span></li>
+                {visibleLogs.map((entry, index) => (
+                  <li className={`is-${entry.kind}`} key={`${entry.timeTenths}-${entry.kind}-${index}`}>
+                    <time>[{formatTime(entry.timeTenths)}]</time>
+                    <span>{formatLogEntry(entry)}</span>
+                  </li>
+                ))}
+              </>
+            ) : (
+              <li className="is-empty">전투 시작을 기다리고 있습니다.</li>
+            )}
           </ol>
-          {isPlaybackComplete && <HuntResultPanel result={result} />}
-        </article>
-      )}
+          {result && isPlaybackComplete && <HuntResultPanel result={result} />}
+      </article>
     </section>
   );
 }
@@ -185,19 +199,20 @@ function CombatHpCard({
 }: {
   label: string;
   name: string;
-  currentHp: number;
-  maxHp: number;
+  currentHp: number | null;
+  maxHp: number | null;
 }) {
-  const hpPercent = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
+  const isUnknown = currentHp === null || maxHp === null;
+  const hpPercent = isUnknown ? 0 : Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
 
   return (
     <div className="combat-hp-card">
       <span>{label}</span>
       <strong>{name}</strong>
-      <div className="combat-hp" role="progressbar" aria-label={`${name} 체력`} aria-valuemin={0} aria-valuemax={maxHp} aria-valuenow={currentHp}>
-        <i style={{ width: `${hpPercent}%` }} />
+      <div className={`combat-hp ${isUnknown ? "is-unknown" : ""}`} role="progressbar" aria-label={`${name} 체력`} aria-valuemin={0} aria-valuemax={maxHp ?? undefined} aria-valuenow={currentHp ?? undefined}>
+        {!isUnknown && <i style={{ width: `${hpPercent}%` }} />}
       </div>
-      <b>HP {formatAmount(currentHp)} / {formatAmount(maxHp)}</b>
+      <b>{isUnknown ? "HP ???" : `HP ${formatAmount(currentHp ?? 0)} / ${formatAmount(maxHp ?? 0)}`}</b>
     </div>
   );
 }
@@ -210,23 +225,29 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
     <section className="hunt-result-section">
       <div className="hunt-result-head">
         <span>COMBAT RESULT</span>
-        <strong>허수아비 격파</strong>
+        <strong>전투 결과</strong>
       </div>
       <div className="hunt-result-summary">
         <Kv label="전투 시간" value={formatTime(result.durationTicks)} />
-        <Kv label="일반공격" value={`${result.attackCount}회`} />
-        <Kv label="치명타" value={`${result.criticalCount}회`} />
-        <Kv label="총 피해" value={`${result.totalDamage.toLocaleString()}`} />
-        <Kv label="재생량" value={`+${formatAmount(result.totalRegeneration)} HP`} />
-        <Kv label="보상" value={`경험치 +${result.gainedExperience}`} />
+        <Kv label="DPS" value={dps} />
+        <Kv label="경험치" value={`+${result.gainedExperience} EXP`} />
       </div>
-      <p className="hunt-result-footnote">DPS {dps} · 다음 훈련은 전투 시간만큼 재정비합니다.</p>
     </section>
   );
 }
 
 function Kv({ label, value }: { label: string; value: string }) {
   return <div><span>{label}</span><strong>{value}</strong></div>;
+}
+
+function StatusMeter({ label, value, percent }: { label: string; value: string; percent: number }) {
+  return (
+    <div className="hunt-status-meter">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <i><b style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} /></i>
+    </div>
+  );
 }
 
 function formatLogEntry(entry: HuntLogEntry) {
