@@ -1113,6 +1113,21 @@ button:disabled {
   min-width: 0;
 }
 
+.combat-card-expansion {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 180ms ease;
+}
+
+.combat-card-expansion.is-expanded {
+  grid-template-rows: 1fr;
+}
+
+.combat-card-expansion > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
 .combat-card-detail {
   margin-top: 12px;
 }

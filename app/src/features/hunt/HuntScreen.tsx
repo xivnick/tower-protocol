@@ -250,7 +250,8 @@ function TrainingDummyGround({
               detail={isMonsterInfoOpen ? undefined : { value: "", percent: 0, isUnknown: true }}
               onInfoClick={() => setIsMonsterInfoOpen((current) => !current)}
               isInfoOpen={isMonsterInfoOpen}
-              expandedContent={isMonsterInfoOpen && monsterInfo ? <MonsterInfoStats info={monsterInfo} /> : null}
+              isExpanded={isMonsterInfoOpen}
+              expandedContent={monsterInfo ? <MonsterInfoStats info={monsterInfo} /> : null}
             />
           </div>
           {message && <p className="panel-message is-error" role="status">{message}</p>}
@@ -283,6 +284,7 @@ function CombatHpCard({
   linkToCharacter = false,
   onInfoClick,
   isInfoOpen = false,
+  isExpanded = false,
   expandedContent,
 }: {
   label: string;
@@ -293,6 +295,7 @@ function CombatHpCard({
   linkToCharacter?: boolean;
   onInfoClick?: () => void;
   isInfoOpen?: boolean;
+  isExpanded?: boolean;
   expandedContent?: ReactNode;
 }) {
   const isUnknown = currentHp === null || maxHp === null;
@@ -322,7 +325,7 @@ function CombatHpCard({
       </div>
       <b>{isUnknown ? "HP ???" : `HP ${formatAmount(currentHp ?? 0)} / ${formatAmount(maxHp ?? 0)}`}</b>
       {detail && <CombatDetail {...detail} />}
-      {expandedContent}
+      {expandedContent && <div className={`combat-card-expansion ${isExpanded ? "is-expanded" : ""}`}>{expandedContent}</div>}
     </div>
   );
 }
