@@ -147,15 +147,14 @@ function TrainingDummyGround({
           <strong>허수아비 훈련소</strong>
         </div>
         <button className="text-button" type="button" onClick={() => setIsGroundSelectorOpen((current) => !current)} aria-expanded={isGroundSelectorOpen} aria-haspopup="listbox">사냥터 선택 ▾</button>
-        {isGroundSelectorOpen && (
-          <div className="hunt-ground-selector" role="listbox" aria-label="사냥터 선택">
+      </div>
+      {isGroundSelectorOpen && (
+        <div className="hunt-ground-selector" role="listbox" aria-label="사냥터 선택">
           <button type="button" className="is-selected" onClick={() => setIsGroundSelectorOpen(false)}>
             <strong>허수아비 훈련소</strong>
-            <small>기본 전투 스탯 시험</small>
           </button>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
       <article className="panel hunt-ground-panel">
         <div className="panel-head compact">
           <span>COMBATANTS</span>
