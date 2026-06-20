@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 import { huntTrainingDummy } from "../../api/characterApi";
 import type { HuntLogEntry, HuntResult } from "../../api/characterApi";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
-import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
-import type { CombatStatLabel } from "../../shared/stats";
+import { calculateCombatStats } from "../../shared/stats";
 import type { Character } from "../../types/character";
 import type { ToastInput } from "../../types/toast";
 
@@ -12,11 +11,6 @@ const trainingDummy = {
   maxHp: 100,
   physicalDefense: 10,
   regenerationPerSecond: 1,
-};
-
-type CombatDetail = {
-  desktop: string;
-  mobile?: string;
 };
 
 export function HuntScreen({
@@ -78,23 +72,6 @@ function TrainingDummyGround({
   const targetHp = visibleLogs.length > 0 ? visibleLogs[visibleLogs.length - 1].targetHp : trainingDummy.maxHp;
   const isPlaybackComplete = Boolean(result && playbackTenths >= result.durationTicks);
   const canHunt = !isSubmitting && remainingTenths === 0 && (!result || isPlaybackComplete);
-  const playerDetails: CombatDetail[] = [
-    combatDetail(COMBAT_STAT_LABELS.physicalAttack, combatStats.physicalAttack),
-    combatDetail(COMBAT_STAT_LABELS.magicAttack, combatStats.magicAttack),
-    combatDetail(COMBAT_STAT_LABELS.physicalDefense, combatStats.physicalDefense),
-    combatDetail(COMBAT_STAT_LABELS.magicDefense, combatStats.magicDefense),
-    combatDetail(COMBAT_STAT_LABELS.regeneration, formatAmount(combatStats.hpRegenPerSecond)),
-    combatDetail(COMBAT_STAT_LABELS.attackSpeed, formatAmount(combatStats.attacksPerSecond)),
-    combatDetail(COMBAT_STAT_LABELS.cooldownReduction, `${formatAmount(combatStats.cooldownReduction * 100)}%`),
-    combatDetail(COMBAT_STAT_LABELS.accuracy, combatStats.accuracy),
-    combatDetail(COMBAT_STAT_LABELS.evasionRate, `${formatAmount(combatStats.evasionRateAgainstAccuracy100 * 100)}%`),
-    combatDetail(COMBAT_STAT_LABELS.criticalChance, `${combatStats.criticalChance}%`),
-    combatDetail(COMBAT_STAT_LABELS.criticalDamage, `${combatStats.criticalDamage}%`),
-  ];
-  const dummyDetails: CombatDetail[] = [
-    combatDetail(COMBAT_STAT_LABELS.physicalAttack, 0), combatDetail(COMBAT_STAT_LABELS.magicAttack, 0), combatDetail(COMBAT_STAT_LABELS.physicalDefense, trainingDummy.physicalDefense), combatDetail(COMBAT_STAT_LABELS.magicDefense, 0), combatDetail(COMBAT_STAT_LABELS.regeneration, trainingDummy.regenerationPerSecond),
-    combatDetail(COMBAT_STAT_LABELS.attackSpeed, 0), combatDetail(COMBAT_STAT_LABELS.cooldownReduction, "0%"), combatDetail(COMBAT_STAT_LABELS.accuracy, 0), combatDetail(COMBAT_STAT_LABELS.evasionRate, "0%"), combatDetail(COMBAT_STAT_LABELS.criticalChance, "0%"), combatDetail(COMBAT_STAT_LABELS.criticalDamage, "0%"),
-  ];
 
   useEffect(() => {
     if (remainingTenths === 0) return;
@@ -152,85 +129,77 @@ function TrainingDummyGround({
         <strong>허수아비 훈련소</strong>
         <small>권장 LV.1–100</small>
       </div>
-      <article className="panel hunt-ground-panel">
-        <div className="panel-head compact">
-          <span>COMBATANTS</span>
-          <h2>전투 스탯</h2>
-        </div>
-        <div className="combatant-grid">
-          <CombatantCard label="PLAYER" name={character.name} currentHp={combatStats.maxHp} maxHp={combatStats.maxHp} details={playerDetails} />
-          <CombatantCard label="MONSTER" name="허수아비" currentHp={targetHp} maxHp={trainingDummy.maxHp} details={dummyDetails} />
-        </div>
-      </article>
-
-      <article className="panel combat-record-panel">
+      <article className="panel hunt-status-panel">
         <div className="panel-head compact action-head">
           <div>
-            <span>COMBAT RECORD</span>
-            <h2>전투 기록</h2>
+            <span>PLAYER</span>
+            <h2>내 상태</h2>
           </div>
           <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
             {isSubmitting ? "시뮬레이션 중..." : remainingTenths > 0 ? `재정비 ${formatTime(remainingTenths)}` : result && !isPlaybackComplete ? "기록 재생 중..." : "전투 시뮬레이션"}
           </button>
         </div>
-        {message && <p className="panel-message is-error" role="status">{message}</p>}
-        <ol className="combat-log" aria-label="전투 로그" ref={logRef}>
-          {visibleLogs.length === 0 ? (
-            <li className="is-empty">전투 시뮬레이션을 시작하면 기록이 표시됩니다.</li>
-          ) : (
-            visibleLogs.map((entry, index) => (
+        <div className="hunt-status-grid">
+          <Kv label="캐릭터" value={character.name} />
+          <Kv label="레벨" value={formatCharacterLevel(character.level)} />
+          <Kv label="체력" value={`${combatStats.maxHp.toLocaleString()} HP`} />
+          <Kv label="경험치" value={formatCharacterExperience(character.level, character.experience)} />
+        </div>
+        {message && !result && <p className="panel-message is-error" role="status">{message}</p>}
+      </article>
+
+      {result && (
+        <article className="panel combat-record-panel">
+          <div className="panel-head compact">
+            <div>
+              <span>COMBAT</span>
+              <h2>허수아비</h2>
+            </div>
+          </div>
+          <div className="combat-hp-grid">
+            <CombatHpCard label="PLAYER" name={character.name} currentHp={combatStats.maxHp} maxHp={combatStats.maxHp} />
+            <CombatHpCard label="ENEMY" name="허수아비" currentHp={targetHp} maxHp={trainingDummy.maxHp} />
+          </div>
+          {message && <p className="panel-message is-error" role="status">{message}</p>}
+          <ol className="combat-log" aria-label="전투 로그" ref={logRef}>
+            <li className="is-encounter"><time>[0.0s]</time><span>허수아비와 조우했습니다.</span></li>
+            {visibleLogs.map((entry, index) => (
               <li className={`is-${entry.kind}`} key={`${entry.timeTenths}-${entry.kind}-${index}`}>
                 <time>[{formatTime(entry.timeTenths)}]</time>
                 <span>{formatLogEntry(entry)}</span>
               </li>
-            ))
-          )}
-        </ol>
-      </article>
-
-      {result && isPlaybackComplete && <HuntResultPanel result={result} />}
+            ))}
+          </ol>
+          {isPlaybackComplete && <HuntResultPanel result={result} />}
+        </article>
+      )}
     </section>
   );
 }
 
-function CombatantCard({
+function CombatHpCard({
   label,
   name,
   currentHp,
   maxHp,
-  details,
 }: {
   label: string;
   name: string;
   currentHp: number;
   maxHp: number;
-  details: CombatDetail[];
 }) {
   const hpPercent = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
 
   return (
-    <div className="combatant-card">
+    <div className="combat-hp-card">
       <span>{label}</span>
       <strong>{name}</strong>
       <div className="combat-hp" role="progressbar" aria-label={`${name} 체력`} aria-valuemin={0} aria-valuemax={maxHp} aria-valuenow={currentHp}>
         <i style={{ width: `${hpPercent}%` }} />
       </div>
       <b>HP {formatAmount(currentHp)} / {formatAmount(maxHp)}</b>
-      <ul>{details.map((detail) => (
-        <li key={detail.desktop}>
-          <span className="combat-detail-wide">{detail.desktop}</span>
-          {detail.mobile && <span className="combat-detail-mobile">{detail.mobile}</span>}
-        </li>
-      ))}</ul>
     </div>
   );
-}
-
-function combatDetail(label: CombatStatLabel, value: string | number): CombatDetail {
-  return {
-    desktop: `${label.label} ${value}`,
-    mobile: label.shortLabel ? `${label.shortLabel} ${value}` : undefined,
-  };
 }
 
 function HuntResultPanel({ result }: { result: HuntResult }) {
@@ -238,10 +207,10 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
   const dps = seconds > 0 ? (result.totalDamage / seconds).toFixed(1) : "0.0";
 
   return (
-    <article className="panel hunt-result-panel">
-      <div className="panel-head compact">
+    <section className="hunt-result-section">
+      <div className="hunt-result-head">
         <span>COMBAT RESULT</span>
-        <h2>허수아비 격파</h2>
+        <strong>허수아비 격파</strong>
       </div>
       <div className="hunt-result-summary">
         <Kv label="전투 시간" value={formatTime(result.durationTicks)} />
@@ -252,7 +221,7 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
         <Kv label="보상" value={`경험치 +${result.gainedExperience}`} />
       </div>
       <p className="hunt-result-footnote">DPS {dps} · 다음 훈련은 전투 시간만큼 재정비합니다.</p>
-    </article>
+    </section>
   );
 }
 

@@ -946,26 +946,55 @@ button:disabled {
   font-weight: 800;
 }
 
-.combatant-grid {
+.hunt-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.hunt-status-grid div {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 10px;
+}
+
+.hunt-status-grid span,
+.hunt-status-grid strong {
+  display: block;
+}
+
+.hunt-status-grid span {
+  color: var(--mut-2);
+  font-size: 11px;
+}
+
+.hunt-status-grid strong {
+  margin-top: 3px;
+  color: var(--txt-bright);
+  font-size: 13px;
+}
+
+.combat-hp-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 14px;
 }
 
-.combatant-card {
+.combat-hp-card {
   border: 1px solid var(--line);
   background: var(--bg-2);
   padding: 12px;
 }
 
-.combatant-card > span {
+.combat-hp-card > span {
   color: var(--mut-2);
   font-size: 11px;
   font-weight: 800;
 }
 
-.combatant-card > strong {
+.combat-hp-card > strong {
   display: block;
   margin-top: 3px;
   color: var(--txt-bright);
@@ -986,27 +1015,11 @@ button:disabled {
   transition: width 90ms linear;
 }
 
-.combatant-card > b {
+.combat-hp-card > b {
   display: block;
   margin-top: 5px;
   color: var(--txt-bright);
   font-size: 12px;
-}
-
-.combatant-card ul {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 3px;
-  border-top: 1px solid var(--line);
-  margin: 10px 0 0;
-  padding: 10px 0 0;
-  color: var(--mut);
-  font-size: 12px;
-  list-style: none;
-}
-
-.combat-detail-mobile {
-  display: none;
 }
 
 .hunt-result-summary {
@@ -1014,6 +1027,29 @@ button:disabled {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 14px;
+}
+
+.hunt-result-section {
+  border-top: 1px solid var(--line);
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.hunt-result-head span,
+.hunt-result-head strong {
+  display: block;
+}
+
+.hunt-result-head span {
+  color: var(--acc);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.hunt-result-head strong {
+  margin-top: 3px;
+  color: var(--txt-bright);
+  font-size: 16px;
 }
 
 .hunt-result-summary div {
@@ -1450,21 +1486,10 @@ button:disabled {
     overflow: visible;
   }
 
+  .hunt-status-grid,
   .hunt-result-summary,
-  .combatant-grid {
+  .combat-hp-grid {
     grid-template-columns: 1fr;
-  }
-
-  .combatant-card ul {
-    grid-template-columns: 1fr;
-  }
-
-  .combat-detail-wide {
-    display: none;
-  }
-
-  .combat-detail-mobile {
-    display: inline;
   }
 
   .archive-view {
