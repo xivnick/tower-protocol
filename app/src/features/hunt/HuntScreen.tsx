@@ -300,6 +300,10 @@ function CombatHpCard({
 }
 
 function CombatDetail({ value, percent, isUnknown = false, isExperience = false }: { value: string; percent: number; isUnknown?: boolean; isExperience?: boolean }) {
+  if (isUnknown && !value) {
+    return <div className="combat-card-detail is-empty" aria-hidden="true" />;
+  }
+
   return (
     <div className={`combat-card-detail ${isExperience ? "is-experience" : ""}`}>
       <i className={isUnknown ? "is-unknown" : ""}><strong style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} /></i>
