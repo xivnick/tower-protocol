@@ -97,6 +97,7 @@ function TrainingDummyGround({
   const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
   const playerHp = playerLogs.length > 0 ? playerLogs[playerLogs.length - 1].targetHp : result?.player.startHp ?? huntState?.playerCurrentHp ?? result?.player.maxHp ?? combatStats.maxHp;
   const isBattleInProgress = result?.status === "in_progress";
+  const isGoingToDifferentGround = Boolean(isBattleInProgress && result && selectedGroundId !== result.huntGroundId);
   const isPlaybackComplete = Boolean(result && (!isBattleInProgress || playbackTenths >= result.durationTicks));
   const isDefeatRecovering = Boolean(huntState?.isDefeatRecovery && huntState.recoveryEndsAt && Date.parse(huntState.recoveryEndsAt) > now);
   const canHunt = !isSubmitting && !isResolving && remainingTenths === 0 && (!result || !isBattleInProgress);
@@ -293,7 +294,7 @@ function TrainingDummyGround({
           aria-controls="hunt-location-menu"
           onClick={() => setIsLocationMenuOpen((current) => !current)}
         >
-          <span>{isBattleInProgress ? "GOING TO" : "LOCATION"}</span>
+          <span>{isGoingToDifferentGround ? "GOING TO.." : "LOCATION"}</span>
           <strong>{selectedGround.name}</strong>
           <small>{selectedGround.recommendedLevel}</small>
           <svg className="hunt-location-icon" aria-hidden="true" viewBox="0 0 16 16">
