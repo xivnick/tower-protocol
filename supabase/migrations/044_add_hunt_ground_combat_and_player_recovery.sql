@@ -38,7 +38,6 @@ declare
   target_character public.characters%rowtype;
   hunt_state public.character_hunt_states%rowtype;
   player_max_hp numeric;
-  player_start_hp numeric;
   player_hp numeric;
 begin
   select * into target_character from public.characters where user_id = auth.uid();
@@ -81,6 +80,7 @@ declare
   monster_attacks_per_second numeric;
   critical_chance numeric;
   player_max_hp numeric;
+  player_start_hp numeric;
   player_hp numeric;
   monster_max_hp numeric;
   monster_hp numeric;
