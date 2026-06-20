@@ -404,7 +404,7 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
       <div className="hunt-result-summary">
         <Kv label="전투 시간" value={formatTime(durationTicks)} />
         <Kv label="DPS" value={dps} />
-        <Kv label="경험치" value={`+${result.gainedExperience} EXP`} />
+        <Kv label={result.status === "fled" ? "전투 결과" : "경험치"} value={result.status === "fled" ? "도망침" : `+${result.gainedExperience} EXP`} />
       </div>
     </article>
   );
