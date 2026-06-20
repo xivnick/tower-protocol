@@ -920,7 +920,7 @@ button:disabled {
 
 .hunt-location-strip {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: flex-start;
   gap: 14px;
   border: 1px solid var(--line);
