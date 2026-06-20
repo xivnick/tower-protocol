@@ -928,6 +928,10 @@ button:disabled {
   padding: 10px 14px;
 }
 
+.hunt-location-control {
+  min-width: 0;
+}
+
 .hunt-location-strip strong {
   color: var(--txt-bright);
   font-size: 15px;
@@ -937,6 +941,7 @@ button:disabled {
   display: grid;
   width: 100%;
   border: 1px solid var(--line);
+  border-top: 0;
   background: var(--surf);
   padding: 8px;
 }
