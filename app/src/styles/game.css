@@ -1326,12 +1326,10 @@ button:disabled {
   color: var(--mut-2);
 }
 
-.combat-log time.is-player-action { color: var(--acc); }
-.combat-log time.is-enemy-action { color: var(--neg); }
 .combat-log-damage { color: var(--neg); }
-.combat-log-recovery { color: var(--acc-2); }
+.combat-log-recovery { color: var(--acc-dim); }
 
-.combat-log-player { color: var(--acc-2); }
+.combat-log-player { color: var(--acc-dim); }
 .combat-log-enemy { color: #ff9b78; }
 .combat-log-arrow { display: inline-block; margin: 0 2px; font-style: normal; font-weight: 900; }
 .combat-log-arrow.is-player { color: var(--acc); }
@@ -1352,8 +1350,8 @@ button:disabled {
 
 .combat-log .is-regeneration .combat-log-recovery,
 .combat-log .is-player_regeneration .combat-log-recovery {
-  color: var(--mut);
-  font-weight: 400;
+  color: var(--acc-dim);
+  font-weight: 800;
 }
 
 .combat-log .is-defeat span {
