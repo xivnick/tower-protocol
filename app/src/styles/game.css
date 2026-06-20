@@ -1074,7 +1074,7 @@ button:disabled {
 }
 
 .combat-card-detail.is-empty {
-  min-height: 27px;
+  min-height: 25px;
 }
 
 .combat-card-detail b {
@@ -1084,17 +1084,16 @@ button:disabled {
   font-size: 12px;
 }
 
-.combat-card-detail.is-experience b {
-  color: var(--mut);
-  font-weight: 500;
-}
-
 .combat-card-detail i {
   display: block;
   height: 8px;
   overflow: hidden;
   background: var(--surf-3);
   margin-top: 0;
+}
+
+.combat-card-detail.is-experience i {
+  height: 5px;
 }
 
 .combat-card-detail i strong {
