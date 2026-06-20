@@ -921,48 +921,23 @@ button:disabled {
 .hunt-location-strip {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 14px;
   border: 1px solid var(--line);
   background: var(--surf);
   padding: 10px 14px;
 }
 
-.hunt-location-control {
-  min-width: 0;
-}
-
 .hunt-location-strip strong {
+  margin-left: 8px;
   color: var(--txt-bright);
   font-size: 15px;
 }
 
-.hunt-ground-selector {
-  display: grid;
-  width: 100%;
-  border: 1px solid var(--line);
-  border-top: 0;
-  background: var(--surf);
-  padding: 8px;
-}
-
-.hunt-ground-selector button {
-  display: grid;
-  gap: 3px;
-  border: 1px solid var(--line-2);
-  background: var(--bg-2);
-  padding: 12px;
-  color: inherit;
-  text-align: left;
-}
-
-.hunt-ground-selector button.is-selected {
-  border-color: var(--acc);
-  background: var(--acc-deep);
-}
-
-.hunt-ground-selector strong {
-  color: var(--txt-bright);
+.hunt-location-strip span {
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .combatant-grid {

@@ -64,7 +64,6 @@ function TrainingDummyGround({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [playbackTenths, setPlaybackTenths] = useState(0);
-  const [isGroundSelectorOpen, setIsGroundSelectorOpen] = useState(false);
   const logRef = useRef<HTMLOListElement>(null);
   const availableAt = character.hunt_available_at ? Date.parse(character.hunt_available_at) : 0;
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
@@ -142,20 +141,9 @@ function TrainingDummyGround({
 
   return (
     <section className="screen-panel hunt-screen">
-      <div className="hunt-location-control">
-        <div className="hunt-location-strip">
-          <div>
-            <strong>허수아비 훈련소</strong>
-          </div>
-          <button className="text-button" type="button" onClick={() => setIsGroundSelectorOpen((current) => !current)} aria-expanded={isGroundSelectorOpen} aria-haspopup="listbox">사냥터 선택 ▾</button>
-        </div>
-        {isGroundSelectorOpen && (
-          <div className="hunt-ground-selector" role="listbox" aria-label="사냥터 선택">
-            <button type="button" className="is-selected" onClick={() => setIsGroundSelectorOpen(false)}>
-              <strong>허수아비 훈련소</strong>
-            </button>
-          </div>
-        )}
+      <div className="hunt-location-strip">
+        <span>사냥터</span>
+        <strong>허수아비 훈련소</strong>
       </div>
       <article className="panel hunt-ground-panel">
         <div className="panel-head compact">
