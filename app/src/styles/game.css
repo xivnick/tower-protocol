@@ -1073,18 +1073,8 @@ button:disabled {
   margin-top: 12px;
 }
 
-.combat-card-detail span,
 .combat-card-detail b {
   display: block;
-}
-
-.combat-card-detail span {
-  color: var(--mut-2);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.combat-card-detail b {
   margin-top: 5px;
   color: var(--txt-bright);
   font-size: 12px;
@@ -1095,7 +1085,7 @@ button:disabled {
   height: 8px;
   overflow: hidden;
   background: var(--surf-3);
-  margin-top: 12px;
+  margin-top: 0;
 }
 
 .combat-card-detail i strong {

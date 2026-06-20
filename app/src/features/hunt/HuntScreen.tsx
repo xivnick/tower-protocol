@@ -229,7 +229,7 @@ function TrainingDummyGround({
               name={result ? `LV.${result.player.level} ${result.player.name}` : `LV.${character.level} ${character.name}`}
               currentHp={result?.player.maxHp ?? combatStats.maxHp}
               maxHp={result?.player.maxHp ?? combatStats.maxHp}
-              detail={{ label: "경험치", value: `${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()} EXP`, percent: experiencePercent }}
+              detail={{ value: `EXP ${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()}`, percent: experiencePercent }}
               linkToCharacter
             />
             <CombatHpCard
@@ -237,7 +237,7 @@ function TrainingDummyGround({
               name={result ? `LV.${result.enemy.level} ${result.enemy.name}` : "???"}
               currentHp={result ? targetHp : null}
               maxHp={result ? dummyMaxHp : null}
-              detail={{ label: "몬스터 정보", value: "???", percent: 0, isUnknown: true }}
+              detail={{ value: "???", percent: 0, isUnknown: true }}
             />
           </div>
           {message && <p className="panel-message is-error" role="status">{message}</p>}
@@ -273,7 +273,7 @@ function CombatHpCard({
   name: string;
   currentHp: number | null;
   maxHp: number | null;
-  detail?: { label: string; value: string; percent: number; isUnknown?: boolean };
+  detail?: { value: string; percent: number; isUnknown?: boolean };
   linkToCharacter?: boolean;
 }) {
   const isUnknown = currentHp === null || maxHp === null;
@@ -299,10 +299,9 @@ function CombatHpCard({
   );
 }
 
-function CombatDetail({ label, value, percent, isUnknown = false }: { label: string; value: string; percent: number; isUnknown?: boolean }) {
+function CombatDetail({ value, percent, isUnknown = false }: { value: string; percent: number; isUnknown?: boolean }) {
   return (
     <div className="combat-card-detail">
-      <span>{label}</span>
       <i className={isUnknown ? "is-unknown" : ""}><strong style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} /></i>
       <b>{value}</b>
     </div>
