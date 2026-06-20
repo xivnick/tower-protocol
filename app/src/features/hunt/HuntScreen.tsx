@@ -82,7 +82,6 @@ function TrainingDummyGround({
   const [playbackTenths, setPlaybackTenths] = useState(0);
   const recoveryToastRef = useRef<string | null>(null);
   const recoverySeenRef = useRef<string | null>(null);
-  const huntStateVersionRef = useRef(0);
   const logRef = useRef<HTMLOListElement>(null);
   const completedResultRef = useRef<HuntResult | null>(null);
   const settlementAttemptRef = useRef<string | null>(null);
@@ -98,9 +97,10 @@ function TrainingDummyGround({
   const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
   const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
   const isBattleInProgress = result?.status === "in_progress";
+  const recoveredPlayerHp = getRecoveredPlayerHp(huntState, now);
   const playerHp = isBattleInProgress
     ? playerLogs.length > 0 ? playerLogs[playerLogs.length - 1].targetHp : result?.player.startHp ?? result?.player.maxHp ?? combatStats.maxHp
-    : huntState?.playerCurrentHp ?? result?.player.currentHp ?? result?.player.startHp ?? result?.player.maxHp ?? combatStats.maxHp;
+    : recoveredPlayerHp ?? huntState?.playerCurrentHp ?? result?.player.currentHp ?? result?.player.startHp ?? result?.player.maxHp ?? combatStats.maxHp;
   const isGoingToDifferentGround = Boolean(isBattleInProgress && result && selectedGroundId !== result.huntGroundId);
   const isPlaybackComplete = Boolean(result && (!isBattleInProgress || playbackTenths >= result.durationTicks));
   const isRecovering = Boolean(!isBattleInProgress && huntState?.recoveryEndsAt && Date.parse(huntState.recoveryEndsAt) > now);
@@ -145,27 +145,6 @@ function TrainingDummyGround({
     const intervalId = window.setInterval(() => setNow(Date.now()), 100);
     return () => window.clearInterval(intervalId);
   }, [isRecovering, remainingTenths]);
-
-  useEffect(() => {
-    if (!isRecovering) return;
-
-    let isActive = true;
-    const syncRecovery = () => {
-      const requestVersion = huntStateVersionRef.current;
-      void getMyHuntState().then((nextState) => {
-        if (!isActive || requestVersion !== huntStateVersionRef.current || !nextState.ok || !nextState.state) return;
-        setHuntState(nextState.state);
-        onHuntStateChange(nextState.state);
-      });
-    };
-
-    syncRecovery();
-    const intervalId = window.setInterval(syncRecovery, 250);
-    return () => {
-      isActive = false;
-      window.clearInterval(intervalId);
-    };
-  }, [isRecovering, onHuntStateChange]);
 
   useEffect(() => {
     const recoveryEndsAt = huntState?.recoveryEndsAt;
@@ -258,7 +237,6 @@ function TrainingDummyGround({
   async function handleHunt() {
     if (!canHunt) return;
 
-    huntStateVersionRef.current += 1;
     setIsSubmitting(true);
     setMessage("");
     setResult(null);
@@ -283,7 +261,6 @@ function TrainingDummyGround({
   async function handleGroundChange(huntGroundId: string) {
     setIsLocationMenuOpen(false);
     if (huntGroundId === selectedGroundId) return;
-    huntStateVersionRef.current += 1;
     const nextState = await selectHuntGround(huntGroundId);
     if (!nextState.ok || !nextState.state) {
       setMessage(nextState.message);
@@ -296,7 +273,6 @@ function TrainingDummyGround({
   async function handleFlee() {
     if (!canFlee || !result) return;
 
-    huntStateVersionRef.current += 1;
     const previousLastResult = lastResult;
     setIsResolving(true);
     setMessage("");
@@ -557,6 +533,22 @@ function formatTime(tenths: number) {
 
 function formatAmount(value: number) {
   return Number.isInteger(value) ? value.toLocaleString() : value.toFixed(1);
+}
+
+function getRecoveredPlayerHp(huntState: HuntState | null, now: number) {
+  const startHp = huntState?.playerRecoveryStartHp;
+  const maxHp = huntState?.playerMaxHp;
+  const startedAt = huntState?.playerRecoveryStartedAt;
+  const recoveryEndsAt = huntState?.recoveryEndsAt;
+  if (startHp === null || startHp === undefined || maxHp === null || maxHp === undefined || !startedAt || !recoveryEndsAt) return null;
+
+  const startedAtMs = Date.parse(startedAt);
+  const recoveryEndsAtMs = Date.parse(recoveryEndsAt);
+  if (Number.isNaN(startedAtMs) || Number.isNaN(recoveryEndsAtMs)) return null;
+  if (now >= recoveryEndsAtMs) return maxHp;
+
+  const recoveredSteps = Math.max(0, Math.floor((now - startedAtMs) / 1000));
+  return Math.min(maxHp, startHp + (maxHp * 0.2 * recoveredSteps));
 }
 
 function getElapsedTenths(startedAt: string, durationTicks: number) {

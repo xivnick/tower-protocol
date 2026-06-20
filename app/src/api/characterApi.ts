@@ -71,6 +71,8 @@ export type HuntState = {
   selectedHuntGroundId: string;
   playerCurrentHp: number | null;
   playerMaxHp: number | null;
+  playerRecoveryStartHp: number | null;
+  playerRecoveryStartedAt: string | null;
   recoveryEndsAt: string | null;
   isDefeatRecovery: boolean;
 };
@@ -161,6 +163,8 @@ type HuntStatePayload = {
   selected_hunt_ground_id?: string;
   player_current_hp?: number | null;
   player_max_hp?: number | null;
+  player_recovery_start_hp?: number | null;
+  player_recovery_started_at?: string | null;
   recovery_ends_at?: string | null;
   is_defeat_recovery?: boolean;
 };
@@ -462,6 +466,8 @@ function mapHuntState(payload: HuntStatePayload | undefined): HuntState {
     selectedHuntGroundId: payload?.selected_hunt_ground_id ?? "training-dummy",
     playerCurrentHp: payload?.player_current_hp ?? null,
     playerMaxHp: payload?.player_max_hp ?? null,
+    playerRecoveryStartHp: payload?.player_recovery_start_hp ?? null,
+    playerRecoveryStartedAt: payload?.player_recovery_started_at ?? null,
     recoveryEndsAt: payload?.recovery_ends_at ?? null,
     isDefeatRecovery: payload?.is_defeat_recovery ?? false,
   };
