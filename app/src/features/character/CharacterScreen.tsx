@@ -1,7 +1,7 @@
 import type { FormEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { allocateCharacterStats, checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, resetCharacterStats, trainMyCharacter } from "../../api/characterApi";
-import type { CharacterStatAllocation, TrainingRewardTier } from "../../api/characterApi";
+import { allocateCharacterStats, checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, getMyTrainingState, resetCharacterStats, trainMyCharacter } from "../../api/characterApi";
+import type { CharacterStatAllocation, TrainingRewardTier, TrainingState } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
 import { BASE_PRIMARY_STAT, calculateCombatStats, COMBAT_STAT_LABELS, PRIMARY_STATS } from "../../shared/stats";
@@ -464,10 +464,37 @@ function CharacterTrainingPanel({
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const [trainingState, setTrainingState] = useState<TrainingState | null>(null);
+  const [now, setNow] = useState(Date.now());
   const isMaxLevel = character.level >= 100;
+  const displayedTrainingState = getDisplayedTrainingState(trainingState, now);
+  const isTrainingAvailable = displayedTrainingState.charges > 0;
+
+  useEffect(() => {
+    let isActive = true;
+
+    void getMyTrainingState().then((result) => {
+      if (!isActive) return;
+      if (!result.ok || !result.state) {
+        setMessage(result.message);
+        return;
+      }
+      setTrainingState(result.state);
+      setNow(Date.now());
+    });
+
+    return () => { isActive = false; };
+  }, [character.id]);
+
+  useEffect(() => {
+    if (!trainingState || displayedTrainingState.charges >= trainingState.maxCharges) return;
+
+    const intervalId = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(intervalId);
+  }, [displayedTrainingState.charges, trainingState]);
 
   async function handleTrain() {
-    if (isSubmitting || isMaxLevel) {
+    if (isSubmitting || isMaxLevel || !isTrainingAvailable) {
       return;
     }
 
@@ -487,6 +514,10 @@ function CharacterTrainingPanel({
     }
 
     onCharacterChange(result.character);
+    if (result.trainingState) {
+      setTrainingState(result.trainingState);
+      setNow(Date.now());
+    }
     onToast(formatTrainingToast(result.gainedExperience, result.rewardTier));
 
     if (result.levelAfter > result.levelBefore) {
@@ -504,13 +535,43 @@ function CharacterTrainingPanel({
       </div>
       <div className="panel-action-body">
         <p className="panel-message">{isMaxLevel ? "최고 레벨에 도달했습니다." : "훈련을 실행하면 경험치를 획득합니다."}</p>
-        <button className="btn primary panel-primary-action" type="button" onClick={handleTrain} disabled={isSubmitting || isMaxLevel}>
-          {isSubmitting ? "훈련 중..." : "훈련 실행"}
+        <button className="btn primary panel-primary-action" type="button" onClick={handleTrain} disabled={isSubmitting || isMaxLevel || !trainingState || !isTrainingAvailable}>
+          {getTrainingButtonLabel({ isSubmitting, isMaxLevel, trainingState, displayedTrainingState })}
         </button>
         {message && <p className="auth-message is-error" role="status">{message}</p>}
       </div>
     </article>
   );
+}
+
+function getDisplayedTrainingState(state: TrainingState | null, now: number) {
+  if (!state || !state.nextRechargeAt) return { charges: state?.charges ?? 0, secondsUntilNextCharge: null };
+
+  const nextRechargeAt = Date.parse(state.nextRechargeAt);
+  if (Number.isNaN(nextRechargeAt)) return { charges: state.charges, secondsUntilNextCharge: null };
+
+  const elapsedCharges = Math.max(0, Math.floor((now - nextRechargeAt) / 6000) + 1);
+  const charges = Math.min(state.maxCharges, state.charges + elapsedCharges);
+  const nextChargeAt = nextRechargeAt + (elapsedCharges * 6000);
+  return { charges, secondsUntilNextCharge: charges >= state.maxCharges ? null : Math.max(0, Math.ceil((nextChargeAt - now) / 1000)) };
+}
+
+function getTrainingButtonLabel({
+  isSubmitting,
+  isMaxLevel,
+  trainingState,
+  displayedTrainingState,
+}: {
+  isSubmitting: boolean;
+  isMaxLevel: boolean;
+  trainingState: TrainingState | null;
+  displayedTrainingState: { charges: number; secondsUntilNextCharge: number | null };
+}) {
+  if (isSubmitting) return "훈련 중...";
+  if (isMaxLevel) return "훈련 실행";
+  if (!trainingState) return "훈련 상태 확인 중...";
+  if (displayedTrainingState.charges === 0) return `훈련까지 ${displayedTrainingState.secondsUntilNextCharge ?? 0}초...`;
+  return `훈련 실행 (${displayedTrainingState.charges}/${trainingState.maxCharges})`;
 }
 
 function formatTrainingToast(gainedExperience: number, rewardTier: TrainingRewardTier): ToastInput {

@@ -25,6 +25,12 @@ type CharacterNameAvailabilityResult = {
 
 export type TrainingRewardTier = "normal" | "good" | "great" | "max";
 
+export type TrainingState = {
+  charges: number;
+  maxCharges: number;
+  nextRechargeAt: string | null;
+};
+
 export type HuntLogEntry = {
   timeTenths: number;
   kind: "encounter" | "attack" | "critical" | "regeneration" | "defeat" | "fled" | "timeout";
@@ -94,6 +100,7 @@ type TrainingResult = {
   rewardTier: TrainingRewardTier;
   levelBefore: number;
   levelAfter: number;
+  trainingState: TrainingState | null;
   message: string;
 };
 
@@ -103,6 +110,13 @@ type TrainingPayload = {
   reward_tier?: TrainingRewardTier;
   level_before?: number;
   level_after?: number;
+  training_state?: TrainingStatePayload;
+};
+
+type TrainingStatePayload = {
+  charges?: number;
+  max_charges?: number;
+  next_recharge_at?: string | null;
 };
 
 type HuntPayload = {
@@ -271,6 +285,7 @@ export async function trainMyCharacter(): Promise<TrainingResult> {
       rewardTier: "normal",
       levelBefore: 0,
       levelAfter: 0,
+      trainingState: null,
       message: "Supabase 설정을 확인해주세요.",
     };
   }
@@ -285,6 +300,7 @@ export async function trainMyCharacter(): Promise<TrainingResult> {
       rewardTier: "normal",
       levelBefore: 0,
       levelAfter: 0,
+      trainingState: null,
       message: toKoreanAuthMessage(error.message, "훈련을 완료하지 못했습니다."),
     };
   }
@@ -298,7 +314,25 @@ export async function trainMyCharacter(): Promise<TrainingResult> {
     rewardTier: payload.reward_tier ?? "normal",
     levelBefore: payload.level_before ?? payload.character?.level ?? 0,
     levelAfter: payload.level_after ?? payload.character?.level ?? 0,
+    trainingState: mapTrainingState(payload.training_state),
     message: "경험치를 획득했습니다.",
+  };
+}
+
+export async function getMyTrainingState(): Promise<{ ok: boolean; state: TrainingState | null; message: string }> {
+  if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
+
+  const { data, error } = await supabase.rpc("get_my_training_state");
+  if (error) return { ok: false, state: null, message: toKoreanAuthMessage(error.message, "훈련 상태를 불러오지 못했습니다.") };
+
+  return { ok: true, state: mapTrainingState(data as TrainingStatePayload), message: "" };
+}
+
+function mapTrainingState(payload: TrainingStatePayload | undefined): TrainingState {
+  return {
+    charges: payload?.charges ?? 0,
+    maxCharges: payload?.max_charges ?? 10,
+    nextRechargeAt: payload?.next_recharge_at ?? null,
   };
 }
 
