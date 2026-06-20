@@ -934,6 +934,12 @@ button:disabled {
   font-size: 15px;
 }
 
+.hunt-location-strip small {
+  margin-left: 4px;
+  color: var(--mut);
+  font-size: 12px;
+}
+
 .hunt-location-strip span {
   color: var(--acc);
   font-size: 12px;

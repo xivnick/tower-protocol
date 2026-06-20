@@ -144,6 +144,7 @@ function TrainingDummyGround({
       <div className="hunt-location-strip">
         <span>LOCATION</span>
         <strong>허수아비 훈련소</strong>
+        <small>권장 LV.1–100</small>
       </div>
       <article className="panel hunt-ground-panel">
         <div className="panel-head compact">
