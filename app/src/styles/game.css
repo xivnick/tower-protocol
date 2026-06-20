@@ -1108,6 +1108,10 @@ button:disabled {
   display: inline;
 }
 
+.monster-info-stats .combat-stat strong {
+  min-width: 0;
+}
+
 .combat-card-detail {
   margin-top: 12px;
 }
