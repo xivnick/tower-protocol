@@ -145,7 +145,17 @@ function TrainingDummyGround({
   }, [visibleLogs.length]);
 
   useEffect(() => {
-    if (!result || result.status !== "victory" || !isPlaybackComplete || completedResultRef.current === result) return;
+    if (!result || !isPlaybackComplete || completedResultRef.current === result) return;
+
+    if (result.status === "timed_out") {
+      if (!result.character) return;
+      completedResultRef.current = result;
+      onCharacterChange(result.character);
+      onToast({ message: "시간 제한에 도달해 전투를 종료했습니다.", tone: "system" });
+      return;
+    }
+
+    if (result.status !== "victory") return;
 
     if (!result.character) return;
 
@@ -403,6 +413,7 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
   const totalDamage = result.status === "fled"
     ? result.logs.filter((entry) => entry.timeTenths <= fledAt && (entry.kind === "attack" || entry.kind === "critical")).reduce((total, entry) => total + entry.amount, 0)
     : result.totalDamage;
+  const resultStatus = result.status === "fled" ? "도망침" : result.status === "timed_out" ? "시간 초과" : null;
   const seconds = durationTicks / 10;
   const dps = seconds > 0 ? (totalDamage / seconds).toFixed(1) : "0.0";
 
@@ -415,7 +426,7 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
       <div className="hunt-result-summary">
         <Kv label="전투 시간" value={formatTime(durationTicks)} />
         <Kv label="DPS" value={dps} />
-        <Kv label={result.status === "fled" ? "전투 결과" : "경험치"} value={result.status === "fled" ? "도망침" : `+${result.gainedExperience} EXP`} />
+        <Kv label={resultStatus ? "전투 결과" : "경험치"} value={resultStatus ?? `+${result.gainedExperience} EXP`} />
       </div>
     </article>
   );
@@ -429,6 +440,7 @@ function formatLogEntry(entry: HuntLogEntry, dummyMaxHp: number, gainedExperienc
   if (entry.kind === "encounter") return "허수아비와 조우했습니다.";
   if (entry.kind === "defeat") return `전투 승리 +${gainedExperience} EXP`;
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
+  if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
   if (entry.kind === "regeneration") return `허수아비 재생 -> 허수아비 · +${formatAmount(entry.amount)} HP`;
   if (entry.kind === "critical") return `치명타! -> 허수아비 · -${entry.amount} HP`;
   return `일반 공격 -> 허수아비 · -${entry.amount} HP`;
