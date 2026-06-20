@@ -61,6 +61,7 @@ function TrainingDummyGround({
   onToast: (toast: ToastInput) => void;
 }) {
   const [result, setResult] = useState<HuntResult | null>(null);
+  const [lastResult, setLastResult] = useState<HuntResult | null>(null);
   const [message, setMessage] = useState("");
   const [huntState, setHuntState] = useState<HuntState | null>(null);
   const [monsterInfo, setMonsterInfo] = useState<MonsterInfo | null>(null);
@@ -98,7 +99,9 @@ function TrainingDummyGround({
       const battle = nextState.state.lastBattle;
       if (!battle) return;
 
-      setResult({ ok: true, character: null, huntState: nextState.state, ...battle, message: "" });
+      const restoredResult = { ok: true, character: null, huntState: nextState.state, ...battle, message: "" };
+      setResult(restoredResult);
+      if (battle.status !== "in_progress") setLastResult(restoredResult);
       setPlaybackTenths(getElapsedTenths(battle.startedAt, battle.durationTicks));
     });
 
@@ -165,6 +168,7 @@ function TrainingDummyGround({
       }
       setHuntState(nextResult.huntState);
       setResult(nextResult);
+      setLastResult(nextResult);
     });
 
     return () => { isActive = false; };
@@ -191,6 +195,7 @@ function TrainingDummyGround({
     settlementAttemptRef.current = null;
     setHuntState(nextResult.huntState);
     setResult(nextResult);
+    setLastResult(nextResult);
   }
 
   async function handleFlee() {
@@ -268,8 +273,8 @@ function TrainingDummyGround({
               <li className="is-empty">전투 시작을 기다리고 있습니다.</li>
             )}
           </ol>
-          {result && result.status !== "in_progress" && isPlaybackComplete && <HuntResultPanel result={result} />}
       </article>
+      {lastResult && <HuntResultPanel result={lastResult} />}
     </section>
   );
 }
@@ -387,17 +392,17 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
   const dps = seconds > 0 ? (totalDamage / seconds).toFixed(1) : "0.0";
 
   return (
-    <section className="hunt-result-section">
-      <div className="hunt-result-head">
-        <span>COMBAT RESULT</span>
-        <strong>{result.status === "fled" ? "도망" : "전투 결과"}</strong>
+    <article className="panel last-battle-result-panel">
+      <div className="panel-head compact">
+        <span>LAST BATTLE</span>
+        <h2>마지막 전투 결과</h2>
       </div>
       <div className="hunt-result-summary">
         <Kv label="전투 시간" value={formatTime(durationTicks)} />
         <Kv label="DPS" value={dps} />
         <Kv label="경험치" value={`+${result.gainedExperience} EXP`} />
       </div>
-    </section>
+    </article>
   );
 }
 
@@ -409,9 +414,9 @@ function formatLogEntry(entry: HuntLogEntry, dummyMaxHp: number, gainedExperienc
   if (entry.kind === "encounter") return "허수아비와 조우했습니다.";
   if (entry.kind === "defeat") return `전투 승리 +${gainedExperience} EXP`;
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
-  if (entry.kind === "regeneration") return `허수아비 재생 -> 허수아비 · +${formatAmount(entry.amount)} HP (${formatAmount(entry.targetHp)} / ${dummyMaxHp})`;
-  if (entry.kind === "critical") return `치명타! -> 허수아비 · -${entry.amount} HP (${formatAmount(entry.targetHp)} / ${dummyMaxHp})`;
-  return `일반 공격 -> 허수아비 · -${entry.amount} HP (${formatAmount(entry.targetHp)} / ${dummyMaxHp})`;
+  if (entry.kind === "regeneration") return `허수아비 재생 -> 허수아비 · +${formatAmount(entry.amount)} HP`;
+  if (entry.kind === "critical") return `치명타! -> 허수아비 · -${entry.amount} HP`;
+  return `일반 공격 -> 허수아비 · -${entry.amount} HP`;
 }
 
 function formatTime(tenths: number) {

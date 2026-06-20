@@ -1217,7 +1217,7 @@ button:disabled {
   list-style: none;
   display: grid;
   gap: 6px;
-  max-height: 240px;
+  height: 240px;
   overflow: auto;
   border: 1px solid var(--line);
   background: var(--bg-2);
