@@ -1227,7 +1227,6 @@ button:disabled {
   gap: 10px;
   color: var(--txt);
   font-size: 12px;
-  animation: combat-log-enter 160ms ease-out both;
 }
 
 .combat-log li.is-empty {
@@ -1738,18 +1737,6 @@ button:disabled {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes combat-log-enter {
-  from {
-    opacity: 0;
-    transform: translateX(-6px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
   }
 }
 
