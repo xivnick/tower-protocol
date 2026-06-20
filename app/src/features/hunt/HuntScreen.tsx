@@ -217,7 +217,7 @@ function TrainingDummyGround({
             <h2 className="hunt-player-title">LV.{displayLevel} {character.name}</h2>
           </div>
           <div className="hunt-action-buttons">
-            {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망</button>}
+            {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망치기</button>}
             <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
               {isSubmitting || isResolving || isBattleInProgress ? "전투 중..." : "전투 시작"}
             </button>
