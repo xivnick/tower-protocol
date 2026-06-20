@@ -1635,6 +1635,10 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .combat-card-detail.is-empty {
+    display: none;
+  }
+
 
   .archive-view {
     overflow: visible;
