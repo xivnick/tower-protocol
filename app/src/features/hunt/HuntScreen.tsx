@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { fleeTrainingDummyHunt, getMyHuntState, getTrainingDummyInfo, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
@@ -249,9 +249,10 @@ function TrainingDummyGround({
               maxHp={result ? dummyMaxHp : null}
               detail={{ value: "", percent: 0, isUnknown: true }}
               onInfoClick={() => setIsMonsterInfoOpen((current) => !current)}
+              isInfoOpen={isMonsterInfoOpen}
+              expandedContent={isMonsterInfoOpen && monsterInfo ? <MonsterInfoStats info={monsterInfo} /> : null}
             />
           </div>
-          {isMonsterInfoOpen && monsterInfo && <MonsterInfoPanel info={monsterInfo} />}
           {message && <p className="panel-message is-error" role="status">{message}</p>}
           <ol className="combat-log" aria-label="전투 로그" ref={logRef}>
             {result ? (
@@ -281,6 +282,8 @@ function CombatHpCard({
   detail,
   linkToCharacter = false,
   onInfoClick,
+  isInfoOpen = false,
+  expandedContent,
 }: {
   label: string;
   name: string;
@@ -289,6 +292,8 @@ function CombatHpCard({
   detail?: { value: string; percent: number; isUnknown?: boolean; isExperience?: boolean };
   linkToCharacter?: boolean;
   onInfoClick?: () => void;
+  isInfoOpen?: boolean;
+  expandedContent?: ReactNode;
 }) {
   const isUnknown = currentHp === null || maxHp === null;
   const hpPercent = isUnknown ? 0 : Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
@@ -305,7 +310,7 @@ function CombatHpCard({
         </Link>
       )}
       {onInfoClick && (
-        <button className="combat-info-button" type="button" onClick={onInfoClick} aria-label={`${name} 정보 보기`}>
+        <button className="combat-info-button" type="button" onClick={onInfoClick} aria-label={`${name} 정보 보기`} aria-expanded={isInfoOpen}>
           <svg aria-hidden="true" viewBox="0 0 16 16">
             <circle cx="8" cy="8" r="5.5" />
             <path d="M8 7v3.5M8 5.2h.01" />
@@ -317,32 +322,27 @@ function CombatHpCard({
       </div>
       <b>{isUnknown ? "HP ???" : `HP ${formatAmount(currentHp ?? 0)} / ${formatAmount(maxHp ?? 0)}`}</b>
       {detail && <CombatDetail {...detail} />}
+      {expandedContent}
     </div>
   );
 }
 
-function MonsterInfoPanel({ info }: { info: MonsterInfo }) {
+function MonsterInfoStats({ info }: { info: MonsterInfo }) {
   return (
-    <section className="monster-info-panel">
-      <div className="monster-info-head">
-        <span>MONSTER INFO</span>
-        <strong>LV.{info.level} {info.name}</strong>
-      </div>
-      <div className="combat-stat-grid monster-info-stats">
-        <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalAttack} value={info.physicalAttack} />
-        <MonsterCombatStat {...COMBAT_STAT_LABELS.magicAttack} value={info.magicAttack} />
-        <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalDefense} value={info.physicalDefense} />
-        <MonsterCombatStat {...COMBAT_STAT_LABELS.magicDefense} value={info.magicDefense} />
-        <MonsterCombatStat {...COMBAT_STAT_LABELS.maxHp} value={info.maxHp} />
-        <MonsterCombatStat {...COMBAT_STAT_LABELS.regeneration} value={info.regeneration} digits={2} />
-        <MonsterCombatStat {...COMBAT_STAT_LABELS.attackSpeed} value={info.attacksPerSecond} digits={2} />
-        <MonsterCombatStat {...COMBAT_STAT_LABELS.cooldownReduction} value={info.cooldownReduction * 100} suffix="%" digits={1} />
-        <MonsterCombatStat {...COMBAT_STAT_LABELS.accuracy} value={info.accuracy} />
-        <MonsterCombatStat {...COMBAT_STAT_LABELS.evasionRate} value={info.evasionRate} suffix="%" digits={1} />
-        <MonsterCombatStat {...COMBAT_STAT_LABELS.criticalChance} value={info.criticalChance} suffix="%" digits={1} />
-        <MonsterCombatStat {...COMBAT_STAT_LABELS.criticalDamage} value={info.criticalDamage} suffix="%" />
-      </div>
-    </section>
+    <div className="combat-stat-grid monster-info-stats">
+      <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalAttack} value={info.physicalAttack} />
+      <MonsterCombatStat {...COMBAT_STAT_LABELS.magicAttack} value={info.magicAttack} />
+      <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalDefense} value={info.physicalDefense} />
+      <MonsterCombatStat {...COMBAT_STAT_LABELS.magicDefense} value={info.magicDefense} />
+      <MonsterCombatStat {...COMBAT_STAT_LABELS.maxHp} value={info.maxHp} />
+      <MonsterCombatStat {...COMBAT_STAT_LABELS.regeneration} value={info.regeneration} digits={2} />
+      <MonsterCombatStat {...COMBAT_STAT_LABELS.attackSpeed} value={info.attacksPerSecond} digits={2} />
+      <MonsterCombatStat {...COMBAT_STAT_LABELS.cooldownReduction} value={info.cooldownReduction * 100} suffix="%" digits={1} />
+      <MonsterCombatStat {...COMBAT_STAT_LABELS.accuracy} value={info.accuracy} />
+      <MonsterCombatStat {...COMBAT_STAT_LABELS.evasionRate} value={info.evasionRate} suffix="%" digits={1} />
+      <MonsterCombatStat {...COMBAT_STAT_LABELS.criticalChance} value={info.criticalChance} suffix="%" digits={1} />
+      <MonsterCombatStat {...COMBAT_STAT_LABELS.criticalDamage} value={info.criticalDamage} suffix="%" />
+    </div>
   );
 }
 

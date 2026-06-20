@@ -1096,30 +1096,6 @@ button:disabled {
   color: var(--acc-2);
 }
 
-.monster-info-panel {
-  border: 1px solid var(--line);
-  background: var(--bg-2);
-  margin-top: 12px;
-  padding: 12px;
-}
-
-.monster-info-head span,
-.monster-info-head strong {
-  display: block;
-}
-
-.monster-info-head span {
-  color: var(--acc);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.monster-info-head strong {
-  margin-top: 3px;
-  color: var(--txt-bright);
-  font-size: 16px;
-}
-
 .monster-info-stats {
   margin-top: 12px;
 }
