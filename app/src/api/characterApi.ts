@@ -27,7 +27,7 @@ export type TrainingRewardTier = "normal" | "good" | "great" | "max";
 
 export type HuntLogEntry = {
   timeTenths: number;
-  kind: "attack" | "critical" | "regeneration" | "defeat";
+  kind: "encounter" | "attack" | "critical" | "regeneration" | "defeat";
   amount: number;
   targetHp: number;
 };
