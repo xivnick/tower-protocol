@@ -1080,6 +1080,11 @@ button:disabled {
   font-size: 12px;
 }
 
+.combat-card-detail.is-experience b {
+  color: var(--mut);
+  font-weight: 500;
+}
+
 .combat-card-detail i {
   display: block;
   height: 8px;

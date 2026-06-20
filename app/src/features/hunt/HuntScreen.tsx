@@ -229,7 +229,7 @@ function TrainingDummyGround({
               name={result ? `LV.${result.player.level} ${result.player.name}` : `LV.${character.level} ${character.name}`}
               currentHp={result?.player.maxHp ?? combatStats.maxHp}
               maxHp={result?.player.maxHp ?? combatStats.maxHp}
-              detail={{ value: `EXP ${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()}`, percent: experiencePercent }}
+              detail={{ value: `EXP ${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()}`, percent: experiencePercent, isExperience: true }}
               linkToCharacter
             />
             <CombatHpCard
@@ -237,7 +237,7 @@ function TrainingDummyGround({
               name={result ? `LV.${result.enemy.level} ${result.enemy.name}` : "???"}
               currentHp={result ? targetHp : null}
               maxHp={result ? dummyMaxHp : null}
-              detail={{ value: "???", percent: 0, isUnknown: true }}
+              detail={{ value: "", percent: 0, isUnknown: true }}
             />
           </div>
           {message && <p className="panel-message is-error" role="status">{message}</p>}
@@ -273,7 +273,7 @@ function CombatHpCard({
   name: string;
   currentHp: number | null;
   maxHp: number | null;
-  detail?: { value: string; percent: number; isUnknown?: boolean };
+  detail?: { value: string; percent: number; isUnknown?: boolean; isExperience?: boolean };
   linkToCharacter?: boolean;
 }) {
   const isUnknown = currentHp === null || maxHp === null;
@@ -299,9 +299,9 @@ function CombatHpCard({
   );
 }
 
-function CombatDetail({ value, percent, isUnknown = false }: { value: string; percent: number; isUnknown?: boolean }) {
+function CombatDetail({ value, percent, isUnknown = false, isExperience = false }: { value: string; percent: number; isUnknown?: boolean; isExperience?: boolean }) {
   return (
-    <div className="combat-card-detail">
+    <div className={`combat-card-detail ${isExperience ? "is-experience" : ""}`}>
       <i className={isUnknown ? "is-unknown" : ""}><strong style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} /></i>
       <b>{value}</b>
     </div>
