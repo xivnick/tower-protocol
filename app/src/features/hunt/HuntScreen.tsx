@@ -214,13 +214,7 @@ function TrainingDummyGround({
         <div className="panel-head compact action-head">
           <div>
             <span>CHARACTER</span>
-            <h2 className="hunt-player-title">LV.{displayLevel} {character.name}</h2>
-          </div>
-          <div className="hunt-action-buttons">
-            {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망치기</button>}
-            <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
-              {isSubmitting || isResolving || isBattleInProgress ? "전투 중..." : "전투 시작"}
-            </button>
+            <h2 className="hunt-player-title">{character.name}</h2>
           </div>
         </div>
         <div className="hunt-status-stack">
@@ -231,10 +225,16 @@ function TrainingDummyGround({
       </article>
 
       <article className="panel combat-record-panel">
-          <div className="panel-head compact">
+          <div className="panel-head compact action-head">
             <div>
               <span>COMBAT</span>
-              <h2>전투 상황</h2>
+              <h2>전투</h2>
+            </div>
+            <div className="hunt-action-buttons">
+              {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망치기</button>}
+              <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
+                {isSubmitting || isResolving || isBattleInProgress ? "전투 중..." : "전투 시작"}
+              </button>
             </div>
           </div>
           <div className="combat-hp-grid">
