@@ -1,9 +1,11 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
 import type { Character } from "../../types/character";
 import type { ToastInput, ToastTone } from "../../types/toast";
+import { getMyHuntState, settleTrainingDummyHunt } from "../../api/characterApi";
+import type { HuntState } from "../../api/characterApi";
 import { CharacterScreen } from "../character/CharacterScreen";
 import { DashboardScreen } from "../dashboard/DashboardScreen";
 import { HuntScreen } from "../hunt/HuntScreen";
@@ -52,13 +54,66 @@ export function AppShell({
   const [isNavClosing, setIsNavClosing] = useState(false);
   const [routeRefreshKey, setRouteRefreshKey] = useState(0);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [activeHuntState, setActiveHuntState] = useState<HuntState | null>(null);
   const toastsRef = useRef<ToastMessage[]>([]);
   const toastIdRef = useRef(0);
+  const settlementAttemptRef = useRef<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const nickname = profile?.nickname ?? "UNKNOWN";
   const currentNavLabel = getCurrentNavLabel(location.pathname);
   const hasUnspentStatPoints = Boolean(character && character.stat_points > 0);
+
+  useEffect(() => {
+    if (!character) {
+      setActiveHuntState(null);
+      return;
+    }
+
+    let isActive = true;
+    void getMyHuntState().then((nextState) => {
+      if (isActive && nextState.ok) setActiveHuntState(nextState.state);
+    });
+
+    return () => { isActive = false; };
+  }, [character?.id]);
+
+  useEffect(() => {
+    const battle = activeHuntState?.lastBattle;
+    if (location.pathname.startsWith("/hunt") || !battle || battle.status !== "in_progress" || !battle.endsAt) return;
+
+    const endsAt = Date.parse(battle.endsAt);
+    if (Number.isNaN(endsAt)) return;
+
+    let isActive = true;
+    const timeoutId = window.setTimeout(() => {
+      if (settlementAttemptRef.current === battle.startedAt) return;
+
+      settlementAttemptRef.current = battle.startedAt;
+      void settleTrainingDummyHunt().then((nextResult) => {
+        settlementAttemptRef.current = null;
+        if (!isActive || !nextResult.ok) return;
+
+        setActiveHuntState(nextResult.huntState);
+        if (!nextResult.character) return;
+
+        onCharacterChange(nextResult.character);
+        showToast({ message: `전투 완료 · +${nextResult.gainedExperience} EXP`, tone: "system" });
+        if (nextResult.levelAfter > nextResult.levelBefore) {
+          showToast({ message: `레벨업! -> LV.${nextResult.levelAfter}`, tone: "epic" });
+        }
+      });
+    }, Math.max(0, endsAt - Date.now()) + 180);
+
+    return () => {
+      isActive = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [activeHuntState, location.pathname, onCharacterChange]);
+
+  function handleHuntStateChange(huntState: HuntState | null) {
+    setActiveHuntState(huntState);
+  }
 
   function toggleAccountMenu() {
     if (isAccountOpen) {
@@ -238,7 +293,7 @@ export function AppShell({
             <Routes>
               <Route path="/" element={<DashboardScreen session={session} profile={profile} character={character} />} />
               <Route path="/character" element={<CharacterScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={showToast} />} />
-              <Route path="/hunt" element={<HuntScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={showToast} />} />
+              <Route path="/hunt" element={<HuntScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={handleHuntStateChange} onToast={showToast} />} />
               <Route path="/ranking" element={<RankingScreen />} />
               <Route path="/patch-notes" element={<PatchNotesArchive />} />
               <Route path="*" element={<Navigate to="/" replace />} />

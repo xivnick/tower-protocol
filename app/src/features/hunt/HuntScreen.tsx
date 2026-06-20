@@ -18,11 +18,13 @@ export function HuntScreen({
   character,
   onCharacterChange,
   onCharacterRefresh,
+  onHuntStateChange,
   onToast,
 }: {
   character: Character | null;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
+  onHuntStateChange: (huntState: HuntState | null) => void;
   onToast: (toast: ToastInput) => void;
 }) {
   useEffect(() => {
@@ -46,18 +48,20 @@ export function HuntScreen({
     );
   }
 
-  return <TrainingDummyGround character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />;
+  return <TrainingDummyGround character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={onHuntStateChange} onToast={onToast} />;
 }
 
 function TrainingDummyGround({
   character,
   onCharacterChange,
   onCharacterRefresh,
+  onHuntStateChange,
   onToast,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
+  onHuntStateChange: (huntState: HuntState | null) => void;
   onToast: (toast: ToastInput) => void;
 }) {
   const [result, setResult] = useState<HuntResult | null>(null);
@@ -100,6 +104,7 @@ function TrainingDummyGround({
       if (!battle) return;
 
       const restoredResult = { ok: true, character: null, huntState: nextState.state, ...battle, message: "" };
+      onHuntStateChange(nextState.state);
       setResult(restoredResult);
       if (battle.status !== "in_progress") setLastResult(restoredResult);
       setPlaybackTenths(getElapsedTenths(battle.startedAt, battle.durationTicks));
@@ -168,6 +173,7 @@ function TrainingDummyGround({
           return;
         }
         setHuntState(nextResult.huntState);
+        onHuntStateChange(nextResult.huntState);
         setResult(nextResult);
         setLastResult(nextResult);
       });
@@ -199,6 +205,7 @@ function TrainingDummyGround({
     completedResultRef.current = null;
     settlementAttemptRef.current = null;
     setHuntState(nextResult.huntState);
+    onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
   }
 
@@ -220,6 +227,7 @@ function TrainingDummyGround({
     }
 
     setHuntState(nextResult.huntState);
+    onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
     setPlaybackTenths(getFleeTenths(nextResult));
     onToast({ message: nextResult.message, tone: "system" });
