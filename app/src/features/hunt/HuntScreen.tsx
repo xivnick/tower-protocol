@@ -328,15 +328,27 @@ function MonsterInfoPanel({ info }: { info: MonsterInfo }) {
         <span>MONSTER INFO</span>
         <strong>LV.{info.level} {info.name}</strong>
       </div>
-      <div className="monster-info-grid">
-        <Kv label="체력" value={info.vitality.toLocaleString()} />
-        <Kv label="인내" value={info.endurance.toLocaleString()} />
-        <Kv label="물리 방어력" value={info.physicalDefense.toLocaleString()} />
-        <Kv label="최대 HP" value={formatAmount(info.maxHp)} />
-        <Kv label="초당 재생" value={`${formatAmount(info.regenerationPerSecond)} HP`} />
-        <Kv label="일반공격" value={info.basicAttackEnabled ? "사용" : "없음"} />
+      <div className="combat-stat-grid monster-info-stats">
+        <MonsterCombatStat label="체력" value={info.vitality.toLocaleString()} />
+        <MonsterCombatStat label="인내" value={info.endurance.toLocaleString()} />
+        <MonsterCombatStat label="물리 방어력" shortLabel="물방" value={info.physicalDefense.toLocaleString()} />
+        <MonsterCombatStat label="최대 HP" value={formatAmount(info.maxHp)} />
+        <MonsterCombatStat label="초당 재생" value={`${formatAmount(info.regenerationPerSecond)} HP`} />
+        <MonsterCombatStat label="일반공격" value={info.basicAttackEnabled ? "사용" : "없음"} />
       </div>
     </section>
+  );
+}
+
+function MonsterCombatStat({ label, shortLabel, value }: { label: string; shortLabel?: string; value: string }) {
+  return (
+    <div className="combat-stat">
+      <span className="combat-label">
+        <span className="combat-label-full">{label}</span>
+        <span className="combat-label-short">{shortLabel ?? label}</span>
+      </span>
+      <strong><b>{value}</b></strong>
+    </div>
   );
 }
 
