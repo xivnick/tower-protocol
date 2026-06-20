@@ -142,15 +142,13 @@ function TrainingDummyGround({
 
   return (
     <section className="screen-panel hunt-screen">
-      <article className="panel hunt-location-panel">
-        <div className="panel-head compact action-head">
-          <div>
-            <span>HUNTING GROUND</span>
-            <h2>허수아비 훈련소</h2>
-          </div>
-          <button className="text-button" type="button" onClick={() => setIsGroundSelectorOpen((current) => !current)} aria-expanded={isGroundSelectorOpen}>사냥터 선택</button>
+      <div className="hunt-location-strip">
+        <div>
+          <span>HUNTING GROUND</span>
+          <strong>허수아비 훈련소</strong>
         </div>
-      </article>
+        <button className="text-button" type="button" onClick={() => setIsGroundSelectorOpen((current) => !current)} aria-expanded={isGroundSelectorOpen}>사냥터 선택</button>
+      </div>
       {isGroundSelectorOpen && (
         <article className="panel hunt-ground-selector">
           <span>HUNTING GROUNDS</span>
