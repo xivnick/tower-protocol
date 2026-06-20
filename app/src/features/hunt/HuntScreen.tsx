@@ -200,7 +200,6 @@ function TrainingDummyGround({
     settlementAttemptRef.current = null;
     setHuntState(nextResult.huntState);
     setResult(nextResult);
-    setLastResult(nextResult);
   }
 
   async function handleFlee() {
