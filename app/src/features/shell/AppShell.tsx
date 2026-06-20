@@ -58,6 +58,7 @@ export function AppShell({
   const toastsRef = useRef<ToastMessage[]>([]);
   const toastIdRef = useRef(0);
   const settlementAttemptRef = useRef<string | null>(null);
+  const recoveryToastRef = useRef<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const nickname = profile?.nickname ?? "UNKNOWN";
@@ -116,6 +117,22 @@ export function AppShell({
       window.clearTimeout(timeoutId);
     };
   }, [activeHuntState, location.pathname, onCharacterChange]);
+
+  useEffect(() => {
+    const recoveryEndsAt = activeHuntState?.recoveryEndsAt;
+    if (!recoveryEndsAt || recoveryToastRef.current === recoveryEndsAt) return;
+
+    const recoveryEndsAtMs = Date.parse(recoveryEndsAt);
+    if (Number.isNaN(recoveryEndsAtMs) || recoveryEndsAtMs <= Date.now()) return;
+
+    const timeoutId = window.setTimeout(() => {
+      if (recoveryToastRef.current === recoveryEndsAt) return;
+      recoveryToastRef.current = recoveryEndsAt;
+      showToast({ message: "체력이 모두 회복되었습니다.", tone: "system" });
+    }, recoveryEndsAtMs - Date.now());
+
+    return () => window.clearTimeout(timeoutId);
+  }, [activeHuntState?.recoveryEndsAt]);
 
   function handleHuntStateChange(huntState: HuntState | null) {
     setActiveHuntState(huntState);

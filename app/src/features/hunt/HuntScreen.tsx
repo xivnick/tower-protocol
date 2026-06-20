@@ -80,8 +80,6 @@ function TrainingDummyGround({
   const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [playbackTenths, setPlaybackTenths] = useState(0);
-  const recoveryToastRef = useRef<string | null>(null);
-  const recoverySeenRef = useRef<string | null>(null);
   const logRef = useRef<HTMLOListElement>(null);
   const completedResultRef = useRef<HuntResult | null>(null);
   const settlementAttemptRef = useRef<string | null>(null);
@@ -145,19 +143,6 @@ function TrainingDummyGround({
     const intervalId = window.setInterval(() => setNow(Date.now()), 100);
     return () => window.clearInterval(intervalId);
   }, [isRecovering, remainingTenths]);
-
-  useEffect(() => {
-    const recoveryEndsAt = huntState?.recoveryEndsAt;
-    if (isRecovering && recoveryEndsAt) {
-      recoverySeenRef.current = recoveryEndsAt;
-      return;
-    }
-    if (!recoverySeenRef.current || recoveryToastRef.current === recoverySeenRef.current) return;
-    const completedRecoveryEndsAt = recoverySeenRef.current;
-    recoveryToastRef.current = completedRecoveryEndsAt;
-    recoverySeenRef.current = null;
-    onToast({ message: "체력이 모두 회복되었습니다.", tone: "system" });
-  }, [huntState?.recoveryEndsAt, isRecovering, now, onToast]);
 
   useEffect(() => {
     if (!result || !isBattleInProgress || isPlaybackComplete) return;
