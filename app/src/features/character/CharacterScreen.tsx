@@ -534,15 +534,9 @@ function CharacterTrainingPanel({
         <h2>기초 훈련</h2>
       </div>
       <div className="panel-action-body">
-        <p className="panel-message">
-          {isMaxLevel
-            ? "최고 레벨에 도달했습니다."
-            : trainingState
-              ? formatTrainingAvailability(displayedTrainingState)
-              : "훈련 상태를 불러오는 중..."}
-        </p>
+        <p className="panel-message">{isMaxLevel ? "최고 레벨에 도달했습니다." : "훈련을 실행하면 경험치를 획득합니다."}</p>
         <button className="btn primary panel-primary-action" type="button" onClick={handleTrain} disabled={isSubmitting || isMaxLevel || !trainingState || !isTrainingAvailable}>
-          {isSubmitting ? "훈련 중..." : "훈련 실행"}
+          {getTrainingButtonLabel({ isSubmitting, isMaxLevel, trainingState, displayedTrainingState })}
         </button>
         {message && <p className="auth-message is-error" role="status">{message}</p>}
       </div>
@@ -562,9 +556,22 @@ function getDisplayedTrainingState(state: TrainingState | null, now: number) {
   return { charges, secondsUntilNextCharge: charges >= state.maxCharges ? null : Math.max(0, Math.ceil((nextChargeAt - now) / 1000)) };
 }
 
-function formatTrainingAvailability(state: { charges: number; secondsUntilNextCharge: number | null }) {
-  const label = `훈련 보관 ${state.charges} / 10`;
-  return state.secondsUntilNextCharge === null ? label : `${label} · 다음 충전까지 ${state.secondsUntilNextCharge}초`;
+function getTrainingButtonLabel({
+  isSubmitting,
+  isMaxLevel,
+  trainingState,
+  displayedTrainingState,
+}: {
+  isSubmitting: boolean;
+  isMaxLevel: boolean;
+  trainingState: TrainingState | null;
+  displayedTrainingState: { charges: number; secondsUntilNextCharge: number | null };
+}) {
+  if (isSubmitting) return "훈련 중...";
+  if (isMaxLevel) return "훈련 실행";
+  if (!trainingState) return "훈련 상태 확인 중...";
+  if (displayedTrainingState.charges === 0) return `훈련까지 ${displayedTrainingState.secondsUntilNextCharge ?? 0}초...`;
+  return `훈련 실행 (${displayedTrainingState.charges}/${trainingState.maxCharges})`;
 }
 
 function formatTrainingToast(gainedExperience: number, rewardTier: TrainingRewardTier): ToastInput {
