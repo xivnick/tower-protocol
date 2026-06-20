@@ -931,7 +931,7 @@ button:disabled {
 .hunt-location-strip strong {
   margin-left: 8px;
   color: var(--txt-bright);
-  font-size: 15px;
+  font-size: 12px;
 }
 
 .hunt-location-strip small {

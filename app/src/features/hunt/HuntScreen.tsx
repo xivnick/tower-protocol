@@ -8,9 +8,10 @@ import type { Character } from "../../types/character";
 import type { ToastInput } from "../../types/toast";
 
 const trainingDummy = {
-  maxHp: 100,
-  physicalDefense: 10,
-  regenerationPerSecond: 1,
+  maxHp(level: number) {
+    const vitality = 10 + ((level - 1) * 5);
+    return 100 + (level * 20) + (vitality * 10);
+  },
 };
 
 export function HuntScreen({
@@ -71,7 +72,8 @@ function TrainingDummyGround({
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
   const combatStats = calculateCombatStats(character);
   const visibleLogs = useMemo(() => result?.logs.filter((entry) => entry.timeTenths <= playbackTenths) ?? [], [playbackTenths, result]);
-  const targetHp = visibleLogs.length > 0 ? visibleLogs[visibleLogs.length - 1].targetHp : trainingDummy.maxHp;
+  const dummyMaxHp = trainingDummy.maxHp(character.level);
+  const targetHp = visibleLogs.length > 0 ? visibleLogs[visibleLogs.length - 1].targetHp : dummyMaxHp;
   const isPlaybackComplete = Boolean(result && playbackTenths >= result.durationTicks);
   const canHunt = !isSubmitting && remainingTenths === 0 && (!result || isPlaybackComplete);
   const requiredExperience = getRequiredExperienceForLevel(character.level + 1) ?? 1;
@@ -145,8 +147,8 @@ function TrainingDummyGround({
       <article className="panel hunt-status-panel">
         <div className="panel-head compact action-head">
           <div>
-            <span>PLAYER</span>
-            <h2 className="hunt-player-title">{character.name} <small>· {formatCharacterLevel(character.level)}</small></h2>
+            <span>CHARACTER</span>
+            <h2 className="hunt-player-title">LV.{character.level} {character.name}</h2>
           </div>
           <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
             {isSubmitting || remainingTenths > 0 || (result && !isPlaybackComplete) ? "전투 중..." : "전투 시작"}
@@ -167,8 +169,8 @@ function TrainingDummyGround({
             </div>
           </div>
           <div className="combat-hp-grid">
-            <CombatHpCard label="PLAYER" name={character.name} currentHp={combatStats.maxHp} maxHp={combatStats.maxHp} />
-            <CombatHpCard label="ENEMY" name={result ? "허수아비" : "???"} currentHp={result ? targetHp : null} maxHp={result ? trainingDummy.maxHp : null} />
+            <CombatHpCard label="PLAYER" name={`LV.${character.level} ${character.name}`} currentHp={combatStats.maxHp} maxHp={combatStats.maxHp} />
+            <CombatHpCard label="ENEMY" name={result ? `LV.${character.level} 허수아비` : "???"} currentHp={result ? targetHp : null} maxHp={result ? dummyMaxHp : null} />
           </div>
           {message && <p className="panel-message is-error" role="status">{message}</p>}
           <ol className="combat-log" aria-label="전투 로그" ref={logRef}>
@@ -177,7 +179,7 @@ function TrainingDummyGround({
                 {visibleLogs.map((entry, index) => (
                   <li className={`is-${entry.kind}`} key={`${entry.timeTenths}-${entry.kind}-${index}`}>
                     <time>[{formatTime(entry.timeTenths)}]</time>
-                    <span>{formatLogEntry(entry)}</span>
+                    <span>{formatLogEntry(entry, dummyMaxHp)}</span>
                   </li>
                 ))}
               </>
@@ -250,12 +252,12 @@ function StatusMeter({ label, value, percent }: { label: string; value: string; 
   );
 }
 
-function formatLogEntry(entry: HuntLogEntry) {
+function formatLogEntry(entry: HuntLogEntry, dummyMaxHp: number) {
   if (entry.kind === "encounter") return "허수아비와 조우했습니다.";
   if (entry.kind === "defeat") return "허수아비 격파";
-  if (entry.kind === "regeneration") return `허수아비 재생 -> 허수아비 · +${formatAmount(entry.amount)} HP (${formatAmount(entry.targetHp)} / ${trainingDummy.maxHp})`;
-  if (entry.kind === "critical") return `치명타! -> 허수아비 · -${entry.amount} HP (${formatAmount(entry.targetHp)} / ${trainingDummy.maxHp})`;
-  return `일반 공격 -> 허수아비 · -${entry.amount} HP (${formatAmount(entry.targetHp)} / ${trainingDummy.maxHp})`;
+  if (entry.kind === "regeneration") return `허수아비 재생 -> 허수아비 · +${formatAmount(entry.amount)} HP (${formatAmount(entry.targetHp)} / ${dummyMaxHp})`;
+  if (entry.kind === "critical") return `치명타! -> 허수아비 · -${entry.amount} HP (${formatAmount(entry.targetHp)} / ${dummyMaxHp})`;
+  return `일반 공격 -> 허수아비 · -${entry.amount} HP (${formatAmount(entry.targetHp)} / ${dummyMaxHp})`;
 }
 
 function formatTime(tenths: number) {
