@@ -1327,7 +1327,7 @@ button:disabled {
 }
 
 .combat-log-damage { color: var(--neg); }
-.combat-log-recovery { color: var(--acc); }
+.combat-log-recovery { color: var(--txt); }
 
 .combat-log-player { color: var(--acc); }
 .combat-log-critical { color: var(--acc); }
@@ -1346,8 +1346,13 @@ button:disabled {
 
 .combat-log .is-regeneration .combat-log-recovery,
 .combat-log .is-player_regeneration .combat-log-recovery {
-  color: var(--acc);
-  font-weight: 800;
+  color: var(--txt);
+  font-weight: 400;
+}
+
+.combat-log .is-combined_regeneration .combat-log-recovery {
+  color: var(--txt);
+  font-weight: 400;
 }
 
 .combat-log .is-defeat span {
