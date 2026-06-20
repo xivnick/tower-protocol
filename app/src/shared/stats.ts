@@ -21,6 +21,26 @@ export const PRIMARY_STATS: PrimaryStatDefinition[] = [
   { key: "wisdom", label: "지혜", shortLabel: "정신" },
 ];
 
+export type CombatStatLabel = {
+  label: string;
+  shortLabel?: string;
+};
+
+export const COMBAT_STAT_LABELS = {
+  physicalAttack: { label: "물리 공격력", shortLabel: "물공" },
+  magicAttack: { label: "마법 공격력", shortLabel: "마공" },
+  physicalDefense: { label: "물리 방어", shortLabel: "물방" },
+  magicDefense: { label: "마법 방어", shortLabel: "마방" },
+  maxHp: { label: "최대 체력", shortLabel: "체력" },
+  regeneration: { label: "재생" },
+  attackSpeed: { label: "공격 속도", shortLabel: "공속" },
+  cooldownReduction: { label: "쿨타임 감소", shortLabel: "쿨감" },
+  accuracy: { label: "명중" },
+  evasionRate: { label: "회피율", shortLabel: "회피" },
+  criticalChance: { label: "치명타 확률", shortLabel: "치확" },
+  criticalDamage: { label: "치명타 피해", shortLabel: "치피" },
+} satisfies Record<string, CombatStatLabel>;
+
 export function calculateEvasionRate(evasion: number, opponentAccuracy: number) {
   return evasion / (evasion + opponentAccuracy);
 }

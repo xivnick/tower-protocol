@@ -647,6 +647,11 @@ button:disabled {
   gap: 14px;
 }
 
+.hunt-action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
 .panel-head h2 {
   margin: 4px 0 0;
   color: var(--txt-bright);
@@ -912,6 +917,356 @@ button:disabled {
 
 .stat-actions {
   margin-top: 12px;
+}
+
+.hunt-screen {
+  align-content: start;
+}
+
+.hunt-location-strip {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 14px;
+  border: 1px solid var(--line);
+  background: var(--surf);
+  padding: 10px 14px;
+}
+
+.hunt-location-strip strong {
+  margin-left: 8px;
+  color: var(--txt-bright);
+  font-size: 12px;
+}
+
+.hunt-location-strip small {
+  margin-left: 4px;
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.hunt-location-strip span {
+  color: var(--acc);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.hunt-status-stack {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.hunt-status-meter span,
+.hunt-status-meter strong {
+  display: block;
+}
+
+.hunt-status-meter span {
+  color: var(--mut-2);
+  font-size: 11px;
+}
+
+.hunt-status-meter strong {
+  margin-top: 3px;
+  color: var(--txt-bright);
+  font-size: 13px;
+}
+
+.hunt-player-title small {
+  color: var(--mut);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.hunt-status-meter i {
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  background: var(--surf-3);
+  margin-top: 8px;
+}
+
+.hunt-status-meter i b {
+  display: block;
+  height: 100%;
+  background: var(--acc-dim);
+}
+
+.combat-hp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.combat-hp-card {
+  position: relative;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 12px;
+}
+
+.combat-hp-card > span {
+  color: var(--mut-2);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.combat-hp-card > strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--txt-bright);
+  font-size: 16px;
+}
+
+.combat-hp {
+  height: 8px;
+  overflow: hidden;
+  background: var(--surf-3);
+  margin-top: 12px;
+}
+
+.combat-hp i {
+  display: block;
+  height: 100%;
+  background: var(--acc-dim);
+  transition: width 90ms linear;
+}
+
+.combat-hp.is-unknown {
+  background: repeating-linear-gradient(90deg, var(--surf-3) 0 8px, var(--line) 8px 10px);
+}
+
+.combat-hp-card > b {
+  display: block;
+  margin-top: 5px;
+  color: var(--txt-bright);
+  font-size: 12px;
+}
+
+.combat-character-link {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  color: var(--mut);
+}
+
+.combat-character-link svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 1.5;
+}
+
+.combat-character-link:hover {
+  color: var(--acc-2);
+}
+
+.combat-info-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mut);
+}
+
+.combat-info-button svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 1.3;
+}
+
+.combat-info-button:hover {
+  color: var(--acc-2);
+}
+
+.monster-info-stats {
+  margin-top: 12px;
+}
+
+.monster-info-stats .combat-label-full {
+  display: none;
+}
+
+.monster-info-stats .combat-label-short {
+  display: inline;
+}
+
+.monster-info-stats .combat-stat strong {
+  min-width: 0;
+}
+
+.combat-card-expansion {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 180ms ease;
+}
+
+.combat-card-expansion.is-expanded {
+  grid-template-rows: 1fr;
+}
+
+.combat-card-expansion > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.combat-card-detail {
+  margin-top: 12px;
+}
+
+.combat-card-detail b {
+  display: block;
+  margin-top: 5px;
+  color: var(--txt-bright);
+  font-size: 12px;
+}
+
+.combat-card-detail i {
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  background: var(--surf-3);
+  margin-top: 0;
+}
+
+.combat-card-detail.is-experience i {
+  height: 5px;
+}
+
+.combat-card-detail i strong {
+  display: block;
+  height: 100%;
+  background: var(--acc-dim);
+}
+
+.combat-card-detail i.is-unknown {
+  background: repeating-linear-gradient(90deg, var(--surf-3) 0 8px, var(--line) 8px 10px);
+}
+
+.hunt-result-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.hunt-result-section {
+  border-top: 1px solid var(--line);
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.hunt-result-head span,
+.hunt-result-head strong {
+  display: block;
+}
+
+.hunt-result-head span {
+  color: var(--acc);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.hunt-result-head strong {
+  margin-top: 3px;
+  color: var(--txt-bright);
+  font-size: 16px;
+}
+
+.hunt-result-summary div {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 10px;
+}
+
+.hunt-result-summary span,
+.hunt-result-summary strong {
+  display: block;
+}
+
+.hunt-result-summary span {
+  color: var(--mut-2);
+  font-size: 11px;
+}
+
+.hunt-result-summary strong {
+  margin-top: 3px;
+  color: var(--txt-bright);
+  font-size: 13px;
+}
+
+.combat-log {
+  list-style: none;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  height: 240px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  margin: 14px 0 0;
+  padding: 12px;
+}
+
+.combat-log li {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 10px;
+  color: var(--txt);
+  font-size: 12px;
+  animation: combat-log-enter 160ms ease-out both;
+}
+
+.combat-log li.is-empty {
+  display: block;
+  color: var(--mut-2);
+}
+
+.combat-log time {
+  color: var(--mut-2);
+}
+
+.combat-log .is-critical span {
+  color: var(--acc-2);
+  font-weight: 800;
+}
+
+.combat-log .is-regeneration span {
+  color: var(--acc-dim);
+}
+
+.combat-log .is-defeat span {
+  color: var(--acc);
+  font-weight: 900;
+}
+
+.combat-log .is-encounter span {
+  color: var(--acc);
+  font-weight: 800;
+}
+
+.hunt-result-footnote {
+  margin: 12px 0 0;
+  color: var(--mut);
+  font-size: 12px;
 }
 
 .combat-stat-grid {
@@ -1277,6 +1632,16 @@ button:disabled {
     overflow: visible;
   }
 
+  .hunt-result-summary,
+  .combat-hp-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .combat-card-detail.is-empty {
+    display: none;
+  }
+
+
   .archive-view {
     overflow: visible;
   }
@@ -1378,6 +1743,18 @@ button:disabled {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes combat-log-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 

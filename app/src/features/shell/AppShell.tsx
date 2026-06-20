@@ -6,6 +6,7 @@ import type { Character } from "../../types/character";
 import type { ToastInput, ToastTone } from "../../types/toast";
 import { CharacterScreen } from "../character/CharacterScreen";
 import { DashboardScreen } from "../dashboard/DashboardScreen";
+import { HuntScreen } from "../hunt/HuntScreen";
 import { PatchNotesArchive } from "../patchNotes/PatchNotes";
 import { RankingScreen } from "../ranking/Ranking";
 
@@ -18,7 +19,7 @@ type ToastMessage = {
 
 const navItems = [
   { label: "대시보드", to: "/", end: true, enabled: true },
-  { label: "사냥", to: "/hunt", enabled: false },
+  { label: "사냥", to: "/hunt", enabled: true },
   { label: "탑", to: "/tower", enabled: false },
   { label: "캐릭터", to: "/character", enabled: true },
   { label: "랭킹", to: "/ranking", enabled: true },
@@ -237,6 +238,7 @@ export function AppShell({
             <Routes>
               <Route path="/" element={<DashboardScreen session={session} profile={profile} character={character} />} />
               <Route path="/character" element={<CharacterScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={showToast} />} />
+              <Route path="/hunt" element={<HuntScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={showToast} />} />
               <Route path="/ranking" element={<RankingScreen />} />
               <Route path="/patch-notes" element={<PatchNotesArchive />} />
               <Route path="*" element={<Navigate to="/" replace />} />
@@ -259,6 +261,7 @@ export function AppShell({
 
 function getCurrentNavLabel(pathname: string) {
   if (pathname.startsWith("/character")) return "캐릭터";
+  if (pathname.startsWith("/hunt")) return "사냥";
   if (pathname.startsWith("/ranking")) return "랭킹";
   if (pathname.startsWith("/patch-notes")) return "패치노트";
   return "대시보드";
