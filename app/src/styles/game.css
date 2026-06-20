@@ -918,6 +918,120 @@ button:disabled {
   align-content: start;
 }
 
+.hunt-ground-option {
+  position: relative;
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
+  margin-top: 14px;
+  padding: 14px 48px 14px 14px;
+  color: inherit;
+  text-align: left;
+}
+
+.hunt-ground-option:hover {
+  border-color: var(--acc-dim);
+  background: var(--surf-2);
+}
+
+.hunt-ground-option > span,
+.hunt-ground-option small {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.hunt-ground-option strong {
+  color: var(--txt-bright);
+  font-size: 16px;
+}
+
+.hunt-ground-option i {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  color: var(--acc);
+  font-style: normal;
+  font-weight: 900;
+  transform: translateY(-50%);
+}
+
+.hunt-ground-head {
+  display: grid;
+  gap: 12px;
+}
+
+.hunt-ground-head > div > span {
+  color: var(--acc);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.hunt-ground-head h2 {
+  margin: 4px 0 0;
+  color: var(--txt-bright);
+  font-size: 22px;
+}
+
+.combatant-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.combatant-card {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 12px;
+}
+
+.combatant-card > span {
+  color: var(--mut-2);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.combatant-card > strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--txt-bright);
+  font-size: 16px;
+}
+
+.combat-hp {
+  height: 8px;
+  overflow: hidden;
+  background: var(--surf-3);
+  margin-top: 12px;
+}
+
+.combat-hp i {
+  display: block;
+  height: 100%;
+  background: var(--acc-dim);
+  transition: width 90ms linear;
+}
+
+.combatant-card > b {
+  display: block;
+  margin-top: 5px;
+  color: var(--txt-bright);
+  font-size: 12px;
+}
+
+.combatant-card ul {
+  display: grid;
+  gap: 3px;
+  border-top: 1px solid var(--line);
+  margin: 10px 0 0;
+  padding: 10px 0 0;
+  color: var(--mut);
+  font-size: 12px;
+  list-style: none;
+}
+
 .hunt-layout {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1044,6 +1158,11 @@ button:disabled {
   gap: 10px;
   color: var(--txt);
   font-size: 12px;
+}
+
+.combat-log li.is-empty {
+  display: block;
+  color: var(--mut-2);
 }
 
 .combat-log time {
@@ -1434,7 +1553,8 @@ button:disabled {
   }
 
   .hunt-layout,
-  .hunt-result-summary {
+  .hunt-result-summary,
+  .combatant-grid {
     grid-template-columns: 1fr;
   }
 
