@@ -303,8 +303,8 @@ function CombatDetail({ label, value, percent, isUnknown = false }: { label: str
   return (
     <div className="combat-card-detail">
       <span>{label}</span>
-      <b>{value}</b>
       <i className={isUnknown ? "is-unknown" : ""}><strong style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} /></i>
+      <b>{value}</b>
     </div>
   );
 }

@@ -1085,17 +1085,17 @@ button:disabled {
 }
 
 .combat-card-detail b {
-  margin-top: 3px;
+  margin-top: 5px;
   color: var(--txt-bright);
   font-size: 12px;
 }
 
 .combat-card-detail i {
   display: block;
-  height: 5px;
+  height: 8px;
   overflow: hidden;
   background: var(--surf-3);
-  margin-top: 8px;
+  margin-top: 12px;
 }
 
 .combat-card-detail i strong {
