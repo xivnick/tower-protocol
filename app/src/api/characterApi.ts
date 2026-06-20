@@ -27,7 +27,7 @@ export type TrainingRewardTier = "normal" | "good" | "great" | "max";
 
 export type HuntLogEntry = {
   timeTenths: number;
-  kind: "encounter" | "attack" | "critical" | "regeneration" | "defeat" | "fled";
+  kind: "encounter" | "attack" | "critical" | "regeneration" | "defeat" | "fled" | "timeout";
   amount: number;
   targetHp: number;
 };
@@ -41,7 +41,7 @@ export type HuntCombatant = {
 
 export type HuntBattle = {
   huntGroundId: string;
-  status: "in_progress" | "victory" | "fled";
+  status: "in_progress" | "victory" | "fled" | "timed_out";
   startedAt: string;
   endsAt?: string;
   player: HuntCombatant;
@@ -346,12 +346,14 @@ export async function huntTrainingDummy(): Promise<HuntResult> {
     character: payload.character ?? null,
     huntState,
     ...battle,
-    message: "허수아비를 격파했습니다.",
+    message: "전투를 시작했습니다.",
   };
 }
 
 export async function settleTrainingDummyHunt(): Promise<HuntResult> {
-  return resolveHuntAction("settle_training_dummy_hunt", "전투를 정산하지 못했습니다.", "허수아비를 격파했습니다.");
+  const result = await resolveHuntAction("settle_training_dummy_hunt", "전투를 정산하지 못했습니다.", "전투를 완료했습니다.");
+  if (!result.ok || result.status !== "timed_out") return result;
+  return { ...result, message: "시간 제한에 도달해 전투를 종료했습니다." };
 }
 
 export async function fleeTrainingDummyHunt(): Promise<HuntResult> {

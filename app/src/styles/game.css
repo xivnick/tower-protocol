@@ -1259,6 +1259,11 @@ button:disabled {
   font-weight: 900;
 }
 
+.combat-log .is-timeout span {
+  color: var(--mut);
+  font-weight: 800;
+}
+
 .combat-log .is-encounter span {
   color: var(--acc);
   font-weight: 800;
