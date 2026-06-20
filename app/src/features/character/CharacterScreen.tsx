@@ -215,7 +215,7 @@ function CharacterStatsPanel({
   const skipStatClickRef = useRef(false);
   const pendingTotal = getPendingTotal(pendingStats);
   const remainingPoints = character.stat_points - pendingTotal;
-  const isPendingComplete = remainingPoints === 0 && pendingTotal >= 0;
+  const isPendingComplete = remainingPoints === 0 && pendingTotal > 0;
   const previewCharacter = applyPendingStats(character, pendingStats);
   const currentCombatStats = calculateCombatStats(character);
   const previewCombatStats = calculateCombatStats(previewCharacter);
