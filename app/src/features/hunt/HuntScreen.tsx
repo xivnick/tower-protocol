@@ -65,7 +65,7 @@ function HuntGroundList({ onSelectTrainingDummy }: { onSelectTrainingDummy: () =
         <button className="hunt-ground-option" type="button" onClick={onSelectTrainingDummy}>
           <span>TRAINING</span>
           <strong>허수아비 훈련소</strong>
-          <small>일반공격과 치명타를 시험할 수 있는 비공격형 훈련 대상</small>
+          <small>기본 전투 스탯 시험</small>
           <i aria-hidden="true">-&gt;</i>
         </button>
       </article>
@@ -173,7 +173,7 @@ function TrainingDummyGround({
           <div>
             <span>HUNTING GROUND</span>
             <strong>허수아비 훈련소</strong>
-            <small>비공격형 훈련 대상 · 매초 체력 재생</small>
+            <small>기본 전투 스탯 시험</small>
           </div>
           <button className="text-button" type="button" onClick={onBack}>← 사냥터 선택</button>
         </div>
