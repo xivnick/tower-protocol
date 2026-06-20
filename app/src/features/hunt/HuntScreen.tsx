@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
-import type { HuntLogEntry, HuntResult, HuntState } from "../../api/characterApi";
+import { fleeTrainingDummyHunt, getMyHuntState, getTrainingDummyInfo, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
+import type { HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats } from "../../shared/stats";
 import type { Character } from "../../types/character";
@@ -63,6 +63,8 @@ function TrainingDummyGround({
   const [result, setResult] = useState<HuntResult | null>(null);
   const [message, setMessage] = useState("");
   const [huntState, setHuntState] = useState<HuntState | null>(null);
+  const [monsterInfo, setMonsterInfo] = useState<MonsterInfo | null>(null);
+  const [isMonsterInfoOpen, setIsMonsterInfoOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -102,6 +104,14 @@ function TrainingDummyGround({
 
     return () => { isActive = false; };
   }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    void getTrainingDummyInfo().then((nextInfo) => {
+      if (isActive && nextInfo.ok) setMonsterInfo(nextInfo.info);
+    });
+    return () => { isActive = false; };
+  }, [character.level]);
 
   useEffect(() => {
     if (remainingTenths === 0) return;
@@ -238,8 +248,10 @@ function TrainingDummyGround({
               currentHp={result ? targetHp : null}
               maxHp={result ? dummyMaxHp : null}
               detail={{ value: "", percent: 0, isUnknown: true }}
+              onInfoClick={() => setIsMonsterInfoOpen((current) => !current)}
             />
           </div>
+          {isMonsterInfoOpen && monsterInfo && <MonsterInfoPanel info={monsterInfo} />}
           {message && <p className="panel-message is-error" role="status">{message}</p>}
           <ol className="combat-log" aria-label="전투 로그" ref={logRef}>
             {result ? (
@@ -268,6 +280,7 @@ function CombatHpCard({
   maxHp,
   detail,
   linkToCharacter = false,
+  onInfoClick,
 }: {
   label: string;
   name: string;
@@ -275,6 +288,7 @@ function CombatHpCard({
   maxHp: number | null;
   detail?: { value: string; percent: number; isUnknown?: boolean; isExperience?: boolean };
   linkToCharacter?: boolean;
+  onInfoClick?: () => void;
 }) {
   const isUnknown = currentHp === null || maxHp === null;
   const hpPercent = isUnknown ? 0 : Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
@@ -290,12 +304,39 @@ function CombatHpCard({
           </svg>
         </Link>
       )}
+      {onInfoClick && (
+        <button className="combat-info-button" type="button" onClick={onInfoClick} aria-label={`${name} 정보 보기`}>
+          <svg aria-hidden="true" viewBox="0 0 16 16">
+            <circle cx="8" cy="8" r="5.5" />
+            <path d="M8 7v3.5M8 5.2h.01" />
+          </svg>
+        </button>
+      )}
       <div className={`combat-hp ${isUnknown ? "is-unknown" : ""}`} role="progressbar" aria-label={`${name} 체력`} aria-valuemin={0} aria-valuemax={maxHp ?? undefined} aria-valuenow={currentHp ?? undefined}>
         {!isUnknown && <i style={{ width: `${hpPercent}%` }} />}
       </div>
       <b>{isUnknown ? "HP ???" : `HP ${formatAmount(currentHp ?? 0)} / ${formatAmount(maxHp ?? 0)}`}</b>
       {detail && <CombatDetail {...detail} />}
     </div>
+  );
+}
+
+function MonsterInfoPanel({ info }: { info: MonsterInfo }) {
+  return (
+    <section className="monster-info-panel">
+      <div className="monster-info-head">
+        <span>MONSTER INFO</span>
+        <strong>LV.{info.level} {info.name}</strong>
+      </div>
+      <div className="monster-info-grid">
+        <Kv label="체력" value={info.vitality.toLocaleString()} />
+        <Kv label="인내" value={info.endurance.toLocaleString()} />
+        <Kv label="물리 방어력" value={info.physicalDefense.toLocaleString()} />
+        <Kv label="최대 HP" value={formatAmount(info.maxHp)} />
+        <Kv label="초당 재생" value={`${formatAmount(info.regenerationPerSecond)} HP`} />
+        <Kv label="일반공격" value={info.basicAttackEnabled ? "사용" : "없음"} />
+      </div>
+    </section>
   );
 }
 

@@ -63,6 +63,17 @@ export type HuntState = {
   lastBattle: HuntBattle | null;
 };
 
+export type MonsterInfo = {
+  name: string;
+  level: number;
+  vitality: number;
+  endurance: number;
+  physicalDefense: number;
+  maxHp: number;
+  regenerationPerSecond: number;
+  basicAttackEnabled: boolean;
+};
+
 export type HuntResult = HuntBattle & {
   ok: boolean;
   character: Character | null;
@@ -348,6 +359,32 @@ export async function getMyHuntState(): Promise<{ ok: boolean; state: HuntState 
   if (error) return { ok: false, state: null, message: toKoreanAuthMessage(error.message, "사냥 기록을 불러오지 못했습니다.") };
 
   return { ok: true, state: mapHuntState(data as HuntStatePayload), message: "" };
+}
+
+export async function getTrainingDummyInfo(): Promise<{ ok: boolean; info: MonsterInfo | null; message: string }> {
+  if (!supabase) return { ok: false, info: null, message: "Supabase 설정을 확인해주세요." };
+
+  const { data, error } = await supabase.rpc("get_training_dummy_info");
+  if (error) return { ok: false, info: null, message: toKoreanAuthMessage(error.message, "몬스터 정보를 불러오지 못했습니다.") };
+
+  const payload = data as {
+    name?: string; level?: number; vitality?: number; endurance?: number; physical_defense?: number;
+    max_hp?: number; regeneration_per_second?: number; basic_attack_enabled?: boolean;
+  };
+  return {
+    ok: true,
+    info: {
+      name: payload.name ?? "허수아비",
+      level: payload.level ?? 0,
+      vitality: payload.vitality ?? 0,
+      endurance: payload.endurance ?? 0,
+      physicalDefense: payload.physical_defense ?? 0,
+      maxHp: payload.max_hp ?? 0,
+      regenerationPerSecond: payload.regeneration_per_second ?? 0,
+      basicAttackEnabled: Boolean(payload.basic_attack_enabled),
+    },
+    message: "",
+  };
 }
 
 function mapHuntState(payload: HuntStatePayload | undefined): HuntState {

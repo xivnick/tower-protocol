@@ -1069,6 +1069,70 @@ button:disabled {
   color: var(--acc-2);
 }
 
+.combat-info-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mut);
+}
+
+.combat-info-button svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 1.3;
+}
+
+.combat-info-button:hover {
+  color: var(--acc-2);
+}
+
+.monster-info-panel {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  margin-top: 12px;
+  padding: 12px;
+}
+
+.monster-info-head span,
+.monster-info-head strong {
+  display: block;
+}
+
+.monster-info-head span {
+  color: var(--acc);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.monster-info-head strong {
+  margin-top: 3px;
+  color: var(--txt-bright);
+  font-size: 16px;
+}
+
+.monster-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.monster-info-grid > div {
+  border: 1px solid var(--line);
+  background: var(--surf);
+  padding: 10px;
+}
+
 .combat-card-detail {
   margin-top: 12px;
 }
@@ -1578,6 +1642,10 @@ button:disabled {
   .hunt-result-summary,
   .combat-hp-grid {
     grid-template-columns: 1fr;
+  }
+
+  .monster-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .archive-view {
