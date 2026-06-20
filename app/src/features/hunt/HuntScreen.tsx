@@ -158,7 +158,7 @@ function TrainingDummyGround({
     });
 
     return () => { isActive = false; };
-  }, [isPlaybackComplete, isResolving, result]);
+  }, [isPlaybackComplete, result]);
 
   async function handleHunt() {
     if (!canHunt) return;
