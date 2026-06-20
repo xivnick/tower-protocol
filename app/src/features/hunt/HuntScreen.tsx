@@ -18,11 +18,13 @@ export function HuntScreen({
   character,
   onCharacterChange,
   onCharacterRefresh,
+  onHuntStateChange,
   onToast,
 }: {
   character: Character | null;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
+  onHuntStateChange: (huntState: HuntState | null) => void;
   onToast: (toast: ToastInput) => void;
 }) {
   useEffect(() => {
@@ -46,18 +48,20 @@ export function HuntScreen({
     );
   }
 
-  return <TrainingDummyGround character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />;
+  return <TrainingDummyGround character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={onHuntStateChange} onToast={onToast} />;
 }
 
 function TrainingDummyGround({
   character,
   onCharacterChange,
   onCharacterRefresh,
+  onHuntStateChange,
   onToast,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
+  onHuntStateChange: (huntState: HuntState | null) => void;
   onToast: (toast: ToastInput) => void;
 }) {
   const [result, setResult] = useState<HuntResult | null>(null);
@@ -100,6 +104,7 @@ function TrainingDummyGround({
       if (!battle) return;
 
       const restoredResult = { ok: true, character: null, huntState: nextState.state, ...battle, message: "" };
+      onHuntStateChange(nextState.state);
       setResult(restoredResult);
       if (battle.status !== "in_progress") setLastResult(restoredResult);
       setPlaybackTenths(getElapsedTenths(battle.startedAt, battle.durationTicks));
@@ -168,6 +173,7 @@ function TrainingDummyGround({
           return;
         }
         setHuntState(nextResult.huntState);
+        onHuntStateChange(nextResult.huntState);
         setResult(nextResult);
         setLastResult(nextResult);
       });
@@ -199,25 +205,29 @@ function TrainingDummyGround({
     completedResultRef.current = null;
     settlementAttemptRef.current = null;
     setHuntState(nextResult.huntState);
+    onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
-    setLastResult(nextResult);
   }
 
   async function handleFlee() {
-    if (!canFlee) return;
+    if (!canFlee || !result) return;
 
+    const previousLastResult = lastResult;
     setIsResolving(true);
     setMessage("");
+    setLastResult({ ...result, status: "fled", durationTicks: playbackTenths });
     const nextResult = await fleeTrainingDummyHunt();
     setIsResolving(false);
 
     if (!nextResult.ok) {
+      setLastResult(previousLastResult);
       setMessage(nextResult.message);
       onToast({ message: nextResult.message, tone: "error" });
       return;
     }
 
     setHuntState(nextResult.huntState);
+    onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
     setPlaybackTenths(getFleeTenths(nextResult));
     onToast({ message: nextResult.message, tone: "system" });
@@ -405,7 +415,7 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
       <div className="hunt-result-summary">
         <Kv label="전투 시간" value={formatTime(durationTicks)} />
         <Kv label="DPS" value={dps} />
-        <Kv label="경험치" value={`+${result.gainedExperience} EXP`} />
+        <Kv label={result.status === "fled" ? "전투 결과" : "경험치"} value={result.status === "fled" ? "도망침" : `+${result.gainedExperience} EXP`} />
       </div>
     </article>
   );
