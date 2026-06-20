@@ -482,7 +482,7 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
   const totalDamage = result.status === "fled"
     ? result.logs.filter((entry) => entry.timeTenths <= fledAt && (entry.kind === "attack" || entry.kind === "critical")).reduce((total, entry) => total + entry.amount, 0)
     : result.totalDamage;
-  const resultStatus = result.status === "fled" ? "도망침" : result.status === "timed_out" ? "시간 초과" : result.status === "defeated" ? "패배.." : "승리";
+  const resultStatus = result.status === "fled" ? "도망침" : result.status === "timed_out" ? "시간 초과" : result.status === "defeated" ? "패배.." : null;
   const seconds = durationTicks / 10;
   const dps = seconds > 0 ? (totalDamage / seconds).toFixed(1) : "0.0";
 
@@ -495,11 +495,7 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
       <div className="hunt-result-summary">
         <Kv label="전투 시간" value={formatTime(durationTicks)} />
         <Kv label="DPS" value={dps} />
-        <Kv label="전투 결과" value={resultStatus} />
-        <Kv label="적 HP" value={`${formatAmount(getFinalHp(result.logs, "enemy", result.enemy.maxHp))} / ${formatAmount(result.enemy.maxHp)}`} />
-        <Kv label="플레이어 HP" value={`${formatAmount(getFinalHp(result.logs, "player", result.player.currentHp ?? result.player.startHp ?? result.player.maxHp))} / ${formatAmount(result.player.maxHp)}`} />
-        <Kv label="피해량" value={formatAmount(totalDamage)} />
-        <Kv label="경험치" value={`+${result.gainedExperience} EXP`} />
+        <Kv label={resultStatus ? "전투 결과" : "경험치"} value={resultStatus ?? `+${result.gainedExperience} EXP`} />
       </div>
     </article>
   );
@@ -519,13 +515,6 @@ function formatLogEntry(entry: HuntLogEntry, enemyName: string, gainedExperience
   if (entry.kind === "enemy_attack") return `${enemyName} 공격 -> 플레이어 · -${formatAmount(entry.amount)} HP`;
   if (entry.kind === "critical") return `치명타! -> ${enemyName} · -${formatAmount(entry.amount)} HP`;
   return `일반 공격 -> ${enemyName} · -${formatAmount(entry.amount)} HP`;
-}
-
-function getFinalHp(logs: HuntLogEntry[], target: HuntLogEntry["target"], fallback: number) {
-  for (let index = logs.length - 1; index >= 0; index -= 1) {
-    if (logs[index].target === target) return logs[index].targetHp;
-  }
-  return fallback;
 }
 
 function formatTime(tenths: number) {
