@@ -71,7 +71,6 @@ function TrainingDummyGround({
 }) {
   const [result, setResult] = useState<HuntResult | null>(null);
   const [lastResult, setLastResult] = useState<HuntResult | null>(null);
-  const [message, setMessage] = useState("");
   const [huntState, setHuntState] = useState<HuntState | null>(null);
   const [monsterInfo, setMonsterInfo] = useState<MonsterInfo | null>(null);
   const [isMonsterInfoOpen, setIsMonsterInfoOpen] = useState(false);
@@ -102,10 +101,11 @@ function TrainingDummyGround({
   const isGoingToDifferentGround = Boolean(isBattleInProgress && result && selectedGroundId !== result.huntGroundId);
   const isPlaybackComplete = Boolean(result && (!isBattleInProgress || playbackTenths >= result.durationTicks));
   const isRecovering = Boolean(!isBattleInProgress && huntState?.recoveryEndsAt && Date.parse(huntState.recoveryEndsAt) > now);
-  const defeatRecoveryStartedAt = huntState?.isDefeatRecovery && huntState.playerRecoveryStartedAt ? Date.parse(huntState.playerRecoveryStartedAt) : 0;
-  const isDefeatRecoveryLocked = Boolean(defeatRecoveryStartedAt && defeatRecoveryStartedAt + 10_000 > now);
-  const isRetreatLocked = Boolean(isDefeatRecoveryLocked && (result?.status === "fled" || huntState?.lastBattle?.status === "fled"));
-  const canHunt = !isSubmitting && !isResolving && !isDefeatRecoveryLocked && remainingTenths === 0 && (!result || !isBattleInProgress);
+  const recoveryLockStatus = huntState?.lastBattle?.status ?? result?.status;
+  const recoveryLockStartedAt = huntState?.playerRecoveryStartedAt ? Date.parse(huntState.playerRecoveryStartedAt) : 0;
+  const isRecoveryLocked = Boolean(recoveryLockStartedAt && (recoveryLockStatus === "defeated" || recoveryLockStatus === "fled") && recoveryLockStartedAt + 10_000 > now);
+  const isRetreatLocked = Boolean(isRecoveryLocked && recoveryLockStatus === "fled");
+  const canHunt = !isSubmitting && !isResolving && !isRecoveryLocked && remainingTenths === 0 && (!result || !isBattleInProgress);
   const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
   const displayLevel = result ? (isPlaybackComplete ? result.levelAfter : result.player.level) : character.level;
   const displayExperience = result ? (isPlaybackComplete ? result.experienceAfter : result.player.experience ?? 0) : character.experience;
@@ -141,11 +141,11 @@ function TrainingDummyGround({
   }, [character.level]);
 
   useEffect(() => {
-    if (remainingTenths === 0 && !isRecovering && !isDefeatRecoveryLocked) return;
+    if (remainingTenths === 0 && !isRecovering && !isRecoveryLocked) return;
 
     const intervalId = window.setInterval(() => setNow(Date.now()), 100);
     return () => window.clearInterval(intervalId);
-  }, [isDefeatRecoveryLocked, isRecovering, remainingTenths]);
+  }, [isRecovering, isRecoveryLocked, remainingTenths]);
 
   useEffect(() => {
     if (!result || !isBattleInProgress || isPlaybackComplete) return;
@@ -206,7 +206,7 @@ function TrainingDummyGround({
         if (!isActive) return;
         setIsResolving(false);
         if (!nextResult.ok) {
-          setMessage(nextResult.message);
+          onToast({ message: nextResult.message, tone: "error" });
           return;
         }
         setHuntState(nextResult.huntState);
@@ -226,14 +226,12 @@ function TrainingDummyGround({
     if (!canHunt) return;
 
     setIsSubmitting(true);
-    setMessage("");
     setResult(null);
     setPlaybackTenths(0);
     const nextResult = await huntTrainingDummy();
     setIsSubmitting(false);
 
     if (!nextResult.ok) {
-      setMessage(nextResult.message);
       onToast({ message: nextResult.message, tone: "error" });
       void onCharacterRefresh();
       return;
@@ -251,7 +249,7 @@ function TrainingDummyGround({
     if (huntGroundId === selectedGroundId) return;
     const nextState = await selectHuntGround(huntGroundId);
     if (!nextState.ok || !nextState.state) {
-      setMessage(nextState.message);
+      onToast({ message: nextState.message, tone: "error" });
       return;
     }
     setHuntState(nextState.state);
@@ -263,14 +261,12 @@ function TrainingDummyGround({
 
     const previousLastResult = lastResult;
     setIsResolving(true);
-    setMessage("");
     setLastResult({ ...result, status: "fled", durationTicks: playbackTenths });
     const nextResult = await fleeTrainingDummyHunt();
     setIsResolving(false);
 
     if (!nextResult.ok) {
       setLastResult(previousLastResult);
-      setMessage(nextResult.message);
       onToast({ message: nextResult.message, tone: "error" });
       return;
     }
@@ -326,7 +322,7 @@ function TrainingDummyGround({
             <div className="hunt-action-buttons">
               {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망치기</button>}
               <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
-                {isSubmitting || isResolving || isBattleInProgress ? "전투 중..." : isRetreatLocked ? "후퇴 후 대기..." : isDefeatRecoveryLocked ? "회복 중..." : "전투 시작"}
+                {isSubmitting || isResolving || isBattleInProgress ? "전투 중..." : isRetreatLocked ? "후퇴 후 회복 중.." : isRecoveryLocked ? "회복 중..." : "전투 시작"}
               </button>
             </div>
           </div>
@@ -350,7 +346,6 @@ function TrainingDummyGround({
               expandedContent={monsterInfo ? <MonsterInfoStats info={monsterInfo} /> : null}
             />
           </div>
-          {message && <p className="panel-message is-error" role="status">{message}</p>}
           <ol className="combat-log" aria-label="전투 로그" ref={logRef}>
             {result ? (
               <>
