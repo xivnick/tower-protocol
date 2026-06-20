@@ -342,7 +342,7 @@ function Kv({ label, value }: { label: string; value: string }) {
 
 function formatLogEntry(entry: HuntLogEntry, dummyMaxHp: number) {
   if (entry.kind === "encounter") return "허수아비와 조우했습니다.";
-  if (entry.kind === "defeat") return "허수아비 격파";
+  if (entry.kind === "defeat") return "전투 승리";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "regeneration") return `허수아비 재생 -> 허수아비 · +${formatAmount(entry.amount)} HP (${formatAmount(entry.targetHp)} / ${dummyMaxHp})`;
   if (entry.kind === "critical") return `치명타! -> 허수아비 · -${entry.amount} HP (${formatAmount(entry.targetHp)} / ${dummyMaxHp})`;
