@@ -66,12 +66,18 @@ export type HuntState = {
 export type MonsterInfo = {
   name: string;
   level: number;
-  vitality: number;
-  endurance: number;
+  physicalAttack: number;
+  magicAttack: number;
   physicalDefense: number;
+  magicDefense: number;
   maxHp: number;
-  regenerationPerSecond: number;
-  basicAttackEnabled: boolean;
+  regeneration: number;
+  attacksPerSecond: number;
+  cooldownReduction: number;
+  accuracy: number;
+  evasionRate: number;
+  criticalChance: number;
+  criticalDamage: number;
 };
 
 export type HuntResult = HuntBattle & {
@@ -368,20 +374,27 @@ export async function getTrainingDummyInfo(): Promise<{ ok: boolean; info: Monst
   if (error) return { ok: false, info: null, message: toKoreanAuthMessage(error.message, "몬스터 정보를 불러오지 못했습니다.") };
 
   const payload = data as {
-    name?: string; level?: number; vitality?: number; endurance?: number; physical_defense?: number;
-    max_hp?: number; regeneration_per_second?: number; basic_attack_enabled?: boolean;
+    name?: string; level?: number; physical_attack?: number; magic_attack?: number; physical_defense?: number;
+    magic_defense?: number; max_hp?: number; regeneration?: number; attacks_per_second?: number;
+    cooldown_reduction?: number; accuracy?: number; evasion_rate?: number; critical_chance?: number; critical_damage?: number;
   };
   return {
     ok: true,
     info: {
       name: payload.name ?? "허수아비",
       level: payload.level ?? 0,
-      vitality: payload.vitality ?? 0,
-      endurance: payload.endurance ?? 0,
+      physicalAttack: payload.physical_attack ?? 0,
+      magicAttack: payload.magic_attack ?? 0,
       physicalDefense: payload.physical_defense ?? 0,
+      magicDefense: payload.magic_defense ?? 0,
       maxHp: payload.max_hp ?? 0,
-      regenerationPerSecond: payload.regeneration_per_second ?? 0,
-      basicAttackEnabled: Boolean(payload.basic_attack_enabled),
+      regeneration: payload.regeneration ?? 0,
+      attacksPerSecond: payload.attacks_per_second ?? 0,
+      cooldownReduction: payload.cooldown_reduction ?? 0,
+      accuracy: payload.accuracy ?? 0,
+      evasionRate: payload.evasion_rate ?? 0,
+      criticalChance: payload.critical_chance ?? 0,
+      criticalDamage: payload.critical_damage ?? 0,
     },
     message: "",
   };

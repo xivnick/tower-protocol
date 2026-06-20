@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { fleeTrainingDummyHunt, getMyHuntState, getTrainingDummyInfo, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
-import { calculateCombatStats } from "../../shared/stats";
+import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
 import type { Character } from "../../types/character";
 import type { ToastInput } from "../../types/toast";
 
@@ -329,27 +329,37 @@ function MonsterInfoPanel({ info }: { info: MonsterInfo }) {
         <strong>LV.{info.level} {info.name}</strong>
       </div>
       <div className="combat-stat-grid monster-info-stats">
-        <MonsterCombatStat label="체력" value={info.vitality.toLocaleString()} />
-        <MonsterCombatStat label="인내" value={info.endurance.toLocaleString()} />
-        <MonsterCombatStat label="물리 방어력" shortLabel="물방" value={info.physicalDefense.toLocaleString()} />
-        <MonsterCombatStat label="최대 HP" value={formatAmount(info.maxHp)} />
-        <MonsterCombatStat label="초당 재생" value={`${formatAmount(info.regenerationPerSecond)} HP`} />
-        <MonsterCombatStat label="일반공격" value={info.basicAttackEnabled ? "사용" : "없음"} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalAttack} value={info.physicalAttack} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.magicAttack} value={info.magicAttack} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalDefense} value={info.physicalDefense} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.magicDefense} value={info.magicDefense} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.maxHp} value={info.maxHp} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.regeneration} value={info.regeneration} digits={2} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.attackSpeed} value={info.attacksPerSecond} digits={2} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.cooldownReduction} value={info.cooldownReduction * 100} suffix="%" digits={1} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.accuracy} value={info.accuracy} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.evasionRate} value={info.evasionRate} suffix="%" digits={1} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.criticalChance} value={info.criticalChance} suffix="%" digits={1} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.criticalDamage} value={info.criticalDamage} suffix="%" />
       </div>
     </section>
   );
 }
 
-function MonsterCombatStat({ label, shortLabel, value }: { label: string; shortLabel?: string; value: string }) {
+function MonsterCombatStat({ label, shortLabel, value, suffix = "", digits = 0 }: { label: string; shortLabel?: string; value: number; suffix?: string; digits?: number }) {
   return (
     <div className="combat-stat">
       <span className="combat-label">
         <span className="combat-label-full">{label}</span>
         <span className="combat-label-short">{shortLabel ?? label}</span>
       </span>
-      <strong><b>{value}</b></strong>
+      <strong><b>{formatCombatStat(value, digits)}{suffix}</b></strong>
     </div>
   );
+}
+
+function formatCombatStat(value: number, digits: number) {
+  return digits > 0 ? value.toFixed(digits) : Math.round(value).toLocaleString();
 }
 
 function CombatDetail({ value, percent, isUnknown = false, isExperience = false }: { value: string; percent: number; isUnknown?: boolean; isExperience?: boolean }) {
