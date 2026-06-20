@@ -1327,7 +1327,7 @@ button:disabled {
 
 .stat-reset-area {
   display: grid;
-  justify-items: end;
+  justify-items: center;
   gap: 4px;
   flex: 0 0 auto;
 }
