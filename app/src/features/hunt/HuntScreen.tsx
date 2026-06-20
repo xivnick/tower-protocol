@@ -13,6 +13,11 @@ const trainingDummy = {
   regenerationPerSecond: 1,
 };
 
+type CombatDetail = {
+  desktop: string;
+  mobile?: string;
+};
+
 export function HuntScreen({
   character,
   onCharacterChange,
@@ -72,22 +77,22 @@ function TrainingDummyGround({
   const targetHp = visibleLogs.length > 0 ? visibleLogs[visibleLogs.length - 1].targetHp : trainingDummy.maxHp;
   const isPlaybackComplete = Boolean(result && playbackTenths >= result.durationTicks);
   const canHunt = !isSubmitting && remainingTenths === 0 && (!result || isPlaybackComplete);
-  const playerDetails = [
-    `물리 공격력 ${combatStats.physicalAttack}`,
-    `마법 공격력 ${combatStats.magicAttack}`,
-    `물리 방어 ${combatStats.physicalDefense}`,
-    `마법 방어 ${combatStats.magicDefense}`,
-    `재생 ${formatAmount(combatStats.hpRegenPerSecond)}`,
-    `공속 ${formatAmount(combatStats.attacksPerSecond)}`,
-    `쿨감 ${formatAmount(combatStats.cooldownReduction * 100)}%`,
-    `명중 ${combatStats.accuracy}`,
-    `회피율 ${formatAmount(combatStats.evasionRateAgainstAccuracy100 * 100)}%`,
-    `치명타 확률 ${combatStats.criticalChance}%`,
-    `치명타 피해 ${combatStats.criticalDamage}%`,
+  const playerDetails: CombatDetail[] = [
+    { desktop: `물리 공격력 ${combatStats.physicalAttack}` },
+    { desktop: `마법 공격력 ${combatStats.magicAttack}` },
+    { desktop: `물리 방어 ${combatStats.physicalDefense}` },
+    { desktop: `마법 방어 ${combatStats.magicDefense}` },
+    { desktop: `재생 ${formatAmount(combatStats.hpRegenPerSecond)}` },
+    { desktop: `공격 속도 ${formatAmount(combatStats.attacksPerSecond)}`, mobile: `공속 ${formatAmount(combatStats.attacksPerSecond)}` },
+    { desktop: `쿨타임 감소 ${formatAmount(combatStats.cooldownReduction * 100)}%`, mobile: `쿨감 ${formatAmount(combatStats.cooldownReduction * 100)}%` },
+    { desktop: `명중 ${combatStats.accuracy}` },
+    { desktop: `회피율 ${formatAmount(combatStats.evasionRateAgainstAccuracy100 * 100)}%` },
+    { desktop: `치명타 확률 ${combatStats.criticalChance}%` },
+    { desktop: `치명타 피해 ${combatStats.criticalDamage}%` },
   ];
-  const dummyDetails = [
-    "물리 공격력 0", "마법 공격력 0", `물리 방어 ${trainingDummy.physicalDefense}`, "마법 방어 0", `재생 ${trainingDummy.regenerationPerSecond}`,
-    "공속 0", "쿨감 0%", "명중 0", "회피율 0%", "치명타 확률 0%", "치명타 피해 0%",
+  const dummyDetails: CombatDetail[] = [
+    { desktop: "물리 공격력 0" }, { desktop: "마법 공격력 0" }, { desktop: `물리 방어 ${trainingDummy.physicalDefense}` }, { desktop: "마법 방어 0" }, { desktop: `재생 ${trainingDummy.regenerationPerSecond}` },
+    { desktop: "공격 속도 0", mobile: "공속 0" }, { desktop: "쿨타임 감소 0%", mobile: "쿨감 0%" }, { desktop: "명중 0" }, { desktop: "회피율 0%" }, { desktop: "치명타 확률 0%" }, { desktop: "치명타 피해 0%" },
   ];
 
   useEffect(() => {
@@ -198,7 +203,7 @@ function CombatantCard({
   name: string;
   currentHp: number;
   maxHp: number;
-  details: string[];
+  details: CombatDetail[];
 }) {
   const hpPercent = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
 
@@ -210,7 +215,12 @@ function CombatantCard({
         <i style={{ width: `${hpPercent}%` }} />
       </div>
       <b>HP {formatAmount(currentHp)} / {formatAmount(maxHp)}</b>
-      <ul>{details.map((detail) => <li key={detail}>{detail}</li>)}</ul>
+      <ul>{details.map((detail) => (
+        <li key={detail.desktop}>
+          <span className="combat-detail-wide">{detail.desktop}</span>
+          {detail.mobile && <span className="combat-detail-mobile">{detail.mobile}</span>}
+        </li>
+      ))}</ul>
     </div>
   );
 }

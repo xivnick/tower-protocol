@@ -1005,6 +1005,10 @@ button:disabled {
   list-style: none;
 }
 
+.combat-detail-mobile {
+  display: none;
+}
+
 .hunt-result-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1453,6 +1457,14 @@ button:disabled {
 
   .combatant-card ul {
     grid-template-columns: 1fr;
+  }
+
+  .combat-detail-wide {
+    display: none;
+  }
+
+  .combat-detail-mobile {
+    display: inline;
   }
 
   .archive-view {
