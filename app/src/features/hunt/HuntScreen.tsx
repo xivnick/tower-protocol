@@ -247,7 +247,7 @@ function TrainingDummyGround({
               name={result ? `LV.${result.enemy.level} ${result.enemy.name}` : "???"}
               currentHp={result ? targetHp : null}
               maxHp={result ? dummyMaxHp : null}
-              detail={{ value: "", percent: 0, isUnknown: true }}
+              detail={isMonsterInfoOpen ? undefined : { value: "", percent: 0, isUnknown: true }}
               onInfoClick={() => setIsMonsterInfoOpen((current) => !current)}
               isInfoOpen={isMonsterInfoOpen}
               expandedContent={isMonsterInfoOpen && monsterInfo ? <MonsterInfoStats info={monsterInfo} /> : null}
