@@ -259,7 +259,7 @@ function TrainingDummyGround({
                 {visibleLogs.map((entry, index) => (
                   <li className={`is-${entry.kind}`} key={`${entry.timeTenths}-${entry.kind}-${index}`}>
                     <time>[{formatTime(entry.timeTenths)}]</time>
-                    <span>{formatLogEntry(entry, dummyMaxHp)}</span>
+                    <span>{formatLogEntry(entry, dummyMaxHp, result.gainedExperience)}</span>
                   </li>
                 ))}
               </>
@@ -403,9 +403,9 @@ function Kv({ label, value }: { label: string; value: string }) {
   return <div><span>{label}</span><strong>{value}</strong></div>;
 }
 
-function formatLogEntry(entry: HuntLogEntry, dummyMaxHp: number) {
+function formatLogEntry(entry: HuntLogEntry, dummyMaxHp: number, gainedExperience: number) {
   if (entry.kind === "encounter") return "허수아비와 조우했습니다.";
-  if (entry.kind === "defeat") return "전투 승리";
+  if (entry.kind === "defeat") return `전투 승리 +${gainedExperience} EXP`;
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "regeneration") return `허수아비 재생 -> 허수아비 · +${formatAmount(entry.amount)} HP (${formatAmount(entry.targetHp)} / ${dummyMaxHp})`;
   if (entry.kind === "critical") return `치명타! -> 허수아비 · -${entry.amount} HP (${formatAmount(entry.targetHp)} / ${dummyMaxHp})`;
