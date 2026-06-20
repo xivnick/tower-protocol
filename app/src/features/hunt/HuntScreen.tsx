@@ -143,11 +143,10 @@ function TrainingDummyGround({
   return (
     <section className="screen-panel hunt-screen">
       <article className="panel hunt-location-panel">
-        <div className="hunt-location-info">
+        <div className="panel-head compact action-head">
           <div>
             <span>HUNTING GROUND</span>
-            <strong>허수아비 훈련소</strong>
-            <small>기본 전투 스탯 시험</small>
+            <h2>허수아비 훈련소</h2>
           </div>
           <button className="text-button" type="button" onClick={() => setIsGroundSelectorOpen((current) => !current)} aria-expanded={isGroundSelectorOpen}>사냥터 선택</button>
         </div>

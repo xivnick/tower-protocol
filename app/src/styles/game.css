@@ -918,27 +918,6 @@ button:disabled {
   align-content: start;
 }
 
-.hunt-location-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.hunt-location-info span,
-.hunt-location-info small {
-  display: block;
-  color: var(--mut);
-  font-size: 12px;
-}
-
-.hunt-location-info strong {
-  display: block;
-  margin: 3px 0;
-  color: var(--txt-bright);
-  font-size: 16px;
-}
-
 .hunt-ground-selector {
   display: grid;
   gap: 10px;
@@ -1477,11 +1456,6 @@ button:disabled {
   .hunt-result-summary,
   .combatant-grid {
     grid-template-columns: 1fr;
-  }
-
-  .hunt-location-info {
-    align-items: flex-start;
-    flex-direction: column;
   }
 
   .combatant-card ul {
