@@ -157,21 +157,26 @@ function TrainingDummyGround({
     if (!result || result.status !== "in_progress" || !isPlaybackComplete || isResolving || settlementAttemptRef.current === result.startedAt) return;
 
     let isActive = true;
-    settlementAttemptRef.current = result.startedAt;
-    setIsResolving(true);
-    void settleTrainingDummyHunt().then((nextResult) => {
-      if (!isActive) return;
-      setIsResolving(false);
-      if (!nextResult.ok) {
-        setMessage(nextResult.message);
-        return;
-      }
-      setHuntState(nextResult.huntState);
-      setResult(nextResult);
-      setLastResult(nextResult);
-    });
+    const timeoutId = window.setTimeout(() => {
+      settlementAttemptRef.current = result.startedAt;
+      setIsResolving(true);
+      void settleTrainingDummyHunt().then((nextResult) => {
+        if (!isActive) return;
+        setIsResolving(false);
+        if (!nextResult.ok) {
+          setMessage(nextResult.message);
+          return;
+        }
+        setHuntState(nextResult.huntState);
+        setResult(nextResult);
+        setLastResult(nextResult);
+      });
+    }, 180);
 
-    return () => { isActive = false; };
+    return () => {
+      isActive = false;
+      window.clearTimeout(timeoutId);
+    };
   }, [isPlaybackComplete, result]);
 
   async function handleHunt() {
