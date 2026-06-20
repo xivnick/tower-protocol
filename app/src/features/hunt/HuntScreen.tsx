@@ -15,8 +15,8 @@ const trainingDummy = {
 };
 
 const HUNT_GROUNDS = [
-  { id: "training-dummy", name: "허수아비 훈련장" },
-  { id: "wooden-doll", name: "목각인형 훈련장" },
+  { id: "training-dummy", name: "허수아비 훈련장", recommendedLevel: "추천 LV.1–100" },
+  { id: "wooden-doll", name: "목각인형 훈련장", recommendedLevel: "추천 LV.1–100" },
 ];
 
 export function HuntScreen({
@@ -77,6 +77,7 @@ function TrainingDummyGround({
   const [isMonsterInfoOpen, setIsMonsterInfoOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
+  const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [playbackTenths, setPlaybackTenths] = useState(0);
   const recoveryToastRef = useRef<string | null>(null);
@@ -89,6 +90,7 @@ function TrainingDummyGround({
   const combatStats = calculateCombatStats(character);
   const visibleLogs = useMemo(() => result?.logs.filter((entry) => entry.timeTenths <= playbackTenths) ?? [], [playbackTenths, result]);
   const selectedGroundId = huntState?.selectedHuntGroundId ?? "training-dummy";
+  const selectedGround = HUNT_GROUNDS.find((ground) => ground.id === selectedGroundId) ?? HUNT_GROUNDS[0];
   const dummyMaxHp = result?.enemy.maxHp ?? monsterInfo?.maxHp ?? trainingDummy.maxHp(character.level);
   const enemyLogs = visibleLogs.filter((entry) => entry.target !== "player");
   const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
@@ -246,6 +248,8 @@ function TrainingDummyGround({
   }
 
   async function handleGroundChange(huntGroundId: string) {
+    setIsLocationMenuOpen(false);
+    if (huntGroundId === selectedGroundId) return;
     const nextState = await selectHuntGround(huntGroundId);
     if (!nextState.ok || !nextState.state) {
       setMessage(nextState.message);
@@ -281,12 +285,38 @@ function TrainingDummyGround({
 
   return (
     <section className="screen-panel hunt-screen">
-      <div className="hunt-location-strip">
-        <span>{isBattleInProgress ? "GOING TO" : "LOCATION"}</span>
-        <select aria-label="사냥터 선택" value={selectedGroundId} onChange={(event) => void handleGroundChange(event.target.value)}>
-          {HUNT_GROUNDS.map((ground) => <option value={ground.id} key={ground.id}>{ground.name}</option>)}
-        </select>
-        <small>권장 LV.1–100</small>
+      <div className="hunt-location-picker">
+        <button
+          className="hunt-location-strip"
+          type="button"
+          aria-expanded={isLocationMenuOpen}
+          aria-controls="hunt-location-menu"
+          onClick={() => setIsLocationMenuOpen((current) => !current)}
+        >
+          <span>{isBattleInProgress ? "GOING TO" : "LOCATION"}</span>
+          <strong>{selectedGround.name}</strong>
+          <small>{selectedGround.recommendedLevel}</small>
+          <svg className="hunt-location-icon" aria-hidden="true" viewBox="0 0 16 16">
+            <path d="m4 6 4 4 4-4" />
+          </svg>
+        </button>
+        {isLocationMenuOpen && (
+          <div className="hunt-location-menu" id="hunt-location-menu" role="menu" aria-label="사냥터 선택">
+            {HUNT_GROUNDS.map((ground) => (
+              <button
+                className={ground.id === selectedGroundId ? "is-selected" : ""}
+                type="button"
+                role="menuitemradio"
+                aria-checked={ground.id === selectedGroundId}
+                key={ground.id}
+                onClick={() => void handleGroundChange(ground.id)}
+              >
+                <strong>{ground.name}</strong>
+                <small>{ground.recommendedLevel}</small>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <article className="panel combat-record-panel">
           <div className="panel-head compact action-head">
