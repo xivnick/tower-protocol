@@ -133,7 +133,7 @@ function TrainingDummyGround({
 
     completedResultRef.current = result;
     onCharacterChange(result.character);
-    onToast({ message: `전투 완료 · 경험치 +${result.gainedExperience}`, tone: "system" });
+    onToast({ message: `전투 완료 · +${result.gainedExperience} EXP`, tone: "system" });
 
     if (result.levelAfter > result.levelBefore) {
       onToast({ message: `레벨업! -> LV.${result.levelAfter}`, tone: "epic" });
