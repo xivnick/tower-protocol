@@ -104,6 +104,7 @@ function TrainingDummyGround({
   const isRecovering = Boolean(!isBattleInProgress && huntState?.recoveryEndsAt && Date.parse(huntState.recoveryEndsAt) > now);
   const defeatRecoveryStartedAt = huntState?.isDefeatRecovery && huntState.playerRecoveryStartedAt ? Date.parse(huntState.playerRecoveryStartedAt) : 0;
   const isDefeatRecoveryLocked = Boolean(defeatRecoveryStartedAt && defeatRecoveryStartedAt + 10_000 > now);
+  const isRetreatLocked = Boolean(isDefeatRecoveryLocked && (result?.status === "fled" || huntState?.lastBattle?.status === "fled"));
   const canHunt = !isSubmitting && !isResolving && !isDefeatRecoveryLocked && remainingTenths === 0 && (!result || !isBattleInProgress);
   const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
   const displayLevel = result ? (isPlaybackComplete ? result.levelAfter : result.player.level) : character.level;
@@ -325,7 +326,7 @@ function TrainingDummyGround({
             <div className="hunt-action-buttons">
               {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망치기</button>}
               <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
-                {isSubmitting || isResolving || isBattleInProgress ? "전투 중..." : isDefeatRecoveryLocked ? "회복 중..." : "전투 시작"}
+                {isSubmitting || isResolving || isBattleInProgress ? "전투 중..." : isRetreatLocked ? "후퇴 후 대기..." : isDefeatRecoveryLocked ? "회복 중..." : "전투 시작"}
               </button>
             </div>
           </div>
