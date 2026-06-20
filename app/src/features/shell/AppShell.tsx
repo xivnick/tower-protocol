@@ -98,8 +98,14 @@ export function AppShell({
         if (!nextResult.character) return;
 
         onCharacterChange(nextResult.character);
-        showToast({ message: `전투 완료 · +${nextResult.gainedExperience} EXP`, tone: "system" });
-        if (nextResult.levelAfter > nextResult.levelBefore) {
+        if (nextResult.status === "defeated") {
+          showToast({ message: "패배..", tone: "error" });
+        } else if (nextResult.status === "timed_out") {
+          showToast({ message: "시간 제한에 도달해 전투를 종료했습니다.", tone: "system" });
+        } else {
+          showToast({ message: `전투 완료 · +${nextResult.gainedExperience} EXP`, tone: "system" });
+        }
+        if (nextResult.status === "victory" && nextResult.levelAfter > nextResult.levelBefore) {
           showToast({ message: `레벨업! -> LV.${nextResult.levelAfter}`, tone: "epic" });
         }
       });

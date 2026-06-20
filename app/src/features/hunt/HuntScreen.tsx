@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { fleeTrainingDummyHunt, getMyHuntState, getTrainingDummyInfo, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
+import { fleeTrainingDummyHunt, getMyHuntState, getTrainingDummyInfo, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
@@ -13,6 +13,11 @@ const trainingDummy = {
     return 100 + (level * 20) + (vitality * 10);
   },
 };
+
+const HUNT_GROUNDS = [
+  { id: "training-dummy", name: "허수아비 훈련장" },
+  { id: "wooden-doll", name: "목각인형 훈련장" },
+];
 
 export function HuntScreen({
   character,
@@ -74,6 +79,7 @@ function TrainingDummyGround({
   const [isResolving, setIsResolving] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [playbackTenths, setPlaybackTenths] = useState(0);
+  const recoveryToastRef = useRef<string | null>(null);
   const logRef = useRef<HTMLOListElement>(null);
   const completedResultRef = useRef<HuntResult | null>(null);
   const settlementAttemptRef = useRef<string | null>(null);
@@ -82,10 +88,15 @@ function TrainingDummyGround({
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
   const combatStats = calculateCombatStats(character);
   const visibleLogs = useMemo(() => result?.logs.filter((entry) => entry.timeTenths <= playbackTenths) ?? [], [playbackTenths, result]);
-  const dummyMaxHp = result?.enemy.maxHp ?? trainingDummy.maxHp(character.level);
-  const targetHp = visibleLogs.length > 0 ? visibleLogs[visibleLogs.length - 1].targetHp : dummyMaxHp;
+  const selectedGroundId = huntState?.selectedHuntGroundId ?? "training-dummy";
+  const dummyMaxHp = result?.enemy.maxHp ?? monsterInfo?.maxHp ?? trainingDummy.maxHp(character.level);
+  const enemyLogs = visibleLogs.filter((entry) => entry.target !== "player");
+  const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
+  const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
+  const playerHp = playerLogs.length > 0 ? playerLogs[playerLogs.length - 1].targetHp : result?.player.startHp ?? huntState?.playerCurrentHp ?? result?.player.maxHp ?? combatStats.maxHp;
   const isBattleInProgress = result?.status === "in_progress";
   const isPlaybackComplete = Boolean(result && (!isBattleInProgress || playbackTenths >= result.durationTicks));
+  const isDefeatRecovering = Boolean(huntState?.isDefeatRecovery && huntState.recoveryEndsAt && Date.parse(huntState.recoveryEndsAt) > now);
   const canHunt = !isSubmitting && !isResolving && remainingTenths === 0 && (!result || !isBattleInProgress);
   const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
   const displayLevel = result ? (isPlaybackComplete ? result.levelAfter : result.player.level) : character.level;
@@ -122,11 +133,18 @@ function TrainingDummyGround({
   }, [character.level]);
 
   useEffect(() => {
-    if (remainingTenths === 0) return;
+    if (remainingTenths === 0 && !isDefeatRecovering) return;
 
     const intervalId = window.setInterval(() => setNow(Date.now()), 100);
     return () => window.clearInterval(intervalId);
-  }, [remainingTenths]);
+  }, [isDefeatRecovering, remainingTenths]);
+
+  useEffect(() => {
+    const recoveryEndsAt = huntState?.recoveryEndsAt;
+    if (!recoveryEndsAt || Date.parse(recoveryEndsAt) > now || recoveryToastRef.current === recoveryEndsAt) return;
+    recoveryToastRef.current = recoveryEndsAt;
+    onToast({ message: "체력이 모두 회복되었습니다.", tone: "system" });
+  }, [huntState?.recoveryEndsAt, now, onToast]);
 
   useEffect(() => {
     if (!result || !isBattleInProgress || isPlaybackComplete) return;
@@ -152,6 +170,14 @@ function TrainingDummyGround({
       completedResultRef.current = result;
       onCharacterChange(result.character);
       onToast({ message: "시간 제한에 도달해 전투를 종료했습니다.", tone: "system" });
+      return;
+    }
+
+    if (result.status === "defeated") {
+      if (!result.character) return;
+      completedResultRef.current = result;
+      onCharacterChange(result.character);
+      onToast({ message: "패배..", tone: "error" });
       return;
     }
 
@@ -219,6 +245,16 @@ function TrainingDummyGround({
     setResult(nextResult);
   }
 
+  async function handleGroundChange(huntGroundId: string) {
+    const nextState = await selectHuntGround(huntGroundId);
+    if (!nextState.ok || !nextState.state) {
+      setMessage(nextState.message);
+      return;
+    }
+    setHuntState(nextState.state);
+    onHuntStateChange(nextState.state);
+  }
+
   async function handleFlee() {
     if (!canFlee || !result) return;
 
@@ -246,8 +282,10 @@ function TrainingDummyGround({
   return (
     <section className="screen-panel hunt-screen">
       <div className="hunt-location-strip">
-        <span>LOCATION</span>
-        <strong>허수아비 훈련소</strong>
+        <span>{isBattleInProgress ? "GOING TO" : "LOCATION"}</span>
+        <select aria-label="사냥터 선택" value={selectedGroundId} onChange={(event) => void handleGroundChange(event.target.value)}>
+          {HUNT_GROUNDS.map((ground) => <option value={ground.id} key={ground.id}>{ground.name}</option>)}
+        </select>
         <small>권장 LV.1–100</small>
       </div>
       <article className="panel combat-record-panel">
@@ -267,8 +305,8 @@ function TrainingDummyGround({
             <CombatHpCard
               label="PLAYER"
               name={result ? `LV.${result.player.level} ${result.player.name}` : `LV.${character.level} ${character.name}`}
-              currentHp={result?.player.maxHp ?? combatStats.maxHp}
-              maxHp={result?.player.maxHp ?? combatStats.maxHp}
+              currentHp={playerHp}
+              maxHp={result?.player.maxHp ?? huntState?.playerMaxHp ?? combatStats.maxHp}
               detail={{ value: `EXP ${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()}`, percent: experiencePercent, isExperience: true }}
               linkToCharacter
             />
@@ -290,7 +328,7 @@ function TrainingDummyGround({
                 {visibleLogs.map((entry, index) => (
                   <li className={`is-${entry.kind}`} key={`${entry.timeTenths}-${entry.kind}-${index}`}>
                     <time>[{formatTime(entry.timeTenths)}]</time>
-                    <span>{formatLogEntry(entry, dummyMaxHp, result.gainedExperience)}</span>
+                    <span>{formatLogEntry(entry, result.enemy.name, result.gainedExperience)}</span>
                   </li>
                 ))}
               </>
@@ -413,7 +451,7 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
   const totalDamage = result.status === "fled"
     ? result.logs.filter((entry) => entry.timeTenths <= fledAt && (entry.kind === "attack" || entry.kind === "critical")).reduce((total, entry) => total + entry.amount, 0)
     : result.totalDamage;
-  const resultStatus = result.status === "fled" ? "도망침" : result.status === "timed_out" ? "시간 초과" : null;
+  const resultStatus = result.status === "fled" ? "도망침" : result.status === "timed_out" ? "시간 초과" : result.status === "defeated" ? "패배.." : "승리";
   const seconds = durationTicks / 10;
   const dps = seconds > 0 ? (totalDamage / seconds).toFixed(1) : "0.0";
 
@@ -426,7 +464,11 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
       <div className="hunt-result-summary">
         <Kv label="전투 시간" value={formatTime(durationTicks)} />
         <Kv label="DPS" value={dps} />
-        <Kv label={resultStatus ? "전투 결과" : "경험치"} value={resultStatus ?? `+${result.gainedExperience} EXP`} />
+        <Kv label="전투 결과" value={resultStatus} />
+        <Kv label="적 HP" value={`${formatAmount(getFinalHp(result.logs, "enemy", result.enemy.maxHp))} / ${formatAmount(result.enemy.maxHp)}`} />
+        <Kv label="플레이어 HP" value={`${formatAmount(getFinalHp(result.logs, "player", result.player.currentHp ?? result.player.startHp ?? result.player.maxHp))} / ${formatAmount(result.player.maxHp)}`} />
+        <Kv label="피해량" value={formatAmount(totalDamage)} />
+        <Kv label="경험치" value={`+${result.gainedExperience} EXP`} />
       </div>
     </article>
   );
@@ -436,14 +478,23 @@ function Kv({ label, value }: { label: string; value: string }) {
   return <div><span>{label}</span><strong>{value}</strong></div>;
 }
 
-function formatLogEntry(entry: HuntLogEntry, dummyMaxHp: number, gainedExperience: number) {
-  if (entry.kind === "encounter") return "허수아비와 조우했습니다.";
+function formatLogEntry(entry: HuntLogEntry, enemyName: string, gainedExperience: number) {
+  if (entry.kind === "encounter") return `${enemyName}와 조우했습니다.`;
   if (entry.kind === "defeat") return `전투 승리 +${gainedExperience} EXP`;
+  if (entry.kind === "player_defeat") return "패배..";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
-  if (entry.kind === "regeneration") return `허수아비 재생 -> 허수아비 · +${formatAmount(entry.amount)} HP`;
-  if (entry.kind === "critical") return `치명타! -> 허수아비 · -${entry.amount} HP`;
-  return `일반 공격 -> 허수아비 · -${entry.amount} HP`;
+  if (entry.kind === "regeneration") return `${enemyName} 재생 · +${formatAmount(entry.amount)} HP`;
+  if (entry.kind === "enemy_attack") return `${enemyName} 공격 -> 플레이어 · -${formatAmount(entry.amount)} HP`;
+  if (entry.kind === "critical") return `치명타! -> ${enemyName} · -${formatAmount(entry.amount)} HP`;
+  return `일반 공격 -> ${enemyName} · -${formatAmount(entry.amount)} HP`;
+}
+
+function getFinalHp(logs: HuntLogEntry[], target: HuntLogEntry["target"], fallback: number) {
+  for (let index = logs.length - 1; index >= 0; index -= 1) {
+    if (logs[index].target === target) return logs[index].targetHp;
+  }
+  return fallback;
 }
 
 function formatTime(tenths: number) {

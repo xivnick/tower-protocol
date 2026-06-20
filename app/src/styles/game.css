@@ -946,6 +946,16 @@ button:disabled {
   font-size: 12px;
 }
 
+.hunt-location-strip select {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--txt-bright);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .hunt-location-strip small {
   margin-left: 4px;
   color: var(--mut);
@@ -1257,6 +1267,15 @@ button:disabled {
 .combat-log .is-defeat span {
   color: var(--acc);
   font-weight: 900;
+}
+
+.combat-log .is-player_defeat span {
+  color: var(--danger);
+  font-weight: 900;
+}
+
+.combat-log .is-enemy_attack span {
+  color: var(--txt-bright);
 }
 
 .combat-log .is-timeout span {
