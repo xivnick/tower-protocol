@@ -351,7 +351,7 @@ function TrainingDummyGround({
               <>
                 {visibleLogs.map((entry, index) => (
                   <li className={`is-${entry.kind}`} key={`${entry.timeTenths}-${entry.kind}-${index}`}>
-                    <time className={entry.target === "player" ? "is-enemy-action" : "is-player-action"}>[{formatTime(entry.timeTenths)}]</time>
+                    <time className={getLogTimeTone(entry)}>[{formatTime(entry.timeTenths)}]</time>
                     <span>{formatLogEntry(entry, result.enemy.name, result.gainedExperience)}</span>
                   </li>
                 ))}
@@ -511,6 +511,12 @@ function formatLogEntry(entry: HuntLogEntry, enemyName: string, gainedExperience
   if (entry.kind === "enemy_attack") return <>{enemyName} 공격 → PLAYER {damage}</>;
   if (entry.kind === "critical") return <>PLAYER 치명타 → {enemyName} {damage}</>;
   return <>PLAYER 공격 → {enemyName} {damage}</>;
+}
+
+function getLogTimeTone(entry: HuntLogEntry) {
+  if (entry.kind === "enemy_attack") return "is-enemy-action";
+  if (entry.kind === "attack" || entry.kind === "critical") return "is-player-action";
+  return "";
 }
 
 function formatTime(tenths: number) {

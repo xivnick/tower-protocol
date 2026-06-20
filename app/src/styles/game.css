@@ -1337,11 +1337,17 @@ button:disabled {
 }
 
 .combat-log .is-regeneration span {
-  color: var(--acc-dim);
+  color: var(--mut);
 }
 
 .combat-log .is-player_regeneration span {
-  color: var(--acc-2);
+  color: var(--mut);
+}
+
+.combat-log .is-regeneration .combat-log-recovery,
+.combat-log .is-player_regeneration .combat-log-recovery {
+  color: var(--mut);
+  font-weight: 400;
 }
 
 .combat-log .is-defeat span {
@@ -1364,8 +1370,8 @@ button:disabled {
 }
 
 .combat-log .is-encounter span {
-  color: var(--acc);
-  font-weight: 800;
+  color: var(--mut);
+  font-weight: 400;
 }
 
 @keyframes combat-log-in {
