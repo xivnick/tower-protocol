@@ -33,7 +33,7 @@ export type TrainingState = {
 
 export type HuntLogEntry = {
   timeTenths: number;
-  kind: "encounter" | "attack" | "critical" | "regeneration" | "defeat" | "fled" | "timeout" | "enemy_attack" | "player_defeat";
+  kind: "encounter" | "attack" | "critical" | "regeneration" | "player_regeneration" | "defeat" | "fled" | "timeout" | "enemy_attack" | "player_defeat";
   amount: number;
   targetHp: number;
   target?: "enemy" | "player";

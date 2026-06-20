@@ -1334,6 +1334,10 @@ button:disabled {
   color: var(--acc-dim);
 }
 
+.combat-log .is-player_regeneration span {
+  color: var(--acc-2);
+}
+
 .combat-log .is-defeat span {
   color: var(--acc);
   font-weight: 900;
