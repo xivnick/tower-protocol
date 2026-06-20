@@ -13,6 +13,7 @@ export type Character = {
   wisdom: number;
   stat_points: number;
   bonus_stat_points: number;
+  hunt_available_at: string | null;
   created_at: string;
   updated_at: string;
 };

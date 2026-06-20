@@ -914,6 +914,162 @@ button:disabled {
   margin-top: 12px;
 }
 
+.hunt-screen {
+  align-content: start;
+}
+
+.hunt-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.hunt-target-card,
+.hunt-player-card {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 12px;
+}
+
+.hunt-target-card > span,
+.hunt-player-card > span {
+  color: var(--acc);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.hunt-target-card > strong,
+.hunt-player-card > strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--txt-bright);
+  font-size: 18px;
+}
+
+.hunt-target-card p,
+.hunt-player-card p {
+  margin: 8px 0 0;
+  color: var(--mut);
+}
+
+.hunt-player-card small {
+  display: block;
+  margin-top: 8px;
+  color: var(--mut-2);
+  font-size: 12px;
+}
+
+.hunt-target-card dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  margin: 12px 0 0;
+  padding-top: 12px;
+}
+
+.hunt-target-card dl div {
+  min-width: 0;
+}
+
+.hunt-target-card dt {
+  color: var(--mut-2);
+  font-size: 11px;
+}
+
+.hunt-target-card dd {
+  margin: 3px 0 0;
+  color: var(--txt-bright);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.hunt-action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.hunt-action-row small {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.hunt-result-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.hunt-result-summary div {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 10px;
+}
+
+.hunt-result-summary span,
+.hunt-result-summary strong {
+  display: block;
+}
+
+.hunt-result-summary span {
+  color: var(--mut-2);
+  font-size: 11px;
+}
+
+.hunt-result-summary strong {
+  margin-top: 3px;
+  color: var(--txt-bright);
+  font-size: 13px;
+}
+
+.combat-log {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  margin: 14px 0 0;
+  padding: 12px;
+}
+
+.combat-log li {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 10px;
+  color: var(--txt);
+  font-size: 12px;
+}
+
+.combat-log time {
+  color: var(--mut-2);
+}
+
+.combat-log .is-critical span {
+  color: var(--acc-2);
+  font-weight: 800;
+}
+
+.combat-log .is-regeneration span {
+  color: var(--acc-dim);
+}
+
+.combat-log .is-defeat span {
+  color: var(--acc);
+  font-weight: 900;
+}
+
+.hunt-result-footnote {
+  margin: 12px 0 0;
+  color: var(--mut);
+  font-size: 12px;
+}
+
 .combat-stat-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1275,6 +1431,20 @@ button:disabled {
   .content-grid,
   .screen-panel {
     overflow: visible;
+  }
+
+  .hunt-layout,
+  .hunt-result-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .hunt-target-card dl {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .hunt-action-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .archive-view {
