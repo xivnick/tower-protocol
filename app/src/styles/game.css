@@ -946,30 +946,40 @@ button:disabled {
   font-weight: 800;
 }
 
-.hunt-status-grid {
+.hunt-status-stack {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  gap: 12px;
   margin-top: 14px;
 }
 
-.hunt-status-grid div {
+.hunt-status-identity {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hunt-status-identity div,
+.hunt-status-meter {
   border: 1px solid var(--line);
   background: var(--bg-2);
   padding: 10px;
 }
 
-.hunt-status-grid span,
-.hunt-status-grid strong {
+.hunt-status-identity span,
+.hunt-status-identity strong,
+.hunt-status-meter span,
+.hunt-status-meter strong {
   display: block;
 }
 
-.hunt-status-grid span {
+.hunt-status-identity span,
+.hunt-status-meter span {
   color: var(--mut-2);
   font-size: 11px;
 }
 
-.hunt-status-grid strong {
+.hunt-status-identity strong,
+.hunt-status-meter strong {
   margin-top: 3px;
   color: var(--txt-bright);
   font-size: 13px;
@@ -1509,9 +1519,12 @@ button:disabled {
     overflow: visible;
   }
 
-  .hunt-status-grid,
   .hunt-result-summary,
   .combat-hp-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hunt-status-identity {
     grid-template-columns: 1fr;
   }
 
