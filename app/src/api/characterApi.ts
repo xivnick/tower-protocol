@@ -27,7 +27,7 @@ export type TrainingRewardTier = "normal" | "good" | "great" | "max";
 
 export type HuntLogEntry = {
   timeTenths: number;
-  kind: "encounter" | "attack" | "critical" | "regeneration" | "defeat";
+  kind: "encounter" | "attack" | "critical" | "regeneration" | "defeat" | "fled";
   amount: number;
   targetHp: number;
 };
@@ -41,7 +41,9 @@ export type HuntCombatant = {
 
 export type HuntBattle = {
   huntGroundId: string;
+  status: "in_progress" | "victory" | "fled";
   startedAt: string;
+  endsAt?: string;
   player: HuntCombatant;
   enemy: HuntCombatant;
   gainedExperience: number;
@@ -93,7 +95,9 @@ type HuntPayload = {
 
 type HuntBattlePayload = {
   hunt_ground_id?: string;
+  status?: HuntBattle["status"];
   started_at?: string;
+  ends_at?: string;
   player?: { name?: string; level?: number; max_hp?: number; experience?: number };
   enemy?: { name?: string; level?: number; max_hp?: number };
   gained_experience?: number;
@@ -287,6 +291,7 @@ export async function huntTrainingDummy(): Promise<HuntResult> {
     character: null,
     huntState: null,
     huntGroundId: "training-dummy",
+    status: "in_progress",
     startedAt: new Date(0).toISOString(),
     player: { name: "", level: 0, maxHp: 0 },
     enemy: { name: "", level: 0, maxHp: 0 },
@@ -315,17 +320,25 @@ export async function huntTrainingDummy(): Promise<HuntResult> {
   const huntState = mapHuntState(payload.hunt_state);
   const battle = huntState.lastBattle;
 
-  if (!payload.character || !battle) {
+  if (!battle) {
     return { ...emptyResult, huntState, message: "사냥 결과를 불러오지 못했습니다." };
   }
 
   return {
     ok: true,
-    character: payload.character,
+    character: payload.character ?? null,
     huntState,
     ...battle,
     message: "허수아비를 격파했습니다.",
   };
+}
+
+export async function settleTrainingDummyHunt(): Promise<HuntResult> {
+  return resolveHuntAction("settle_training_dummy_hunt", "전투를 정산하지 못했습니다.", "허수아비를 격파했습니다.");
+}
+
+export async function fleeTrainingDummyHunt(): Promise<HuntResult> {
+  return resolveHuntAction("flee_training_dummy_hunt", "도망치지 못했습니다.", "전투에서 도망쳤습니다.");
 }
 
 export async function getMyHuntState(): Promise<{ ok: boolean; state: HuntState | null; message: string }> {
@@ -347,7 +360,9 @@ function mapHuntState(payload: HuntStatePayload | undefined): HuntState {
 function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
   return {
     huntGroundId: payload.hunt_ground_id ?? "training-dummy",
+    status: payload.status ?? "victory",
     startedAt: payload.started_at ?? new Date(0).toISOString(),
+    endsAt: payload.ends_at,
     player: {
       name: payload.player?.name ?? "",
       level: payload.player?.level ?? 0,
@@ -366,6 +381,26 @@ function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
     totalRegeneration: payload.total_regeneration ?? 0,
     logs: (payload.logs ?? []).map((log) => ({ timeTenths: log.time_tenths, kind: log.kind, amount: log.amount, targetHp: log.target_hp })),
   };
+}
+
+async function resolveHuntAction(rpc: "settle_training_dummy_hunt" | "flee_training_dummy_hunt", fallbackMessage: string, successMessage: string): Promise<HuntResult> {
+  const emptyResult: HuntResult = {
+    ok: false, character: null, huntState: null, huntGroundId: "training-dummy", status: "in_progress", startedAt: new Date(0).toISOString(),
+    player: { name: "", level: 0, maxHp: 0 }, enemy: { name: "", level: 0, maxHp: 0 }, gainedExperience: 0,
+    levelBefore: 0, levelAfter: 0, experienceAfter: 0, durationTicks: 0, totalDamage: 0,
+    attackCount: 0, criticalCount: 0, totalRegeneration: 0, logs: [], message: fallbackMessage,
+  };
+  if (!supabase) return { ...emptyResult, message: "Supabase 설정을 확인해주세요." };
+
+  const { data, error } = await supabase.rpc(rpc);
+  if (error) return { ...emptyResult, message: toKoreanAuthMessage(error.message, fallbackMessage) };
+
+  const payload = data as HuntPayload;
+  const huntState = mapHuntState(payload.hunt_state);
+  const battle = huntState.lastBattle;
+  if (!battle) return { ...emptyResult, huntState, message: fallbackMessage };
+
+  return { ok: true, character: payload.character ?? null, huntState, ...battle, message: successMessage };
 }
 
 export async function deleteMyCharacter(characterId: string): Promise<CharacterActionResult> {

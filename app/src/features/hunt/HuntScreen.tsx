@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { getMyHuntState, huntTrainingDummy } from "../../api/characterApi";
+import { fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntLogEntry, HuntResult, HuntState } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats } from "../../shared/stats";
@@ -64,10 +64,12 @@ function TrainingDummyGround({
   const [message, setMessage] = useState("");
   const [huntState, setHuntState] = useState<HuntState | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResolving, setIsResolving] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [playbackTenths, setPlaybackTenths] = useState(0);
   const logRef = useRef<HTMLOListElement>(null);
   const completedResultRef = useRef<HuntResult | null>(null);
+  const settlementAttemptRef = useRef<string | null>(null);
   const huntAvailableAt = result?.huntState?.availableAt ?? huntState?.availableAt;
   const availableAt = huntAvailableAt ? Date.parse(huntAvailableAt) : 0;
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
@@ -75,8 +77,10 @@ function TrainingDummyGround({
   const visibleLogs = useMemo(() => result?.logs.filter((entry) => entry.timeTenths <= playbackTenths) ?? [], [playbackTenths, result]);
   const dummyMaxHp = result?.enemy.maxHp ?? trainingDummy.maxHp(character.level);
   const targetHp = visibleLogs.length > 0 ? visibleLogs[visibleLogs.length - 1].targetHp : dummyMaxHp;
-  const isPlaybackComplete = Boolean(result && playbackTenths >= result.durationTicks);
-  const canHunt = !isSubmitting && remainingTenths === 0 && (!result || isPlaybackComplete);
+  const isBattleInProgress = result?.status === "in_progress";
+  const isPlaybackComplete = Boolean(result && (!isBattleInProgress || playbackTenths >= result.durationTicks));
+  const canHunt = !isSubmitting && !isResolving && remainingTenths === 0 && (!result || !isBattleInProgress);
+  const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
   const displayLevel = result ? (isPlaybackComplete ? result.levelAfter : result.player.level) : character.level;
   const displayExperience = result ? (isPlaybackComplete ? result.experienceAfter : result.player.experience ?? 0) : character.experience;
   const requiredExperience = getRequiredExperienceForLevel(displayLevel + 1) ?? 1;
@@ -107,14 +111,14 @@ function TrainingDummyGround({
   }, [remainingTenths]);
 
   useEffect(() => {
-    if (!result || isPlaybackComplete) return;
+    if (!result || !isBattleInProgress || isPlaybackComplete) return;
 
     const intervalId = window.setInterval(() => {
       setPlaybackTenths((current) => Math.min(current + 1, result.durationTicks));
     }, 100);
 
     return () => window.clearInterval(intervalId);
-  }, [isPlaybackComplete, result]);
+  }, [isBattleInProgress, isPlaybackComplete, result]);
 
   useEffect(() => {
     if (visibleLogs.length > 0 && logRef.current) {
@@ -123,7 +127,7 @@ function TrainingDummyGround({
   }, [visibleLogs.length]);
 
   useEffect(() => {
-    if (!result || !isPlaybackComplete || completedResultRef.current === result) return;
+    if (!result || result.status !== "victory" || !isPlaybackComplete || completedResultRef.current === result) return;
 
     if (!result.character) return;
 
@@ -136,6 +140,26 @@ function TrainingDummyGround({
     }
   }, [isPlaybackComplete, onCharacterChange, onToast, result]);
 
+  useEffect(() => {
+    if (!result || result.status !== "in_progress" || !isPlaybackComplete || isResolving || settlementAttemptRef.current === result.startedAt) return;
+
+    let isActive = true;
+    settlementAttemptRef.current = result.startedAt;
+    setIsResolving(true);
+    void settleTrainingDummyHunt().then((nextResult) => {
+      if (!isActive) return;
+      setIsResolving(false);
+      if (!nextResult.ok) {
+        setMessage(nextResult.message);
+        return;
+      }
+      setHuntState(nextResult.huntState);
+      setResult(nextResult);
+    });
+
+    return () => { isActive = false; };
+  }, [isPlaybackComplete, isResolving, result]);
+
   async function handleHunt() {
     if (!canHunt) return;
 
@@ -146,7 +170,7 @@ function TrainingDummyGround({
     const nextResult = await huntTrainingDummy();
     setIsSubmitting(false);
 
-    if (!nextResult.ok || !nextResult.character) {
+    if (!nextResult.ok) {
       setMessage(nextResult.message);
       onToast({ message: nextResult.message, tone: "error" });
       void onCharacterRefresh();
@@ -154,8 +178,29 @@ function TrainingDummyGround({
     }
 
     completedResultRef.current = null;
+    settlementAttemptRef.current = null;
     setHuntState(nextResult.huntState);
     setResult(nextResult);
+  }
+
+  async function handleFlee() {
+    if (!canFlee) return;
+
+    setIsResolving(true);
+    setMessage("");
+    const nextResult = await fleeTrainingDummyHunt();
+    setIsResolving(false);
+
+    if (!nextResult.ok) {
+      setMessage(nextResult.message);
+      onToast({ message: nextResult.message, tone: "error" });
+      return;
+    }
+
+    setHuntState(nextResult.huntState);
+    setResult(nextResult);
+    setPlaybackTenths(getFleeTenths(nextResult));
+    onToast({ message: nextResult.message, tone: "system" });
   }
 
   return (
@@ -171,9 +216,12 @@ function TrainingDummyGround({
             <span>CHARACTER</span>
             <h2 className="hunt-player-title">LV.{displayLevel} {character.name}</h2>
           </div>
-          <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
-            {isSubmitting || remainingTenths > 0 || (result && !isPlaybackComplete) ? "전투 중..." : "전투 시작"}
-          </button>
+          <div className="hunt-action-buttons">
+            {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망</button>}
+            <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
+              {isSubmitting || isResolving || isBattleInProgress ? "전투 중..." : "전투 시작"}
+            </button>
+          </div>
         </div>
         <div className="hunt-status-stack">
           <StatusMeter label="체력" value={`${combatStats.maxHp.toLocaleString()} / ${combatStats.maxHp.toLocaleString()} HP`} percent={100} />
@@ -208,7 +256,7 @@ function TrainingDummyGround({
               <li className="is-empty">전투 시작을 기다리고 있습니다.</li>
             )}
           </ol>
-          {result && isPlaybackComplete && <HuntResultPanel result={result} />}
+          {result && result.status !== "in_progress" && isPlaybackComplete && <HuntResultPanel result={result} />}
       </article>
     </section>
   );
@@ -241,17 +289,22 @@ function CombatHpCard({
 }
 
 function HuntResultPanel({ result }: { result: HuntResult }) {
-  const seconds = result.durationTicks / 10;
-  const dps = seconds > 0 ? (result.totalDamage / seconds).toFixed(1) : "0.0";
+  const fledAt = getFleeTenths(result);
+  const durationTicks = result.status === "fled" ? fledAt : result.durationTicks;
+  const totalDamage = result.status === "fled"
+    ? result.logs.filter((entry) => entry.timeTenths <= fledAt && (entry.kind === "attack" || entry.kind === "critical")).reduce((total, entry) => total + entry.amount, 0)
+    : result.totalDamage;
+  const seconds = durationTicks / 10;
+  const dps = seconds > 0 ? (totalDamage / seconds).toFixed(1) : "0.0";
 
   return (
     <section className="hunt-result-section">
       <div className="hunt-result-head">
         <span>COMBAT RESULT</span>
-        <strong>전투 결과</strong>
+        <strong>{result.status === "fled" ? "도망" : "전투 결과"}</strong>
       </div>
       <div className="hunt-result-summary">
-        <Kv label="전투 시간" value={formatTime(result.durationTicks)} />
+        <Kv label="전투 시간" value={formatTime(durationTicks)} />
         <Kv label="DPS" value={dps} />
         <Kv label="경험치" value={`+${result.gainedExperience} EXP`} />
       </div>
@@ -276,6 +329,7 @@ function StatusMeter({ label, value, percent }: { label: string; value: string; 
 function formatLogEntry(entry: HuntLogEntry, dummyMaxHp: number) {
   if (entry.kind === "encounter") return "허수아비와 조우했습니다.";
   if (entry.kind === "defeat") return "허수아비 격파";
+  if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "regeneration") return `허수아비 재생 -> 허수아비 · +${formatAmount(entry.amount)} HP (${formatAmount(entry.targetHp)} / ${dummyMaxHp})`;
   if (entry.kind === "critical") return `치명타! -> 허수아비 · -${entry.amount} HP (${formatAmount(entry.targetHp)} / ${dummyMaxHp})`;
   return `일반 공격 -> 허수아비 · -${entry.amount} HP (${formatAmount(entry.targetHp)} / ${dummyMaxHp})`;
@@ -293,4 +347,11 @@ function getElapsedTenths(startedAt: string, durationTicks: number) {
   const startedAtMs = Date.parse(startedAt);
   if (Number.isNaN(startedAtMs)) return durationTicks;
   return Math.max(0, Math.min(durationTicks, Math.floor((Date.now() - startedAtMs) / 100)));
+}
+
+function getFleeTenths(result: HuntResult) {
+  for (let index = result.logs.length - 1; index >= 0; index -= 1) {
+    if (result.logs[index].kind === "fled") return result.logs[index].timeTenths;
+  }
+  return result.durationTicks;
 }

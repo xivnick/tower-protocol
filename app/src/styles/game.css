@@ -647,6 +647,11 @@ button:disabled {
   gap: 14px;
 }
 
+.hunt-action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
 .panel-head h2 {
   margin: 4px 0 0;
   color: var(--txt-bright);
