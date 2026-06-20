@@ -1216,6 +1216,7 @@ button:disabled {
 .combat-log {
   list-style: none;
   display: grid;
+  align-content: start;
   gap: 6px;
   height: 240px;
   overflow: auto;
