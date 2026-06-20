@@ -203,14 +203,17 @@ function TrainingDummyGround({
   }
 
   async function handleFlee() {
-    if (!canFlee) return;
+    if (!canFlee || !result) return;
 
+    const previousLastResult = lastResult;
     setIsResolving(true);
     setMessage("");
+    setLastResult({ ...result, status: "fled", durationTicks: playbackTenths });
     const nextResult = await fleeTrainingDummyHunt();
     setIsResolving(false);
 
     if (!nextResult.ok) {
+      setLastResult(previousLastResult);
       setMessage(nextResult.message);
       onToast({ message: nextResult.message, tone: "error" });
       return;
