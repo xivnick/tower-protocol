@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { fleeTrainingDummyHunt, getMyHuntState, getTrainingDummyInfo, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
+import { fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
@@ -72,7 +72,6 @@ function TrainingDummyGround({
   const [result, setResult] = useState<HuntResult | null>(null);
   const [lastResult, setLastResult] = useState<HuntResult | null>(null);
   const [huntState, setHuntState] = useState<HuntState | null>(null);
-  const [monsterInfo, setMonsterInfo] = useState<MonsterInfo | null>(null);
   const [isMonsterInfoOpen, setIsMonsterInfoOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
@@ -90,7 +89,7 @@ function TrainingDummyGround({
   const displayedLogs = useMemo(() => groupCombatLogs(visibleLogs), [visibleLogs]);
   const selectedGroundId = huntState?.selectedHuntGroundId ?? "training-dummy";
   const selectedGround = HUNT_GROUNDS.find((ground) => ground.id === selectedGroundId) ?? HUNT_GROUNDS[0];
-  const dummyMaxHp = result?.enemy.maxHp ?? monsterInfo?.maxHp ?? trainingDummy.maxHp(character.level);
+  const dummyMaxHp = result?.enemy.maxHp ?? trainingDummy.maxHp(character.level);
   const enemyLogs = visibleLogs.filter((entry) => entry.target !== "player");
   const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
   const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
@@ -132,14 +131,6 @@ function TrainingDummyGround({
 
     return () => { isActive = false; };
   }, []);
-
-  useEffect(() => {
-    let isActive = true;
-    void getTrainingDummyInfo().then((nextInfo) => {
-      if (isActive && nextInfo.ok) setMonsterInfo(nextInfo.info);
-    });
-    return () => { isActive = false; };
-  }, [character.level]);
 
   useEffect(() => {
     if (remainingTenths === 0 && !isRecovering && !isRecoveryLocked) return;
@@ -341,10 +332,10 @@ function TrainingDummyGround({
               name={result ? `LV.${result.enemy.level} ${result.enemy.name}` : "???"}
               currentHp={result ? targetHp : null}
               maxHp={result ? dummyMaxHp : null}
-              onInfoClick={() => setIsMonsterInfoOpen((current) => !current)}
+              onInfoClick={result?.enemy.info ? () => setIsMonsterInfoOpen((current) => !current) : undefined}
               isInfoOpen={isMonsterInfoOpen}
               isExpanded={isMonsterInfoOpen}
-              expandedContent={monsterInfo ? <MonsterInfoStats info={monsterInfo} /> : null}
+              expandedContent={result?.enemy.info ? <MonsterInfoStats info={result.enemy.info} /> : null}
             />
           </div>
           <ol className="combat-log" aria-label="전투 로그" ref={logRef}>

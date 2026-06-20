@@ -44,6 +44,7 @@ export type HuntCombatant = {
   level: number;
   maxHp: number;
   experience?: number;
+  info?: MonsterInfo;
 };
 
 export type HuntBattle = {
@@ -138,7 +139,7 @@ type HuntBattlePayload = {
   started_at?: string;
   ends_at?: string;
   player?: { name?: string; level?: number; max_hp?: number; experience?: number; start_hp?: number; current_hp?: number };
-  enemy?: { name?: string; level?: number; max_hp?: number };
+  enemy?: { name?: string; level?: number; max_hp?: number; combat_stats?: MonsterInfoPayload };
   gained_experience?: number;
   level_before?: number;
   level_after?: number;
@@ -167,6 +168,12 @@ type HuntStatePayload = {
   player_recovery_started_at?: string | null;
   recovery_ends_at?: string | null;
   is_defeat_recovery?: boolean;
+};
+
+type MonsterInfoPayload = {
+  physical_attack?: number; magic_attack?: number; physical_defense?: number; magic_defense?: number; max_hp?: number;
+  regeneration?: number; attacks_per_second?: number; cooldown_reduction?: number; accuracy?: number; evasion_rate?: number;
+  critical_chance?: number; critical_damage?: number;
 };
 
 const characterSelectFields = "id,user_id,name,level,experience,strength,agility,dexterity,vitality,endurance,intelligence,wisdom,stat_points,bonus_stat_points,hunt_available_at,created_at,updated_at";
@@ -487,7 +494,10 @@ function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
       startHp: payload.player?.start_hp,
       currentHp: payload.player?.current_hp,
     },
-    enemy: { name: payload.enemy?.name ?? "허수아비", level: payload.enemy?.level ?? 0, maxHp: payload.enemy?.max_hp ?? 0 },
+    enemy: {
+      name: payload.enemy?.name ?? "허수아비", level: payload.enemy?.level ?? 0, maxHp: payload.enemy?.max_hp ?? 0,
+      info: payload.enemy?.combat_stats ? mapMonsterInfo(payload.enemy.combat_stats) : undefined,
+    },
     gainedExperience: payload.gained_experience ?? 0,
     levelBefore: payload.level_before ?? 0,
     levelAfter: payload.level_after ?? 0,
@@ -498,6 +508,16 @@ function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
     criticalCount: payload.critical_count ?? 0,
     totalRegeneration: payload.total_regeneration ?? 0,
     logs: (payload.logs ?? []).map((log) => ({ timeTenths: log.time_tenths, kind: log.kind, amount: log.amount, targetHp: log.target_hp, target: log.target })),
+  };
+}
+
+function mapMonsterInfo(payload: MonsterInfoPayload): MonsterInfo {
+  return {
+    name: "", level: 0, physicalAttack: payload.physical_attack ?? 0, magicAttack: payload.magic_attack ?? 0,
+    physicalDefense: payload.physical_defense ?? 0, magicDefense: payload.magic_defense ?? 0, maxHp: payload.max_hp ?? 0,
+    regeneration: payload.regeneration ?? 0, attacksPerSecond: payload.attacks_per_second ?? 0,
+    cooldownReduction: payload.cooldown_reduction ?? 0, accuracy: payload.accuracy ?? 0,
+    evasionRate: payload.evasion_rate ?? 0, criticalChance: payload.critical_chance ?? 0, criticalDamage: payload.critical_damage ?? 0,
   };
 }
 
