@@ -247,7 +247,6 @@ function TrainingDummyGround({
               name={result ? `LV.${result.enemy.level} ${result.enemy.name}` : "???"}
               currentHp={result ? targetHp : null}
               maxHp={result ? dummyMaxHp : null}
-              detail={isMonsterInfoOpen ? undefined : { value: "", percent: 0, isUnknown: true }}
               onInfoClick={() => setIsMonsterInfoOpen((current) => !current)}
               isInfoOpen={isMonsterInfoOpen}
               isExpanded={isMonsterInfoOpen}
@@ -325,7 +324,7 @@ function CombatHpCard({
       </div>
       <b>{isUnknown ? "HP ???" : `HP ${formatAmount(currentHp ?? 0)} / ${formatAmount(maxHp ?? 0)}`}</b>
       {detail && <CombatDetail {...detail} />}
-      {expandedContent && <div className={`combat-card-expansion ${isExpanded ? "is-expanded" : ""}`}>{expandedContent}</div>}
+      {expandedContent && <div className={`combat-card-expansion ${isExpanded ? "is-expanded" : ""}`}><div>{expandedContent}</div></div>}
     </div>
   );
 }

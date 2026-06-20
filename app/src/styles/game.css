@@ -1132,10 +1132,6 @@ button:disabled {
   margin-top: 12px;
 }
 
-.combat-card-detail.is-empty {
-  min-height: 25px;
-}
-
 .combat-card-detail b {
   display: block;
   margin-top: 5px;
