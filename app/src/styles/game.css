@@ -1327,18 +1327,14 @@ button:disabled {
 }
 
 .combat-log-damage { color: var(--neg); }
-.combat-log-recovery { color: var(--acc-dim); }
+.combat-log-recovery { color: var(--acc); }
 
-.combat-log-player { color: var(--acc-dim); }
+.combat-log-player { color: var(--acc); }
+.combat-log-critical { color: var(--acc); }
 .combat-log-enemy { color: #ff9b78; }
 .combat-log-arrow { display: inline-block; margin: 0 2px; font-style: normal; font-weight: 900; }
 .combat-log-arrow.is-player { color: var(--acc); }
 .combat-log-arrow.is-enemy { color: var(--neg); }
-
-.combat-log .is-critical span {
-  color: var(--acc-2);
-  font-weight: 800;
-}
 
 .combat-log .is-regeneration span {
   color: var(--mut);
@@ -1350,7 +1346,7 @@ button:disabled {
 
 .combat-log .is-regeneration .combat-log-recovery,
 .combat-log .is-player_regeneration .combat-log-recovery {
-  color: var(--acc-dim);
+  color: var(--acc);
   font-weight: 800;
 }
 
