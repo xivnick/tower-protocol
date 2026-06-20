@@ -953,36 +953,36 @@ button:disabled {
 }
 
 .hunt-status-identity {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  align-items: baseline;
   gap: 8px;
 }
 
-.hunt-status-identity div,
-.hunt-status-meter {
-  border: 1px solid var(--line);
-  background: var(--bg-2);
-  padding: 10px;
-}
-
-.hunt-status-identity span,
 .hunt-status-identity strong,
 .hunt-status-meter span,
 .hunt-status-meter strong {
   display: block;
 }
 
-.hunt-status-identity span,
 .hunt-status-meter span {
   color: var(--mut-2);
   font-size: 11px;
 }
 
-.hunt-status-identity strong,
 .hunt-status-meter strong {
   margin-top: 3px;
   color: var(--txt-bright);
   font-size: 13px;
+}
+
+.hunt-status-identity strong {
+  color: var(--txt-bright);
+  font-size: 14px;
+}
+
+.hunt-status-identity span {
+  color: var(--mut);
+  font-size: 12px;
 }
 
 .hunt-status-meter i {
@@ -1525,7 +1525,7 @@ button:disabled {
   }
 
   .hunt-status-identity {
-    grid-template-columns: 1fr;
+    align-items: baseline;
   }
 
   .archive-view {

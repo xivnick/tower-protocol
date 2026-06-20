@@ -154,8 +154,8 @@ function TrainingDummyGround({
         </div>
         <div className="hunt-status-stack">
           <div className="hunt-status-identity">
-            <Kv label="캐릭터" value={character.name} />
-            <Kv label="레벨" value={formatCharacterLevel(character.level)} />
+            <strong>{character.name}</strong>
+            <span>{formatCharacterLevel(character.level)}</span>
           </div>
           <StatusMeter label="체력" value={`${combatStats.maxHp.toLocaleString()} / ${combatStats.maxHp.toLocaleString()} HP`} percent={100} />
           <StatusMeter label="경험치" value={`${character.experience.toLocaleString()} / ${requiredExperience.toLocaleString()} EXP`} percent={experiencePercent} />
