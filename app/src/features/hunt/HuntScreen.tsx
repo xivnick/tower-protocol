@@ -66,7 +66,8 @@ function TrainingDummyGround({
   const [playbackTenths, setPlaybackTenths] = useState(0);
   const logRef = useRef<HTMLOListElement>(null);
   const completedResultRef = useRef<HuntResult | null>(null);
-  const availableAt = character.hunt_available_at ? Date.parse(character.hunt_available_at) : 0;
+  const huntAvailableAt = result?.character?.hunt_available_at ?? character.hunt_available_at;
+  const availableAt = huntAvailableAt ? Date.parse(huntAvailableAt) : 0;
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
   const combatStats = calculateCombatStats(character);
   const visibleLogs = useMemo(() => result?.logs.filter((entry) => entry.timeTenths <= playbackTenths) ?? [], [playbackTenths, result]);
@@ -102,13 +103,16 @@ function TrainingDummyGround({
   useEffect(() => {
     if (!result || !isPlaybackComplete || completedResultRef.current === result) return;
 
+    if (!result.character) return;
+
     completedResultRef.current = result;
+    onCharacterChange(result.character);
     onToast({ message: `전투 완료 · 경험치 +${result.gainedExperience}`, tone: "system" });
 
     if (result.levelAfter > result.levelBefore) {
       onToast({ message: `레벨업! -> LV.${result.levelAfter}`, tone: "epic" });
     }
-  }, [isPlaybackComplete, onToast, result]);
+  }, [isPlaybackComplete, onCharacterChange, onToast, result]);
 
   async function handleHunt() {
     if (!canHunt) return;
@@ -128,7 +132,6 @@ function TrainingDummyGround({
     }
 
     completedResultRef.current = null;
-    onCharacterChange(nextResult.character);
     setResult(nextResult);
   }
 
