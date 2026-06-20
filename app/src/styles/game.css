@@ -983,6 +983,36 @@ button:disabled {
   font-size: 16px;
 }
 
+.hunt-ground-selector {
+  display: grid;
+  gap: 10px;
+}
+
+.hunt-ground-selector > span {
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.hunt-ground-selector button {
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--acc-dim);
+  background: var(--acc-deep);
+  padding: 12px;
+  color: inherit;
+  text-align: left;
+}
+
+.hunt-ground-selector strong {
+  color: var(--txt-bright);
+}
+
+.hunt-ground-selector small {
+  color: var(--mut);
+  font-size: 12px;
+}
+
 .hunt-ground-head > div > span {
   color: var(--acc);
   font-size: 12px;

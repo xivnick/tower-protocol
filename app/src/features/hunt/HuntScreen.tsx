@@ -24,8 +24,6 @@ export function HuntScreen({
   onCharacterRefresh: () => Promise<boolean>;
   onToast: (toast: ToastInput) => void;
 }) {
-  const [selectedGround, setSelectedGround] = useState<"training-dummy" | null>(null);
-
   useEffect(() => {
     void onCharacterRefresh();
   }, []);
@@ -47,41 +45,16 @@ export function HuntScreen({
     );
   }
 
-  if (selectedGround === "training-dummy") {
-    return <TrainingDummyGround character={character} onBack={() => setSelectedGround(null)} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />;
-  }
-
-  return <HuntGroundList onSelectTrainingDummy={() => setSelectedGround("training-dummy")} />;
-}
-
-function HuntGroundList({ onSelectTrainingDummy }: { onSelectTrainingDummy: () => void }) {
-  return (
-    <section className="screen-panel hunt-screen">
-      <article className="panel">
-        <div className="panel-head">
-          <span>HUNTING GROUNDS</span>
-          <h2>사냥터 선택</h2>
-        </div>
-        <button className="hunt-ground-option" type="button" onClick={onSelectTrainingDummy}>
-          <span>TRAINING</span>
-          <strong>허수아비 훈련소</strong>
-          <small>기본 전투 스탯 시험</small>
-          <i aria-hidden="true">-&gt;</i>
-        </button>
-      </article>
-    </section>
-  );
+  return <TrainingDummyGround character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />;
 }
 
 function TrainingDummyGround({
   character,
-  onBack,
   onCharacterChange,
   onCharacterRefresh,
   onToast,
 }: {
   character: Character;
-  onBack: () => void;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
   onToast: (toast: ToastInput) => void;
@@ -91,6 +64,7 @@ function TrainingDummyGround({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [playbackTenths, setPlaybackTenths] = useState(0);
+  const [isGroundSelectorOpen, setIsGroundSelectorOpen] = useState(false);
   const logRef = useRef<HTMLOListElement>(null);
   const availableAt = character.hunt_available_at ? Date.parse(character.hunt_available_at) : 0;
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
@@ -175,9 +149,18 @@ function TrainingDummyGround({
             <strong>허수아비 훈련소</strong>
             <small>기본 전투 스탯 시험</small>
           </div>
-          <button className="text-button" type="button" onClick={onBack}>← 사냥터 선택</button>
+          <button className="text-button" type="button" onClick={() => setIsGroundSelectorOpen((current) => !current)} aria-expanded={isGroundSelectorOpen}>사냥터 선택</button>
         </div>
       </article>
+      {isGroundSelectorOpen && (
+        <article className="panel hunt-ground-selector">
+          <span>HUNTING GROUNDS</span>
+          <button type="button" className="is-selected" onClick={() => setIsGroundSelectorOpen(false)}>
+            <strong>허수아비 훈련소</strong>
+            <small>기본 전투 스탯 시험</small>
+          </button>
+        </article>
+      )}
       <article className="panel hunt-ground-panel">
         <div className="panel-head compact">
           <span>COMBATANTS</span>
