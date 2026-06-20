@@ -1001,6 +1001,7 @@ button:disabled {
 }
 
 .combat-hp-card {
+  position: relative;
   border: 1px solid var(--line);
   background: var(--bg-2);
   padding: 12px;
@@ -1042,6 +1043,69 @@ button:disabled {
   margin-top: 5px;
   color: var(--txt-bright);
   font-size: 12px;
+}
+
+.combat-character-link {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  color: var(--mut);
+}
+
+.combat-character-link svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 1.5;
+}
+
+.combat-character-link:hover {
+  color: var(--acc-2);
+}
+
+.combat-card-detail {
+  margin-top: 12px;
+}
+
+.combat-card-detail span,
+.combat-card-detail b {
+  display: block;
+}
+
+.combat-card-detail span {
+  color: var(--mut-2);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.combat-card-detail b {
+  margin-top: 3px;
+  color: var(--txt-bright);
+  font-size: 12px;
+}
+
+.combat-card-detail i {
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  background: var(--surf-3);
+  margin-top: 8px;
+}
+
+.combat-card-detail i strong {
+  display: block;
+  height: 100%;
+  background: var(--acc-dim);
+}
+
+.combat-card-detail i.is-unknown {
+  background: repeating-linear-gradient(90deg, var(--surf-3) 0 8px, var(--line) 8px 10px);
 }
 
 .hunt-result-summary {

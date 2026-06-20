@@ -210,20 +210,6 @@ function TrainingDummyGround({
         <strong>허수아비 훈련소</strong>
         <small>권장 LV.1–100</small>
       </div>
-      <article className="panel hunt-status-panel">
-        <div className="panel-head compact action-head">
-          <div>
-            <span>CHARACTER</span>
-            <h2 className="hunt-player-title">{character.name}</h2>
-          </div>
-        </div>
-        <div className="hunt-status-stack">
-          <StatusMeter label="체력" value={`${combatStats.maxHp.toLocaleString()} / ${combatStats.maxHp.toLocaleString()} HP`} percent={100} />
-          <StatusMeter label="경험치" value={`${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()} EXP`} percent={experiencePercent} />
-        </div>
-        {message && !result && <p className="panel-message is-error" role="status">{message}</p>}
-      </article>
-
       <article className="panel combat-record-panel">
           <div className="panel-head compact action-head">
             <div>
@@ -238,8 +224,21 @@ function TrainingDummyGround({
             </div>
           </div>
           <div className="combat-hp-grid">
-            <CombatHpCard label="PLAYER" name={result ? `LV.${result.player.level} ${result.player.name}` : `LV.${character.level} ${character.name}`} currentHp={result?.player.maxHp ?? combatStats.maxHp} maxHp={result?.player.maxHp ?? combatStats.maxHp} />
-            <CombatHpCard label="ENEMY" name={result ? `LV.${result.enemy.level} ${result.enemy.name}` : "???"} currentHp={result ? targetHp : null} maxHp={result ? dummyMaxHp : null} />
+            <CombatHpCard
+              label="PLAYER"
+              name={result ? `LV.${result.player.level} ${result.player.name}` : `LV.${character.level} ${character.name}`}
+              currentHp={result?.player.maxHp ?? combatStats.maxHp}
+              maxHp={result?.player.maxHp ?? combatStats.maxHp}
+              detail={{ label: "경험치", value: `${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()} EXP`, percent: experiencePercent }}
+              linkToCharacter
+            />
+            <CombatHpCard
+              label="ENEMY"
+              name={result ? `LV.${result.enemy.level} ${result.enemy.name}` : "???"}
+              currentHp={result ? targetHp : null}
+              maxHp={result ? dummyMaxHp : null}
+              detail={{ label: "몬스터 정보", value: "???", percent: 0, isUnknown: true }}
+            />
           </div>
           {message && <p className="panel-message is-error" role="status">{message}</p>}
           <ol className="combat-log" aria-label="전투 로그" ref={logRef}>
@@ -267,11 +266,15 @@ function CombatHpCard({
   name,
   currentHp,
   maxHp,
+  detail,
+  linkToCharacter = false,
 }: {
   label: string;
   name: string;
   currentHp: number | null;
   maxHp: number | null;
+  detail?: { label: string; value: string; percent: number; isUnknown?: boolean };
+  linkToCharacter?: boolean;
 }) {
   const isUnknown = currentHp === null || maxHp === null;
   const hpPercent = isUnknown ? 0 : Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
@@ -280,10 +283,28 @@ function CombatHpCard({
     <div className="combat-hp-card">
       <span>{label}</span>
       <strong>{name}</strong>
+      {linkToCharacter && (
+        <Link className="combat-character-link" to="/character" aria-label="캐릭터 정보 보기">
+          <svg aria-hidden="true" viewBox="0 0 16 16">
+            <path d="M6.5 3.5h6v6M12.5 3.5 7 9m3 3.5H3.5v-6" />
+          </svg>
+        </Link>
+      )}
       <div className={`combat-hp ${isUnknown ? "is-unknown" : ""}`} role="progressbar" aria-label={`${name} 체력`} aria-valuemin={0} aria-valuemax={maxHp ?? undefined} aria-valuenow={currentHp ?? undefined}>
         {!isUnknown && <i style={{ width: `${hpPercent}%` }} />}
       </div>
       <b>{isUnknown ? "HP ???" : `HP ${formatAmount(currentHp ?? 0)} / ${formatAmount(maxHp ?? 0)}`}</b>
+      {detail && <CombatDetail {...detail} />}
+    </div>
+  );
+}
+
+function CombatDetail({ label, value, percent, isUnknown = false }: { label: string; value: string; percent: number; isUnknown?: boolean }) {
+  return (
+    <div className="combat-card-detail">
+      <span>{label}</span>
+      <b>{value}</b>
+      <i className={isUnknown ? "is-unknown" : ""}><strong style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} /></i>
     </div>
   );
 }
@@ -314,16 +335,6 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
 
 function Kv({ label, value }: { label: string; value: string }) {
   return <div><span>{label}</span><strong>{value}</strong></div>;
-}
-
-function StatusMeter({ label, value, percent }: { label: string; value: string; percent: number }) {
-  return (
-    <div className="hunt-status-meter">
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <i><b style={{ width: `${Math.max(0, Math.min(100, percent))}%` }} /></i>
-    </div>
-  );
 }
 
 function formatLogEntry(entry: HuntLogEntry, dummyMaxHp: number) {
