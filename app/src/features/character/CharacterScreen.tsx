@@ -4,7 +4,7 @@ import { allocateCharacterStats, checkCharacterNameAvailability, createMyCharact
 import type { CharacterStatAllocation, TrainingRewardTier } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
-import { BASE_PRIMARY_STAT, calculateCombatStats, PRIMARY_STATS } from "../../shared/stats";
+import { BASE_PRIMARY_STAT, calculateCombatStats, COMBAT_STAT_LABELS, PRIMARY_STATS } from "../../shared/stats";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
 import type { Character } from "../../types/character";
 import type { ToastInput, ToastTone } from "../../types/toast";
@@ -425,18 +425,18 @@ function CharacterStatsPanel({
       </div>
 
       <div className="combat-stat-grid">
-        <CombatStat label="물리 공격력" shortLabel="물공" current={currentCombatStats.physicalAttack} preview={previewCombatStats.physicalAttack} />
-        <CombatStat label="마법 공격력" shortLabel="마공" current={currentCombatStats.magicAttack} preview={previewCombatStats.magicAttack} />
-        <CombatStat label="물리 방어" shortLabel="물방" current={currentCombatStats.physicalDefense} preview={previewCombatStats.physicalDefense} />
-        <CombatStat label="마법 방어" shortLabel="마방" current={currentCombatStats.magicDefense} preview={previewCombatStats.magicDefense} />
-        <CombatStat label="최대 체력" shortLabel="체력" current={currentCombatStats.maxHp} preview={previewCombatStats.maxHp} />
-        <CombatStat label="재생" current={currentCombatStats.hpRegenPerSecond} preview={previewCombatStats.hpRegenPerSecond} digits={2} />
-        <CombatStat label="공속" current={currentCombatStats.attacksPerSecond} preview={previewCombatStats.attacksPerSecond} digits={2} />
-        <CombatStat label="쿨타임 감소" shortLabel="쿨감" current={currentCombatStats.cooldownReduction * 100} preview={previewCombatStats.cooldownReduction * 100} suffix="%" digits={1} />
-        <CombatStat label="명중" shortLabel="명중" current={currentCombatStats.accuracy} preview={previewCombatStats.accuracy} />
-        <CombatStat label="회피율" shortLabel="회피" current={currentCombatStats.evasionRateAgainstAccuracy100 * 100} preview={previewCombatStats.evasionRateAgainstAccuracy100 * 100} suffix="%" digits={1} />
-        <CombatStat label="치명타 확률" shortLabel="치확" current={currentCombatStats.criticalChance} preview={previewCombatStats.criticalChance} suffix="%" digits={1} />
-        <CombatStat label="치명타 피해" shortLabel="치피" current={currentCombatStats.criticalDamage} preview={previewCombatStats.criticalDamage} suffix="%" />
+        <CombatStat {...COMBAT_STAT_LABELS.physicalAttack} current={currentCombatStats.physicalAttack} preview={previewCombatStats.physicalAttack} />
+        <CombatStat {...COMBAT_STAT_LABELS.magicAttack} current={currentCombatStats.magicAttack} preview={previewCombatStats.magicAttack} />
+        <CombatStat {...COMBAT_STAT_LABELS.physicalDefense} current={currentCombatStats.physicalDefense} preview={previewCombatStats.physicalDefense} />
+        <CombatStat {...COMBAT_STAT_LABELS.magicDefense} current={currentCombatStats.magicDefense} preview={previewCombatStats.magicDefense} />
+        <CombatStat {...COMBAT_STAT_LABELS.maxHp} current={currentCombatStats.maxHp} preview={previewCombatStats.maxHp} />
+        <CombatStat {...COMBAT_STAT_LABELS.regeneration} current={currentCombatStats.hpRegenPerSecond} preview={previewCombatStats.hpRegenPerSecond} digits={2} />
+        <CombatStat {...COMBAT_STAT_LABELS.attackSpeed} current={currentCombatStats.attacksPerSecond} preview={previewCombatStats.attacksPerSecond} digits={2} />
+        <CombatStat {...COMBAT_STAT_LABELS.cooldownReduction} current={currentCombatStats.cooldownReduction * 100} preview={previewCombatStats.cooldownReduction * 100} suffix="%" digits={1} />
+        <CombatStat {...COMBAT_STAT_LABELS.accuracy} current={currentCombatStats.accuracy} preview={previewCombatStats.accuracy} />
+        <CombatStat {...COMBAT_STAT_LABELS.evasionRate} current={currentCombatStats.evasionRateAgainstAccuracy100 * 100} preview={previewCombatStats.evasionRateAgainstAccuracy100 * 100} suffix="%" digits={1} />
+        <CombatStat {...COMBAT_STAT_LABELS.criticalChance} current={currentCombatStats.criticalChance} preview={previewCombatStats.criticalChance} suffix="%" digits={1} />
+        <CombatStat {...COMBAT_STAT_LABELS.criticalDamage} current={currentCombatStats.criticalDamage} preview={previewCombatStats.criticalDamage} suffix="%" />
       </div>
       <div className="stat-reset-area">
         <button className="btn ghost" type="button" onClick={handleResetStats} disabled={!canReset}>

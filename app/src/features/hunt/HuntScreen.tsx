@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { huntTrainingDummy } from "../../api/characterApi";
 import type { HuntLogEntry, HuntResult } from "../../api/characterApi";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
-import { calculateCombatStats } from "../../shared/stats";
+import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
+import type { CombatStatLabel } from "../../shared/stats";
 import type { Character } from "../../types/character";
 import type { ToastInput } from "../../types/toast";
 
@@ -78,21 +79,21 @@ function TrainingDummyGround({
   const isPlaybackComplete = Boolean(result && playbackTenths >= result.durationTicks);
   const canHunt = !isSubmitting && remainingTenths === 0 && (!result || isPlaybackComplete);
   const playerDetails: CombatDetail[] = [
-    { desktop: `물리 공격력 ${combatStats.physicalAttack}` },
-    { desktop: `마법 공격력 ${combatStats.magicAttack}` },
-    { desktop: `물리 방어 ${combatStats.physicalDefense}` },
-    { desktop: `마법 방어 ${combatStats.magicDefense}` },
-    { desktop: `재생 ${formatAmount(combatStats.hpRegenPerSecond)}` },
-    { desktop: `공격 속도 ${formatAmount(combatStats.attacksPerSecond)}`, mobile: `공속 ${formatAmount(combatStats.attacksPerSecond)}` },
-    { desktop: `쿨타임 감소 ${formatAmount(combatStats.cooldownReduction * 100)}%`, mobile: `쿨감 ${formatAmount(combatStats.cooldownReduction * 100)}%` },
-    { desktop: `명중 ${combatStats.accuracy}` },
-    { desktop: `회피율 ${formatAmount(combatStats.evasionRateAgainstAccuracy100 * 100)}%` },
-    { desktop: `치명타 확률 ${combatStats.criticalChance}%` },
-    { desktop: `치명타 피해 ${combatStats.criticalDamage}%` },
+    combatDetail(COMBAT_STAT_LABELS.physicalAttack, combatStats.physicalAttack),
+    combatDetail(COMBAT_STAT_LABELS.magicAttack, combatStats.magicAttack),
+    combatDetail(COMBAT_STAT_LABELS.physicalDefense, combatStats.physicalDefense),
+    combatDetail(COMBAT_STAT_LABELS.magicDefense, combatStats.magicDefense),
+    combatDetail(COMBAT_STAT_LABELS.regeneration, formatAmount(combatStats.hpRegenPerSecond)),
+    combatDetail(COMBAT_STAT_LABELS.attackSpeed, formatAmount(combatStats.attacksPerSecond)),
+    combatDetail(COMBAT_STAT_LABELS.cooldownReduction, `${formatAmount(combatStats.cooldownReduction * 100)}%`),
+    combatDetail(COMBAT_STAT_LABELS.accuracy, combatStats.accuracy),
+    combatDetail(COMBAT_STAT_LABELS.evasionRate, `${formatAmount(combatStats.evasionRateAgainstAccuracy100 * 100)}%`),
+    combatDetail(COMBAT_STAT_LABELS.criticalChance, `${combatStats.criticalChance}%`),
+    combatDetail(COMBAT_STAT_LABELS.criticalDamage, `${combatStats.criticalDamage}%`),
   ];
   const dummyDetails: CombatDetail[] = [
-    { desktop: "물리 공격력 0" }, { desktop: "마법 공격력 0" }, { desktop: `물리 방어 ${trainingDummy.physicalDefense}` }, { desktop: "마법 방어 0" }, { desktop: `재생 ${trainingDummy.regenerationPerSecond}` },
-    { desktop: "공격 속도 0", mobile: "공속 0" }, { desktop: "쿨타임 감소 0%", mobile: "쿨감 0%" }, { desktop: "명중 0" }, { desktop: "회피율 0%" }, { desktop: "치명타 확률 0%" }, { desktop: "치명타 피해 0%" },
+    combatDetail(COMBAT_STAT_LABELS.physicalAttack, 0), combatDetail(COMBAT_STAT_LABELS.magicAttack, 0), combatDetail(COMBAT_STAT_LABELS.physicalDefense, trainingDummy.physicalDefense), combatDetail(COMBAT_STAT_LABELS.magicDefense, 0), combatDetail(COMBAT_STAT_LABELS.regeneration, trainingDummy.regenerationPerSecond),
+    combatDetail(COMBAT_STAT_LABELS.attackSpeed, 0), combatDetail(COMBAT_STAT_LABELS.cooldownReduction, "0%"), combatDetail(COMBAT_STAT_LABELS.accuracy, 0), combatDetail(COMBAT_STAT_LABELS.evasionRate, "0%"), combatDetail(COMBAT_STAT_LABELS.criticalChance, "0%"), combatDetail(COMBAT_STAT_LABELS.criticalDamage, "0%"),
   ];
 
   useEffect(() => {
@@ -223,6 +224,13 @@ function CombatantCard({
       ))}</ul>
     </div>
   );
+}
+
+function combatDetail(label: CombatStatLabel, value: string | number): CombatDetail {
+  return {
+    desktop: `${label.label} ${value}`,
+    mobile: label.shortLabel ? `${label.shortLabel} ${value}` : undefined,
+  };
 }
 
 function HuntResultPanel({ result }: { result: HuntResult }) {
