@@ -102,7 +102,9 @@ function TrainingDummyGround({
   const isGoingToDifferentGround = Boolean(isBattleInProgress && result && selectedGroundId !== result.huntGroundId);
   const isPlaybackComplete = Boolean(result && (!isBattleInProgress || playbackTenths >= result.durationTicks));
   const isRecovering = Boolean(!isBattleInProgress && huntState?.recoveryEndsAt && Date.parse(huntState.recoveryEndsAt) > now);
-  const canHunt = !isSubmitting && !isResolving && remainingTenths === 0 && (!result || !isBattleInProgress);
+  const defeatRecoveryStartedAt = huntState?.isDefeatRecovery && huntState.playerRecoveryStartedAt ? Date.parse(huntState.playerRecoveryStartedAt) : 0;
+  const isDefeatRecoveryLocked = Boolean(defeatRecoveryStartedAt && defeatRecoveryStartedAt + 10_000 > now);
+  const canHunt = !isSubmitting && !isResolving && !isDefeatRecoveryLocked && remainingTenths === 0 && (!result || !isBattleInProgress);
   const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
   const displayLevel = result ? (isPlaybackComplete ? result.levelAfter : result.player.level) : character.level;
   const displayExperience = result ? (isPlaybackComplete ? result.experienceAfter : result.player.experience ?? 0) : character.experience;
@@ -138,11 +140,11 @@ function TrainingDummyGround({
   }, [character.level]);
 
   useEffect(() => {
-    if (remainingTenths === 0 && !isRecovering) return;
+    if (remainingTenths === 0 && !isRecovering && !isDefeatRecoveryLocked) return;
 
     const intervalId = window.setInterval(() => setNow(Date.now()), 100);
     return () => window.clearInterval(intervalId);
-  }, [isRecovering, remainingTenths]);
+  }, [isDefeatRecoveryLocked, isRecovering, remainingTenths]);
 
   useEffect(() => {
     if (!result || !isBattleInProgress || isPlaybackComplete) return;
@@ -323,7 +325,7 @@ function TrainingDummyGround({
             <div className="hunt-action-buttons">
               {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망치기</button>}
               <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
-                {isSubmitting || isResolving || isBattleInProgress ? "전투 중..." : "전투 시작"}
+                {isSubmitting || isResolving || isBattleInProgress ? "전투 중..." : isDefeatRecoveryLocked ? "회복 중..." : "전투 시작"}
               </button>
             </div>
           </div>
