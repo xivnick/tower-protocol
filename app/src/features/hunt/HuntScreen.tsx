@@ -142,7 +142,7 @@ function TrainingDummyGround({
   return (
     <section className="screen-panel hunt-screen">
       <div className="hunt-location-strip">
-        <span>사냥터</span>
+        <span>LOCATION</span>
         <strong>허수아비 훈련소</strong>
       </div>
       <article className="panel hunt-ground-panel">

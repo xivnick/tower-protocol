@@ -935,7 +935,7 @@ button:disabled {
 }
 
 .hunt-location-strip span {
-  color: var(--mut);
+  color: var(--acc);
   font-size: 12px;
   font-weight: 800;
 }
