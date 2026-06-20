@@ -351,8 +351,8 @@ function TrainingDummyGround({
               <>
                 {visibleLogs.map((entry, index) => (
                   <li className={`is-${entry.kind}`} key={`${entry.timeTenths}-${entry.kind}-${index}`}>
-                    <time>[{formatTime(entry.timeTenths)}]</time>
-                    <span>{formatLogEntry(entry, result.enemy.name, result.gainedExperience, result.player.maxHp, result.enemy.maxHp)}</span>
+                    <time className={entry.target === "player" ? "is-enemy-action" : "is-player-action"}>[{formatTime(entry.timeTenths)}]</time>
+                    <span>{formatLogEntry(entry, result.enemy.name, result.gainedExperience)}</span>
                   </li>
                 ))}
               </>
@@ -498,18 +498,19 @@ function Kv({ label, value }: { label: string; value: string }) {
   return <div><span>{label}</span><strong>{value}</strong></div>;
 }
 
-function formatLogEntry(entry: HuntLogEntry, enemyName: string, gainedExperience: number, playerMaxHp: number, enemyMaxHp: number) {
-  const hp = (maxHp: number) => ` · ${formatAmount(entry.targetHp)} / ${formatAmount(maxHp)} HP`;
+function formatLogEntry(entry: HuntLogEntry, enemyName: string, gainedExperience: number): ReactNode {
+  const damage = <b className="combat-log-damage">-{formatAmount(entry.amount)} HP</b>;
+  const recovery = <b className="combat-log-recovery">+{formatAmount(entry.amount)} HP</b>;
   if (entry.kind === "encounter") return `${enemyName}와 조우했습니다.`;
   if (entry.kind === "defeat") return `전투 승리 +${gainedExperience} EXP`;
   if (entry.kind === "player_defeat") return "패배..";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
-  if (entry.kind === "regeneration") return `${enemyName} 재생 +${formatAmount(entry.amount)} HP${hp(enemyMaxHp)}`;
-  if (entry.kind === "player_regeneration") return `PLAYER 재생 +${formatAmount(entry.amount)} HP${hp(playerMaxHp)}`;
-  if (entry.kind === "enemy_attack") return `${enemyName} 공격 → PLAYER -${formatAmount(entry.amount)} HP${hp(playerMaxHp)}`;
-  if (entry.kind === "critical") return `PLAYER 치명타 → ${enemyName} -${formatAmount(entry.amount)} HP${hp(enemyMaxHp)}`;
-  return `PLAYER 공격 → ${enemyName} -${formatAmount(entry.amount)} HP${hp(enemyMaxHp)}`;
+  if (entry.kind === "regeneration") return <>{enemyName} 재생 {recovery}</>;
+  if (entry.kind === "player_regeneration") return <>PLAYER 재생 {recovery}</>;
+  if (entry.kind === "enemy_attack") return <>{enemyName} 공격 → PLAYER {damage}</>;
+  if (entry.kind === "critical") return <>PLAYER 치명타 → {enemyName} {damage}</>;
+  return <>PLAYER 공격 → {enemyName} {damage}</>;
 }
 
 function formatTime(tenths: number) {

@@ -1314,6 +1314,7 @@ button:disabled {
   gap: 10px;
   color: var(--txt);
   font-size: 12px;
+  animation: combat-log-in 160ms ease-out both;
 }
 
 .combat-log li.is-empty {
@@ -1324,6 +1325,11 @@ button:disabled {
 .combat-log time {
   color: var(--mut-2);
 }
+
+.combat-log time.is-player-action { color: var(--acc); }
+.combat-log time.is-enemy-action { color: var(--neg); }
+.combat-log-damage { color: var(--neg); }
+.combat-log-recovery { color: var(--acc-2); }
 
 .combat-log .is-critical span {
   color: var(--acc-2);
@@ -1360,6 +1366,11 @@ button:disabled {
 .combat-log .is-encounter span {
   color: var(--acc);
   font-weight: 800;
+}
+
+@keyframes combat-log-in {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .hunt-result-footnote {
