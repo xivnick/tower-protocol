@@ -919,6 +919,13 @@ button:disabled {
   margin-top: 12px;
 }
 
+.stat-panel-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
 .hunt-screen {
   align-content: start;
 }
@@ -1319,10 +1326,10 @@ button:disabled {
 }
 
 .stat-reset-area {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 14px;
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  flex: 0 0 auto;
 }
 
 .stat-reset-area small {

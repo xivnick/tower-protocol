@@ -340,9 +340,17 @@ function CharacterStatsPanel({
 
   return (
     <article className="panel">
-      <div className="panel-head">
-        <span>STATS</span>
-        <h2>능력치</h2>
+      <div className="panel-head stat-panel-head">
+        <div>
+          <span>STATS</span>
+          <h2>능력치</h2>
+        </div>
+        <div className="stat-reset-area">
+          <button className="btn ghost" type="button" onClick={handleResetStats} disabled={!canReset}>
+            {isResetting ? "초기화 중..." : "스탯 초기화"}
+          </button>
+          <small>비용 무료</small>
+        </div>
       </div>
       <div className="stat-meter-row">
         <span className={remainingPoints > 0 ? "is-unspent" : "is-empty"}>미분배 {remainingPoints.toLocaleString()}P</span>
@@ -437,12 +445,6 @@ function CharacterStatsPanel({
         <CombatStat {...COMBAT_STAT_LABELS.evasionRate} current={currentCombatStats.evasionRateAgainstAccuracy100 * 100} preview={previewCombatStats.evasionRateAgainstAccuracy100 * 100} suffix="%" digits={1} />
         <CombatStat {...COMBAT_STAT_LABELS.criticalChance} current={currentCombatStats.criticalChance} preview={previewCombatStats.criticalChance} suffix="%" digits={1} />
         <CombatStat {...COMBAT_STAT_LABELS.criticalDamage} current={currentCombatStats.criticalDamage} preview={previewCombatStats.criticalDamage} suffix="%" />
-      </div>
-      <div className="stat-reset-area">
-        <button className="btn ghost" type="button" onClick={handleResetStats} disabled={!canReset}>
-          {isResetting ? "초기화 중..." : "스탯 초기화"}
-        </button>
-        <small>비용 무료</small>
       </div>
       {message && <p className="auth-message is-error" role="status">{message}</p>}
     </article>
