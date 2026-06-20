@@ -87,6 +87,7 @@ function TrainingDummyGround({
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
   const combatStats = calculateCombatStats(character);
   const visibleLogs = useMemo(() => result?.logs.filter((entry) => entry.timeTenths <= playbackTenths) ?? [], [playbackTenths, result]);
+  const displayedLogs = useMemo(() => groupCombatLogs(visibleLogs), [visibleLogs]);
   const selectedGroundId = huntState?.selectedHuntGroundId ?? "training-dummy";
   const selectedGround = HUNT_GROUNDS.find((ground) => ground.id === selectedGroundId) ?? HUNT_GROUNDS[0];
   const dummyMaxHp = result?.enemy.maxHp ?? monsterInfo?.maxHp ?? trainingDummy.maxHp(character.level);
@@ -349,10 +350,10 @@ function TrainingDummyGround({
           <ol className="combat-log" aria-label="전투 로그" ref={logRef}>
             {result ? (
               <>
-                {visibleLogs.map((entry, index) => (
-                  <li className={`is-${entry.kind}`} key={`${entry.timeTenths}-${entry.kind}-${index}`}>
-                    <time className={getLogTimeTone(entry)}>[{formatTime(entry.timeTenths)}]</time>
-                    <span>{formatLogEntry(entry, result.player.name, result.enemy.name, result.gainedExperience)}</span>
+                {displayedLogs.map((log, index) => (
+                  <li className={`is-${log.kind}`} key={`${log.timeTenths}-${log.kind}-${index}`}>
+                    <time className={getLogTimeTone(log.entries[0])}>[{formatTime(log.timeTenths)}]</time>
+                    <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(log.entries[0], result.player.name, result.enemy.name, result.gainedExperience)}</span>
                   </li>
                 ))}
               </>
@@ -522,6 +523,30 @@ function getLogTimeTone(entry: HuntLogEntry) {
   if (entry.kind === "enemy_attack") return "is-enemy-action";
   if (entry.kind === "attack" || entry.kind === "critical") return "is-player-action";
   return "";
+}
+
+function groupCombatLogs(logs: HuntLogEntry[]) {
+  const groups: Array<{ kind: HuntLogEntry["kind"] | "combined_regeneration"; timeTenths: number; entries: HuntLogEntry[] }> = [];
+  for (const entry of logs) {
+    const previous = groups[groups.length - 1];
+    const isRegeneration = entry.kind === "regeneration" || entry.kind === "player_regeneration";
+    if (isRegeneration && previous?.kind === "combined_regeneration" && previous.timeTenths === entry.timeTenths) {
+      previous.entries.push(entry);
+      continue;
+    }
+    groups.push({ kind: isRegeneration ? "combined_regeneration" : entry.kind, timeTenths: entry.timeTenths, entries: [entry] });
+  }
+  return groups;
+}
+
+function formatCombinedRegeneration(entries: HuntLogEntry[]): ReactNode {
+  const player = entries.find((entry) => entry.kind === "player_regeneration");
+  const enemy = entries.find((entry) => entry.kind === "regeneration");
+  return <>
+    재생
+    {player && <> <i className="combat-log-arrow is-player">≫</i> <b className="combat-log-recovery">+{formatAmount(player.amount)} HP</b></>}
+    {enemy && <> <i className="combat-log-arrow is-enemy">≫</i> <b className="combat-log-recovery">+{formatAmount(enemy.amount)} HP</b></>}
+  </>;
 }
 
 function formatTime(tenths: number) {
