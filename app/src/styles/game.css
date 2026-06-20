@@ -1330,7 +1330,7 @@ button:disabled {
 .combat-log-recovery { color: var(--txt); }
 
 .combat-log-player { color: var(--acc); }
-.combat-log-critical { color: var(--acc); }
+.combat-log-critical { color: var(--acc-2); }
 .combat-log-enemy { color: #ff9b78; }
 .combat-log-arrow { display: inline-block; margin: 0 2px; font-style: normal; font-weight: 900; }
 .combat-log-arrow.is-player { color: var(--acc); }
@@ -1356,7 +1356,7 @@ button:disabled {
 }
 
 .combat-log .is-defeat span {
-  color: var(--acc);
+  color: var(--acc-2);
   font-weight: 900;
 }
 
