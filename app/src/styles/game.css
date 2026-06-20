@@ -1210,8 +1210,8 @@ button:disabled {
 
 .combat-log {
   list-style: none;
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: 6px;
   height: 240px;
   overflow: auto;
