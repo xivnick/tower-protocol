@@ -81,6 +81,8 @@ function TrainingDummyGround({
   const [now, setNow] = useState(Date.now());
   const [playbackTenths, setPlaybackTenths] = useState(0);
   const recoveryToastRef = useRef<string | null>(null);
+  const recoverySeenRef = useRef<string | null>(null);
+  const huntStateVersionRef = useRef(0);
   const logRef = useRef<HTMLOListElement>(null);
   const completedResultRef = useRef<HuntResult | null>(null);
   const settlementAttemptRef = useRef<string | null>(null);
@@ -95,11 +97,13 @@ function TrainingDummyGround({
   const enemyLogs = visibleLogs.filter((entry) => entry.target !== "player");
   const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
   const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
-  const playerHp = playerLogs.length > 0 ? playerLogs[playerLogs.length - 1].targetHp : result?.player.startHp ?? huntState?.playerCurrentHp ?? result?.player.maxHp ?? combatStats.maxHp;
   const isBattleInProgress = result?.status === "in_progress";
+  const playerHp = isBattleInProgress
+    ? playerLogs.length > 0 ? playerLogs[playerLogs.length - 1].targetHp : result?.player.startHp ?? result?.player.maxHp ?? combatStats.maxHp
+    : huntState?.playerCurrentHp ?? result?.player.currentHp ?? result?.player.startHp ?? result?.player.maxHp ?? combatStats.maxHp;
   const isGoingToDifferentGround = Boolean(isBattleInProgress && result && selectedGroundId !== result.huntGroundId);
   const isPlaybackComplete = Boolean(result && (!isBattleInProgress || playbackTenths >= result.durationTicks));
-  const isDefeatRecovering = Boolean(huntState?.isDefeatRecovery && huntState.recoveryEndsAt && Date.parse(huntState.recoveryEndsAt) > now);
+  const isRecovering = Boolean(!isBattleInProgress && huntState?.recoveryEndsAt && Date.parse(huntState.recoveryEndsAt) > now);
   const canHunt = !isSubmitting && !isResolving && remainingTenths === 0 && (!result || !isBattleInProgress);
   const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
   const displayLevel = result ? (isPlaybackComplete ? result.levelAfter : result.player.level) : character.level;
@@ -136,18 +140,45 @@ function TrainingDummyGround({
   }, [character.level]);
 
   useEffect(() => {
-    if (remainingTenths === 0 && !isDefeatRecovering) return;
+    if (remainingTenths === 0 && !isRecovering) return;
 
     const intervalId = window.setInterval(() => setNow(Date.now()), 100);
     return () => window.clearInterval(intervalId);
-  }, [isDefeatRecovering, remainingTenths]);
+  }, [isRecovering, remainingTenths]);
+
+  useEffect(() => {
+    if (!isRecovering) return;
+
+    let isActive = true;
+    const syncRecovery = () => {
+      const requestVersion = huntStateVersionRef.current;
+      void getMyHuntState().then((nextState) => {
+        if (!isActive || requestVersion !== huntStateVersionRef.current || !nextState.ok || !nextState.state) return;
+        setHuntState(nextState.state);
+        onHuntStateChange(nextState.state);
+      });
+    };
+
+    syncRecovery();
+    const intervalId = window.setInterval(syncRecovery, 250);
+    return () => {
+      isActive = false;
+      window.clearInterval(intervalId);
+    };
+  }, [isRecovering, onHuntStateChange]);
 
   useEffect(() => {
     const recoveryEndsAt = huntState?.recoveryEndsAt;
-    if (!recoveryEndsAt || Date.parse(recoveryEndsAt) > now || recoveryToastRef.current === recoveryEndsAt) return;
-    recoveryToastRef.current = recoveryEndsAt;
+    if (isRecovering && recoveryEndsAt) {
+      recoverySeenRef.current = recoveryEndsAt;
+      return;
+    }
+    if (!recoverySeenRef.current || recoveryToastRef.current === recoverySeenRef.current) return;
+    const completedRecoveryEndsAt = recoverySeenRef.current;
+    recoveryToastRef.current = completedRecoveryEndsAt;
+    recoverySeenRef.current = null;
     onToast({ message: "체력이 모두 회복되었습니다.", tone: "system" });
-  }, [huntState?.recoveryEndsAt, now, onToast]);
+  }, [huntState?.recoveryEndsAt, isRecovering, now, onToast]);
 
   useEffect(() => {
     if (!result || !isBattleInProgress || isPlaybackComplete) return;
@@ -227,6 +258,7 @@ function TrainingDummyGround({
   async function handleHunt() {
     if (!canHunt) return;
 
+    huntStateVersionRef.current += 1;
     setIsSubmitting(true);
     setMessage("");
     setResult(null);
@@ -251,6 +283,7 @@ function TrainingDummyGround({
   async function handleGroundChange(huntGroundId: string) {
     setIsLocationMenuOpen(false);
     if (huntGroundId === selectedGroundId) return;
+    huntStateVersionRef.current += 1;
     const nextState = await selectHuntGround(huntGroundId);
     if (!nextState.ok || !nextState.state) {
       setMessage(nextState.message);
@@ -263,6 +296,7 @@ function TrainingDummyGround({
   async function handleFlee() {
     if (!canFlee || !result) return;
 
+    huntStateVersionRef.current += 1;
     const previousLastResult = lastResult;
     setIsResolving(true);
     setMessage("");
