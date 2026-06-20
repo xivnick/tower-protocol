@@ -962,6 +962,27 @@ button:disabled {
   gap: 12px;
 }
 
+.hunt-location-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.hunt-location-info span,
+.hunt-location-info small {
+  display: block;
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.hunt-location-info strong {
+  display: block;
+  margin: 3px 0;
+  color: var(--txt-bright);
+  font-size: 16px;
+}
+
 .hunt-ground-head > div > span {
   color: var(--acc);
   font-size: 12px;
@@ -1023,6 +1044,7 @@ button:disabled {
 
 .combatant-card ul {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 3px;
   border-top: 1px solid var(--line);
   margin: 10px 0 0;
@@ -1565,6 +1587,15 @@ button:disabled {
   .hunt-action-row {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .hunt-location-info {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .combatant-card ul {
+    grid-template-columns: 1fr;
   }
 
   .archive-view {

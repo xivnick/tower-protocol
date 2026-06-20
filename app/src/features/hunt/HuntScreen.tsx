@@ -99,6 +99,23 @@ function TrainingDummyGround({
   const targetHp = visibleLogs.length > 0 ? visibleLogs[visibleLogs.length - 1].targetHp : trainingDummy.maxHp;
   const isPlaybackComplete = Boolean(result && playbackTenths >= result.durationTicks);
   const canHunt = !isSubmitting && remainingTenths === 0 && (!result || isPlaybackComplete);
+  const playerDetails = [
+    `물리 공격력 ${combatStats.physicalAttack}`,
+    `마법 공격력 ${combatStats.magicAttack}`,
+    `물리 방어 ${combatStats.physicalDefense}`,
+    `마법 방어 ${combatStats.magicDefense}`,
+    `재생 ${formatAmount(combatStats.hpRegenPerSecond)}`,
+    `공속 ${formatAmount(combatStats.attacksPerSecond)}`,
+    `쿨감 ${formatAmount(combatStats.cooldownReduction * 100)}%`,
+    `명중 ${combatStats.accuracy}`,
+    `회피율 ${formatAmount(combatStats.evasionRateAgainstAccuracy100 * 100)}%`,
+    `치명타 확률 ${combatStats.criticalChance}%`,
+    `치명타 피해 ${combatStats.criticalDamage}%`,
+  ];
+  const dummyDetails = [
+    "물리 공격력 0", "마법 공격력 0", `물리 방어 ${trainingDummy.physicalDefense}`, "마법 방어 0", `재생 ${trainingDummy.regenerationPerSecond}`,
+    "공속 0", "쿨감 0%", "명중 0", "회피율 0%", "치명타 확률 0%", "치명타 피해 0%",
+  ];
 
   useEffect(() => {
     if (remainingTenths === 0) return;
@@ -151,17 +168,24 @@ function TrainingDummyGround({
 
   return (
     <section className="screen-panel hunt-screen">
-      <article className="panel hunt-ground-panel">
-        <div className="hunt-ground-head">
-          <button className="text-button" type="button" onClick={onBack}>← 사냥터 선택</button>
+      <article className="panel hunt-location-panel">
+        <div className="hunt-location-info">
           <div>
-            <span>HUNTING GROUNDS / TRAINING</span>
-            <h2>허수아비 훈련소</h2>
+            <span>HUNTING GROUND</span>
+            <strong>허수아비 훈련소</strong>
+            <small>비공격형 훈련 대상 · 매초 체력 재생</small>
           </div>
+          <button className="text-button" type="button" onClick={onBack}>← 사냥터 선택</button>
+        </div>
+      </article>
+      <article className="panel hunt-ground-panel">
+        <div className="panel-head compact">
+          <span>COMBATANTS</span>
+          <h2>전투 스탯</h2>
         </div>
         <div className="combatant-grid">
-          <CombatantCard label="PLAYER" name={character.name} currentHp={combatStats.maxHp} maxHp={combatStats.maxHp} details={[`물리 공격 ${combatStats.physicalAttack}`, `공격속도 ${combatStats.attackSpeed}`, `치명타 ${combatStats.criticalChance}%`]} />
-          <CombatantCard label="MONSTER" name="허수아비" currentHp={targetHp} maxHp={trainingDummy.maxHp} details={[`물리 방어 ${trainingDummy.physicalDefense}`, `재생 초당 ${trainingDummy.regenerationPerSecond} HP`, "일반공격 없음"]} />
+          <CombatantCard label="PLAYER" name={character.name} currentHp={combatStats.maxHp} maxHp={combatStats.maxHp} details={playerDetails} />
+          <CombatantCard label="MONSTER" name="허수아비" currentHp={targetHp} maxHp={trainingDummy.maxHp} details={dummyDetails} />
         </div>
       </article>
 
@@ -169,13 +193,12 @@ function TrainingDummyGround({
         <div className="panel-head compact action-head">
           <div>
             <span>COMBAT RECORD</span>
-            <h2>{result ? `[${formatTime(playbackTenths)}] 전투 기록` : "전투 기록"}</h2>
+            <h2>전투 기록</h2>
           </div>
           <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
             {isSubmitting ? "시뮬레이션 중..." : remainingTenths > 0 ? `재정비 ${formatTime(remainingTenths)}` : result && !isPlaybackComplete ? "기록 재생 중..." : "전투 시뮬레이션"}
           </button>
         </div>
-        <p className="panel-message">허수아비는 일반공격을 하지 않으며, 매초 체력을 재생합니다.</p>
         {message && <p className="panel-message is-error" role="status">{message}</p>}
         <ol className="combat-log" aria-label="전투 로그" ref={logRef}>
           {visibleLogs.length === 0 ? (
