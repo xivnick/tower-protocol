@@ -1124,6 +1124,14 @@ button:disabled {
   margin-top: 12px;
 }
 
+.monster-info-stats .combat-label-full {
+  display: none;
+}
+
+.monster-info-stats .combat-label-short {
+  display: inline;
+}
+
 .combat-card-detail {
   margin-top: 12px;
 }
