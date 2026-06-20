@@ -32,18 +32,39 @@ export type HuntLogEntry = {
   targetHp: number;
 };
 
-export type HuntResult = {
-  ok: boolean;
-  character: Character | null;
+export type HuntCombatant = {
+  name: string;
+  level: number;
+  maxHp: number;
+  experience?: number;
+};
+
+export type HuntBattle = {
+  huntGroundId: string;
+  startedAt: string;
+  player: HuntCombatant;
+  enemy: HuntCombatant;
   gainedExperience: number;
   levelBefore: number;
   levelAfter: number;
+  experienceAfter: number;
   durationTicks: number;
   totalDamage: number;
   attackCount: number;
   criticalCount: number;
   totalRegeneration: number;
   logs: HuntLogEntry[];
+};
+
+export type HuntState = {
+  availableAt: string | null;
+  lastBattle: HuntBattle | null;
+};
+
+export type HuntResult = HuntBattle & {
+  ok: boolean;
+  character: Character | null;
+  huntState: HuntState | null;
   message: string;
 };
 
@@ -67,9 +88,18 @@ type TrainingPayload = {
 
 type HuntPayload = {
   character?: Character;
+  hunt_state?: HuntStatePayload;
+};
+
+type HuntBattlePayload = {
+  hunt_ground_id?: string;
+  started_at?: string;
+  player?: { name?: string; level?: number; max_hp?: number; experience?: number };
+  enemy?: { name?: string; level?: number; max_hp?: number };
   gained_experience?: number;
   level_before?: number;
   level_after?: number;
+  experience_after?: number;
   duration_ticks?: number;
   total_damage?: number;
   attack_count?: number;
@@ -81,6 +111,11 @@ type HuntPayload = {
     amount: number;
     target_hp: number;
   }>;
+};
+
+type HuntStatePayload = {
+  available_at?: string | null;
+  last_battle?: HuntBattlePayload | null;
 };
 
 const characterSelectFields = "id,user_id,name,level,experience,strength,agility,dexterity,vitality,endurance,intelligence,wisdom,stat_points,bonus_stat_points,hunt_available_at,created_at,updated_at";
@@ -250,9 +285,15 @@ export async function huntTrainingDummy(): Promise<HuntResult> {
   const emptyResult: HuntResult = {
     ok: false,
     character: null,
+    huntState: null,
+    huntGroundId: "training-dummy",
+    startedAt: new Date(0).toISOString(),
+    player: { name: "", level: 0, maxHp: 0 },
+    enemy: { name: "", level: 0, maxHp: 0 },
     gainedExperience: 0,
     levelBefore: 0,
     levelAfter: 0,
+    experienceAfter: 0,
     durationTicks: 0,
     totalDamage: 0,
     attackCount: 0,
@@ -271,25 +312,59 @@ export async function huntTrainingDummy(): Promise<HuntResult> {
   }
 
   const payload = data as HuntPayload;
+  const huntState = mapHuntState(payload.hunt_state);
+  const battle = huntState.lastBattle;
+
+  if (!payload.character || !battle) {
+    return { ...emptyResult, huntState, message: "사냥 결과를 불러오지 못했습니다." };
+  }
 
   return {
-    ok: Boolean(payload.character),
-    character: payload.character ?? null,
+    ok: true,
+    character: payload.character,
+    huntState,
+    ...battle,
+    message: "허수아비를 격파했습니다.",
+  };
+}
+
+export async function getMyHuntState(): Promise<{ ok: boolean; state: HuntState | null; message: string }> {
+  if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
+
+  const { data, error } = await supabase.rpc("get_my_hunt_state");
+  if (error) return { ok: false, state: null, message: toKoreanAuthMessage(error.message, "사냥 기록을 불러오지 못했습니다.") };
+
+  return { ok: true, state: mapHuntState(data as HuntStatePayload), message: "" };
+}
+
+function mapHuntState(payload: HuntStatePayload | undefined): HuntState {
+  return {
+    availableAt: payload?.available_at ?? null,
+    lastBattle: payload?.last_battle ? mapHuntBattle(payload.last_battle) : null,
+  };
+}
+
+function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
+  return {
+    huntGroundId: payload.hunt_ground_id ?? "training-dummy",
+    startedAt: payload.started_at ?? new Date(0).toISOString(),
+    player: {
+      name: payload.player?.name ?? "",
+      level: payload.player?.level ?? 0,
+      maxHp: payload.player?.max_hp ?? 0,
+      experience: payload.player?.experience ?? 0,
+    },
+    enemy: { name: payload.enemy?.name ?? "허수아비", level: payload.enemy?.level ?? 0, maxHp: payload.enemy?.max_hp ?? 0 },
     gainedExperience: payload.gained_experience ?? 0,
-    levelBefore: payload.level_before ?? payload.character?.level ?? 0,
-    levelAfter: payload.level_after ?? payload.character?.level ?? 0,
+    levelBefore: payload.level_before ?? 0,
+    levelAfter: payload.level_after ?? 0,
+    experienceAfter: payload.experience_after ?? 0,
     durationTicks: payload.duration_ticks ?? 0,
     totalDamage: payload.total_damage ?? 0,
     attackCount: payload.attack_count ?? 0,
     criticalCount: payload.critical_count ?? 0,
     totalRegeneration: payload.total_regeneration ?? 0,
-    logs: (payload.logs ?? []).map((log) => ({
-      timeTenths: log.time_tenths,
-      kind: log.kind,
-      amount: log.amount,
-      targetHp: log.target_hp,
-    })),
-    message: "허수아비를 격파했습니다.",
+    logs: (payload.logs ?? []).map((log) => ({ timeTenths: log.time_tenths, kind: log.kind, amount: log.amount, targetHp: log.target_hp })),
   };
 }
 

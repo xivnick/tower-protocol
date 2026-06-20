@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { huntTrainingDummy } from "../../api/characterApi";
-import type { HuntLogEntry, HuntResult } from "../../api/characterApi";
+import { getMyHuntState, huntTrainingDummy } from "../../api/characterApi";
+import type { HuntLogEntry, HuntResult, HuntState } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats } from "../../shared/stats";
 import type { Character } from "../../types/character";
@@ -62,22 +62,42 @@ function TrainingDummyGround({
 }) {
   const [result, setResult] = useState<HuntResult | null>(null);
   const [message, setMessage] = useState("");
+  const [huntState, setHuntState] = useState<HuntState | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [playbackTenths, setPlaybackTenths] = useState(0);
   const logRef = useRef<HTMLOListElement>(null);
   const completedResultRef = useRef<HuntResult | null>(null);
-  const huntAvailableAt = result?.character?.hunt_available_at ?? character.hunt_available_at;
+  const huntAvailableAt = result?.huntState?.availableAt ?? huntState?.availableAt;
   const availableAt = huntAvailableAt ? Date.parse(huntAvailableAt) : 0;
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
   const combatStats = calculateCombatStats(character);
   const visibleLogs = useMemo(() => result?.logs.filter((entry) => entry.timeTenths <= playbackTenths) ?? [], [playbackTenths, result]);
-  const dummyMaxHp = trainingDummy.maxHp(character.level);
+  const dummyMaxHp = result?.enemy.maxHp ?? trainingDummy.maxHp(character.level);
   const targetHp = visibleLogs.length > 0 ? visibleLogs[visibleLogs.length - 1].targetHp : dummyMaxHp;
   const isPlaybackComplete = Boolean(result && playbackTenths >= result.durationTicks);
   const canHunt = !isSubmitting && remainingTenths === 0 && (!result || isPlaybackComplete);
-  const requiredExperience = getRequiredExperienceForLevel(character.level + 1) ?? 1;
-  const experiencePercent = character.level >= 100 ? 100 : (character.experience / requiredExperience) * 100;
+  const displayLevel = result ? (isPlaybackComplete ? result.levelAfter : result.player.level) : character.level;
+  const displayExperience = result ? (isPlaybackComplete ? result.experienceAfter : result.player.experience ?? 0) : character.experience;
+  const requiredExperience = getRequiredExperienceForLevel(displayLevel + 1) ?? 1;
+  const experiencePercent = displayLevel >= 100 ? 100 : (displayExperience / requiredExperience) * 100;
+
+  useEffect(() => {
+    let isActive = true;
+
+    void getMyHuntState().then((nextState) => {
+      if (!isActive || !nextState.ok || !nextState.state) return;
+
+      setHuntState(nextState.state);
+      const battle = nextState.state.lastBattle;
+      if (!battle) return;
+
+      setResult({ ok: true, character: null, huntState: nextState.state, ...battle, message: "" });
+      setPlaybackTenths(getElapsedTenths(battle.startedAt, battle.durationTicks));
+    });
+
+    return () => { isActive = false; };
+  }, []);
 
   useEffect(() => {
     if (remainingTenths === 0) return;
@@ -87,14 +107,14 @@ function TrainingDummyGround({
   }, [remainingTenths]);
 
   useEffect(() => {
-    if (!result) return;
+    if (!result || isPlaybackComplete) return;
 
     const intervalId = window.setInterval(() => {
       setPlaybackTenths((current) => Math.min(current + 1, result.durationTicks));
     }, 100);
 
     return () => window.clearInterval(intervalId);
-  }, [result]);
+  }, [isPlaybackComplete, result]);
 
   useEffect(() => {
     if (visibleLogs.length > 0 && logRef.current) {
@@ -134,6 +154,7 @@ function TrainingDummyGround({
     }
 
     completedResultRef.current = null;
+    setHuntState(nextResult.huntState);
     setResult(nextResult);
   }
 
@@ -148,7 +169,7 @@ function TrainingDummyGround({
         <div className="panel-head compact action-head">
           <div>
             <span>CHARACTER</span>
-            <h2 className="hunt-player-title">LV.{character.level} {character.name}</h2>
+            <h2 className="hunt-player-title">LV.{displayLevel} {character.name}</h2>
           </div>
           <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
             {isSubmitting || remainingTenths > 0 || (result && !isPlaybackComplete) ? "전투 중..." : "전투 시작"}
@@ -156,7 +177,7 @@ function TrainingDummyGround({
         </div>
         <div className="hunt-status-stack">
           <StatusMeter label="체력" value={`${combatStats.maxHp.toLocaleString()} / ${combatStats.maxHp.toLocaleString()} HP`} percent={100} />
-          <StatusMeter label="경험치" value={`${character.experience.toLocaleString()} / ${requiredExperience.toLocaleString()} EXP`} percent={experiencePercent} />
+          <StatusMeter label="경험치" value={`${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()} EXP`} percent={experiencePercent} />
         </div>
         {message && !result && <p className="panel-message is-error" role="status">{message}</p>}
       </article>
@@ -169,8 +190,8 @@ function TrainingDummyGround({
             </div>
           </div>
           <div className="combat-hp-grid">
-            <CombatHpCard label="PLAYER" name={`LV.${character.level} ${character.name}`} currentHp={combatStats.maxHp} maxHp={combatStats.maxHp} />
-            <CombatHpCard label="ENEMY" name={result ? `LV.${character.level} 허수아비` : "???"} currentHp={result ? targetHp : null} maxHp={result ? dummyMaxHp : null} />
+            <CombatHpCard label="PLAYER" name={result ? `LV.${result.player.level} ${result.player.name}` : `LV.${character.level} ${character.name}`} currentHp={result?.player.maxHp ?? combatStats.maxHp} maxHp={result?.player.maxHp ?? combatStats.maxHp} />
+            <CombatHpCard label="ENEMY" name={result ? `LV.${result.enemy.level} ${result.enemy.name}` : "???"} currentHp={result ? targetHp : null} maxHp={result ? dummyMaxHp : null} />
           </div>
           {message && <p className="panel-message is-error" role="status">{message}</p>}
           <ol className="combat-log" aria-label="전투 로그" ref={logRef}>
@@ -266,4 +287,10 @@ function formatTime(tenths: number) {
 
 function formatAmount(value: number) {
   return Number.isInteger(value) ? value.toLocaleString() : value.toFixed(1);
+}
+
+function getElapsedTenths(startedAt: string, durationTicks: number) {
+  const startedAtMs = Date.parse(startedAt);
+  if (Number.isNaN(startedAtMs)) return durationTicks;
+  return Math.max(0, Math.min(durationTicks, Math.floor((Date.now() - startedAtMs) / 100)));
 }
