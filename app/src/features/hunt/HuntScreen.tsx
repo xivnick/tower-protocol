@@ -146,17 +146,13 @@ function TrainingDummyGround({
         <div className="panel-head compact action-head">
           <div>
             <span>PLAYER</span>
-            <h2>내 상태</h2>
+            <h2 className="hunt-player-title">{character.name} <small>· {formatCharacterLevel(character.level)}</small></h2>
           </div>
           <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
             {isSubmitting || remainingTenths > 0 || (result && !isPlaybackComplete) ? "전투 중..." : "전투 시작"}
           </button>
         </div>
         <div className="hunt-status-stack">
-          <div className="hunt-status-identity">
-            <strong>{character.name}</strong>
-            <span>{formatCharacterLevel(character.level)}</span>
-          </div>
           <StatusMeter label="체력" value={`${combatStats.maxHp.toLocaleString()} / ${combatStats.maxHp.toLocaleString()} HP`} percent={100} />
           <StatusMeter label="경험치" value={`${character.experience.toLocaleString()} / ${requiredExperience.toLocaleString()} EXP`} percent={experiencePercent} />
         </div>

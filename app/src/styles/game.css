@@ -952,13 +952,6 @@ button:disabled {
   margin-top: 14px;
 }
 
-.hunt-status-identity {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.hunt-status-identity strong,
 .hunt-status-meter span,
 .hunt-status-meter strong {
   display: block;
@@ -975,14 +968,10 @@ button:disabled {
   font-size: 13px;
 }
 
-.hunt-status-identity strong {
-  color: var(--txt-bright);
-  font-size: 14px;
-}
-
-.hunt-status-identity span {
+.hunt-player-title small {
   color: var(--mut);
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .hunt-status-meter i {
@@ -1522,10 +1511,6 @@ button:disabled {
   .hunt-result-summary,
   .combat-hp-grid {
     grid-template-columns: 1fr;
-  }
-
-  .hunt-status-identity {
-    align-items: baseline;
   }
 
   .archive-view {
