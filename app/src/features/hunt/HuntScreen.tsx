@@ -361,7 +361,7 @@ function TrainingDummyGround({
               {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망치기</button>}
               {canFleeEncounter && <button className="btn ghost" type="button" onClick={handleEncounterFlee} disabled={isResolving}>도망치기</button>}
               {!hasEncounteredMonster && <button className="btn primary" type="button" onClick={handleEncounter} disabled={!canEncounter}>
-                {isSubmitting || isResolving ? "탐색 중..." : remainingTenths > 0 ? "도망치는 중.." : isBattleInProgress ? "전투 중..." : isRetreatLocked ? "후퇴 후 회복 중.." : isRecoveryLocked ? "회복 중..." : "몬스터 찾기"}
+                {isSubmitting || isResolving ? "탐색 중..." : isBattleInProgress ? "전투 중..." : remainingTenths > 0 ? "도망치는 중.." : isRetreatLocked ? "후퇴 후 회복 중.." : isRecoveryLocked ? "회복 중..." : "몬스터 찾기"}
               </button>}
               {hasEncounteredMonster && <button className="btn primary" type="button" onClick={handleHunt} disabled={!canStartBattle}>
                 {isSubmitting ? "전투 준비 중..." : "전투 시작"}
