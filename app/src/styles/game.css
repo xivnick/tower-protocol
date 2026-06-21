@@ -782,7 +782,7 @@ button:disabled {
 
 .box-open-action {
   display: grid;
-  justify-items: end;
+  justify-items: center;
   gap: 6px;
 }
 
