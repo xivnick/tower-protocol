@@ -243,7 +243,7 @@ function TrainingDummyGround({
     autoActionRef.current = key;
     const timeoutId = window.setTimeout(() => void handleEncounter(), 180);
     return () => window.clearTimeout(timeoutId);
-  }, [autoHuntEnabled, autoHuntRemaining, canAutoEncounter, hasEncounteredMonster, isBattleInProgress, isRecovering, isResolving, isSubmitting, now, result?.startedAt]);
+  }, [autoHuntEnabled, autoHuntRemaining, canAutoEncounter, hasEncounteredMonster, isBattleInProgress, isRecovering, isResolving, isSubmitting, result?.startedAt]);
 
   async function handleHunt() {
     if (!canStartBattle) return;
