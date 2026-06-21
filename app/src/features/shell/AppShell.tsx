@@ -120,7 +120,10 @@ export function AppShell({
 
   useEffect(() => {
     const recoveryEndsAt = activeHuntState?.recoveryEndsAt;
+    const recoveryStartHp = activeHuntState?.playerRecoveryStartHp;
+    const recoveryMaxHp = activeHuntState?.playerMaxHp;
     if (!recoveryEndsAt || recoveryToastRef.current === recoveryEndsAt) return;
+    if (recoveryStartHp !== null && recoveryStartHp !== undefined && recoveryMaxHp !== null && recoveryMaxHp !== undefined && recoveryStartHp >= recoveryMaxHp) return;
 
     const recoveryEndsAtMs = Date.parse(recoveryEndsAt);
     if (Number.isNaN(recoveryEndsAtMs) || recoveryEndsAtMs <= Date.now()) return;
@@ -132,7 +135,7 @@ export function AppShell({
     }, recoveryEndsAtMs - Date.now());
 
     return () => window.clearTimeout(timeoutId);
-  }, [activeHuntState?.recoveryEndsAt]);
+  }, [activeHuntState?.playerMaxHp, activeHuntState?.playerRecoveryStartHp, activeHuntState?.recoveryEndsAt]);
 
   function handleHuntStateChange(huntState: HuntState | null) {
     setActiveHuntState(huntState);
