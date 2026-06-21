@@ -388,7 +388,7 @@ export function AppShell({
 
           <div className="workspace-body route-frame" key={`${location.pathname}:${routeRefreshKey}`}>
             <Routes>
-              <Route path="/" element={<DashboardScreen session={session} profile={profile} character={character} />} />
+              <Route path="/" element={<DashboardScreen session={session} profile={profile} character={character} huntState={activeHuntState} />} />
               <Route path="/character" element={<CharacterScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={showToast} />} />
               <Route path="/hunt" element={<HuntScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={handleHuntStateChange} onToast={showToast} />} />
               <Route path="/ranking" element={<RankingScreen />} />
