@@ -44,9 +44,9 @@ export function CharacterScreen({
           </div>
         </article>
 
-        <CharacterPartTimeJobPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
         <CharacterStatsPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
         <CharacterTrainingPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
+        <CharacterPartTimeJobPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
         <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
       </section>
     );
