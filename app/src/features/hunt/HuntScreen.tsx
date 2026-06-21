@@ -244,7 +244,10 @@ function TrainingDummyGround({
       onToast({ message: nextState.message, tone: "error" });
       return;
     }
-    setHuntState(nextState.state);
+    setHuntState((currentState) => currentState ? {
+      ...currentState,
+      selectedHuntGroundId: nextState.state!.selectedHuntGroundId,
+    } : nextState.state);
     onHuntStateChange(nextState.state);
   }
 
