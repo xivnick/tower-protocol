@@ -108,7 +108,7 @@ function TrainingDummyGround({
   const isRecoveryLocked = Boolean(recoveryLockStartedAt && (recoveryLockStatus === "defeated" || recoveryLockStatus === "fled") && recoveryLockStartedAt + 10_000 > now);
   const isRetreatLocked = Boolean(isRecoveryLocked && recoveryLockStatus === "fled");
   const canEncounter = !isSubmitting && !isResolving && !isRecoveryLocked && remainingTenths === 0 && !hasEncounteredMonster && (!result || !isBattleInProgress);
-  const canAutoEncounter = !isSubmitting && !isResolving && remainingTenths === 0 && !hasEncounteredMonster && (!result || !isBattleInProgress);
+  const canAutoEncounter = !isSubmitting && !isResolving && !isRecoveryLocked && remainingTenths === 0 && !hasEncounteredMonster && (!result || !isBattleInProgress);
   const canStartBattle = !isSubmitting && !isResolving && hasEncounteredMonster;
   const canFleeEncounter = Boolean(hasEncounteredMonster && !isSubmitting && !isResolving);
   const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
@@ -253,6 +253,7 @@ function TrainingDummyGround({
     setIsSubmitting(false);
 
     if (!nextResult.ok) {
+      autoActionRef.current = null;
       onToast({ message: nextResult.message, tone: "error" });
       void onCharacterRefresh();
       return;
@@ -274,6 +275,7 @@ function TrainingDummyGround({
     setIsSubmitting(false);
 
     if (!nextResult.ok) {
+      autoActionRef.current = null;
       onToast({ message: nextResult.message, tone: "error" });
       void onCharacterRefresh();
       return;

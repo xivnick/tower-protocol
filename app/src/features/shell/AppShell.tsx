@@ -151,6 +151,17 @@ export function AppShell({
       });
       return;
     }
+    const defeatRecoveryEndsAt = activeHuntState.isDefeatRecovery && activeHuntState.playerRecoveryStartedAt
+      ? Date.parse(activeHuntState.playerRecoveryStartedAt) + 10_000
+      : 0;
+    if (defeatRecoveryEndsAt > Date.now()) {
+      const timeoutId = window.setTimeout(() => {
+        void getMyHuntState().then((next) => {
+          if (next.ok && next.state) setActiveHuntState(next.state);
+        });
+      }, defeatRecoveryEndsAt - Date.now() + 50);
+      return () => window.clearTimeout(timeoutId);
+    }
     const key = `encounter-${activeHuntState.autoHuntRemaining}-${battle?.startedAt ?? "ready"}`;
     if (autoHuntActionRef.current === key) return;
     autoHuntActionRef.current = key;
