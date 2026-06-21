@@ -180,7 +180,7 @@ type MonsterInfoPayload = {
   critical_chance?: number; critical_damage?: number;
 };
 
-const characterSelectFields = "id,user_id,name,level,experience,strength,agility,dexterity,vitality,endurance,intelligence,wisdom,stat_points,bonus_stat_points,hunt_available_at,created_at,updated_at";
+const characterSelectFields = "id,user_id,name,level,experience,credits,strength,agility,dexterity,vitality,endurance,intelligence,wisdom,stat_points,bonus_stat_points,hunt_available_at,created_at,updated_at";
 
 export async function getMyCharacter(): Promise<CharacterResult> {
   if (!supabase) return { ok: false, character: null, message: "Supabase 설정을 확인해주세요." };

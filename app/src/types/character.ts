@@ -4,6 +4,7 @@ export type Character = {
   name: string;
   level: number;
   experience: number;
+  credits: number;
   strength: number;
   agility: number;
   dexterity: number;

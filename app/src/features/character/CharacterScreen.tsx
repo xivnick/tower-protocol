@@ -38,6 +38,7 @@ export function CharacterScreen({
             <Kv label="이름" value={character.name} />
             <Kv label="레벨" value={formatCharacterLevel(character.level)} />
             <Kv label="경험치" value={formatCharacterExperience(character.level, character.experience)} />
+            <Kv label="크레딧" value={`${character.credits.toLocaleString()} CR`} />
           </div>
         </article>
 
