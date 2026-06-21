@@ -78,12 +78,8 @@ export function DashboardScreen({
           </div>
           <div className="kv-grid">
             <Kv label="상태" value={getAutoHuntStatus(huntState)} />
-            {huntState?.autoHuntEnabled && (
-              <>
-                <Kv label="남은 횟수" value={`${huntState.autoHuntRemaining}회`} />
-                {huntState.lastBattle && <Kv label="상대" value={`LV.${huntState.lastBattle.enemy.level} ${huntState.lastBattle.enemy.name}`} />}
-              </>
-            )}
+            <Kv label="남은 횟수" value={`${huntState?.autoHuntRemaining ?? 0}회`} />
+            <Kv label="상대" value={huntState?.autoHuntEnabled && huntState.lastBattle ? `LV.${huntState.lastBattle.enemy.level} ${huntState.lastBattle.enemy.name}` : "-"} />
           </div>
         </article>
       )}
