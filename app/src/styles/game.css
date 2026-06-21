@@ -413,6 +413,9 @@ button:disabled {
   box-sizing: border-box;
   width: max-content;
   max-width: min(280px, calc(100vw - 32px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
   border: 1px solid var(--acc-dim);
   background: color-mix(in srgb, var(--surf) 94%, black);
   color: var(--txt-bright);
@@ -421,6 +424,37 @@ button:disabled {
   font-weight: 800;
   box-shadow: 0 0 0 1px rgba(57, 255, 122, 0.08), 0 18px 60px rgba(0, 0, 0, 0.36);
   animation: toast-in 160ms ease-out;
+}
+
+.toast-message {
+  min-width: 0;
+}
+
+.toast-action,
+.toast-close {
+  border: 0;
+  background: transparent;
+  color: var(--acc);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.toast-action:hover,
+.toast-action:focus-visible,
+.toast-close:hover,
+.toast-close:focus-visible {
+  color: var(--txt-bright);
+}
+
+.toast-close {
+  margin-left: auto;
+  padding: 2px;
+  color: var(--txt-dim);
+  font-size: 16px;
 }
 
 .toast.is-common {

@@ -3,7 +3,6 @@ import type { Session } from "@supabase/supabase-js";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
 import type { Character } from "../../types/character";
-import type { ToastInput, ToastTone } from "../../types/toast";
 import { configureAutoHunt, encounterHuntMonster, getMyHuntState, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntState } from "../../api/characterApi";
 import { CharacterScreen } from "../character/CharacterScreen";
@@ -11,13 +10,7 @@ import { DashboardScreen } from "../dashboard/DashboardScreen";
 import { HuntScreen } from "../hunt/HuntScreen";
 import { PatchNotesArchive } from "../patchNotes/PatchNotes";
 import { RankingScreen } from "../ranking/Ranking";
-
-type ToastMessage = {
-  id: number;
-  message: string;
-  tone: ToastTone;
-  isClosing: boolean;
-};
+import { useToast } from "../toast/ToastProvider";
 
 const navItems = [
   { label: "대시보드", to: "/", end: true, enabled: true },
@@ -29,9 +22,6 @@ const navItems = [
 ];
 
 const dropdownCloseMs = 100;
-const toastDurationMs = 3000;
-const toastCloseMs = 180;
-const maxToasts = 3;
 
 export function AppShell({
   session,
@@ -53,16 +43,14 @@ export function AppShell({
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavClosing, setIsNavClosing] = useState(false);
   const [routeRefreshKey, setRouteRefreshKey] = useState(0);
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [activeHuntState, setActiveHuntState] = useState<HuntState | null>(null);
-  const toastsRef = useRef<ToastMessage[]>([]);
-  const toastIdRef = useRef(0);
   const settlementAttemptRef = useRef<string | null>(null);
   const recoveryToastRef = useRef<string | null>(null);
   const autoHuntActionRef = useRef<string | null>(null);
   const autoEncounterDuringRecoveryRef = useRef(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const nickname = profile?.nickname ?? "UNKNOWN";
   const currentNavLabel = getCurrentNavLabel(location.pathname);
   const hasUnspentStatPoints = Boolean(character && character.stat_points > 0);
@@ -256,42 +244,6 @@ export function AppShell({
     }
   }
 
-  function showToast(input: ToastInput) {
-    const id = toastIdRef.current + 1;
-    toastIdRef.current = id;
-    const tone = input.tone ?? "common";
-
-    function appendToast() {
-      updateToasts((current) => [...current, { id, message: input.message, tone, isClosing: false }]);
-      window.setTimeout(() => {
-        closeToast(id);
-      }, toastDurationMs);
-    }
-
-    const openToasts = toastsRef.current.filter((toast) => !toast.isClosing);
-
-    if (openToasts.length >= maxToasts) {
-      closeToast(openToasts[0].id);
-      window.setTimeout(appendToast, toastCloseMs);
-      return;
-    }
-
-    appendToast();
-  }
-
-  function closeToast(id: number) {
-    updateToasts((current) => current.map((toast) => toast.id === id ? { ...toast, isClosing: true } : toast));
-    window.setTimeout(() => {
-      updateToasts((current) => current.filter((toast) => toast.id !== id));
-    }, toastCloseMs);
-  }
-
-  function updateToasts(updater: (current: ToastMessage[]) => ToastMessage[]) {
-    const nextToasts = updater(toastsRef.current);
-    toastsRef.current = nextToasts;
-    setToasts(nextToasts);
-  }
-
   return (
     <>
       <div className="crt-overlay" aria-hidden="true" />
@@ -389,8 +341,8 @@ export function AppShell({
           <div className="workspace-body route-frame" key={`${location.pathname}:${routeRefreshKey}`}>
             <Routes>
               <Route path="/" element={<DashboardScreen session={session} profile={profile} character={character} huntState={activeHuntState} />} />
-              <Route path="/character" element={<CharacterScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={showToast} />} />
-              <Route path="/hunt" element={<HuntScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={handleHuntStateChange} onToast={showToast} />} />
+              <Route path="/character" element={<CharacterScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />} />
+              <Route path="/hunt" element={<HuntScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={handleHuntStateChange} />} />
               <Route path="/ranking" element={<RankingScreen />} />
               <Route path="/patch-notes" element={<PatchNotesArchive />} />
               <Route path="*" element={<Navigate to="/" replace />} />
@@ -398,15 +350,6 @@ export function AppShell({
           </div>
         </section>
       </main>
-      {toasts.length > 0 && (
-        <div className="toast-stack" role="status" aria-live="polite">
-          {toasts.map((toast) => (
-            <div className={`toast is-${toast.tone} ${toast.isClosing ? "is-closing" : ""}`} key={toast.id}>
-              {toast.message}
-            </div>
-          ))}
-        </div>
-      )}
     </>
   );
 }
