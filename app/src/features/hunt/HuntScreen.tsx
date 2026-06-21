@@ -427,6 +427,9 @@ function TrainingDummyGround({
               {hasEncounteredMonster && !isStartingBattle && <button className="btn primary" type="button" onClick={handleHunt} disabled={!canStartBattle}>
                 {isSubmitting ? "전투 준비 중..." : "전투 시작"}
               </button>}
+              {(isBattleInProgress || isStartingBattle) && <button className="btn primary" type="button" disabled>
+                전투 중...
+              </button>}
             </div>
           </div>
           <div className="combat-hp-grid">
