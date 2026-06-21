@@ -251,7 +251,9 @@ export function AppShell({
           <button className="mobile-nav-trigger" type="button" onClick={toggleNavMenu} aria-expanded={isNavOpen}>
             <span>{currentNavLabel}</span>
             {currentNavLabel === "캐릭터" && hasUnspentStatPoints && <span className="nav-notice" aria-hidden="true" />}
-            <span className="mobile-nav-icon" aria-hidden="true">▾</span>
+            <svg className="mobile-nav-icon" aria-hidden="true" viewBox="0 0 16 16">
+              <path d="m4 6 4 4 4-4" />
+            </svg>
           </button>
           {isNavOpen && (
             <nav className={`mobile-nav-menu ${isNavClosing ? "is-closing" : ""}`} aria-label="게임 화면">

@@ -1683,6 +1683,18 @@ button:disabled {
 
   .mobile-nav-icon {
     margin-left: auto;
+    width: 16px;
+    height: 16px;
+    color: var(--acc);
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: square;
+    stroke-width: 1.5;
+    transition: transform 140ms ease;
+  }
+
+  .mobile-nav-trigger[aria-expanded="true"] .mobile-nav-icon {
+    transform: rotate(180deg);
   }
 
   .mobile-nav-menu {
