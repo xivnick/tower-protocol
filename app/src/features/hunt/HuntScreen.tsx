@@ -181,7 +181,7 @@ function TrainingDummyGround({
       if (!result.character) return;
       completedResultRef.current = result;
       onCharacterChange(result.character);
-      onToast({ message: "패배..", tone: "error" });
+      onToast({ message: "전투에서 패배했습니다.", tone: "error" });
       return;
     }
 
@@ -311,7 +311,7 @@ function TrainingDummyGround({
     autoActionRef.current = null;
     setHuntState(nextState.state);
     onHuntStateChange(nextState.state);
-    onToast({ message: completionMessage ?? (enabled ? "자동사냥을 시작했습니다." : "자동사냥을 중단했습니다."), tone: "system" });
+    onToast({ message: completionMessage ?? (enabled ? (autoHuntEnabled ? "자동전투 횟수를 갱신했습니다." : "자동사냥을 시작했습니다.") : "자동사냥을 중단했습니다."), tone: "system" });
   }
 
   async function handleGroundChange(huntGroundId: string) {
@@ -581,7 +581,7 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
   const totalDamage = result.status === "fled"
     ? result.logs.filter((entry) => entry.timeTenths <= fledAt && (entry.kind === "attack" || entry.kind === "critical")).reduce((total, entry) => total + entry.amount, 0)
     : result.totalDamage;
-  const resultStatus = result.status === "fled" ? "도망침" : result.status === "timed_out" ? "시간 초과" : result.status === "defeated" ? "패배.." : null;
+  const resultStatus = result.status === "fled" ? "도망침" : result.status === "timed_out" ? "시간 초과" : result.status === "defeated" ? "전투에서 패배했습니다." : null;
   const seconds = durationTicks / 10;
   const dps = seconds > 0 ? (totalDamage / seconds).toFixed(1) : "0.0";
 
@@ -609,7 +609,7 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   const recovery = <b className="combat-log-recovery">+{formatAmount(entry.amount)} HP</b>;
   if (entry.kind === "encounter") return `LV.${enemyLevel} ${enemyName}과 조우했습니다.`;
   if (entry.kind === "defeat") return `전투 승리 +${gainedExperience} EXP`;
-  if (entry.kind === "player_defeat") return "패배..";
+  if (entry.kind === "player_defeat") return "전투에서 패배했습니다.";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
   if (entry.kind === "miss") return <><b className="combat-log-player">{playerName}</b> 공격이 빗나갔습니다.</>;

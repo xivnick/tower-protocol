@@ -102,7 +102,7 @@ export function AppShell({
 
         onCharacterChange(nextResult.character);
         if (nextResult.status === "defeated") {
-          showToast({ message: "패배..", tone: "error" });
+          showToast({ message: "전투에서 패배했습니다.", tone: "error" });
         } else if (nextResult.status === "timed_out") {
           showToast({ message: "시간 제한에 도달해 전투를 종료했습니다.", tone: "system" });
         } else {
@@ -191,7 +191,7 @@ export function AppShell({
     const recoveryStartHp = activeHuntState?.playerRecoveryStartHp;
     const recoveryMaxHp = activeHuntState?.playerMaxHp;
     if (!recoveryEndsAt || recoveryToastRef.current === recoveryEndsAt) return;
-    if (activeHuntState?.autoHuntEnabled && activeHuntState.lastBattle?.status === "encountered") return;
+    if (activeHuntState?.autoHuntEnabled) return;
     if (recoveryStartHp !== null && recoveryStartHp !== undefined && recoveryMaxHp !== null && recoveryMaxHp !== undefined && recoveryStartHp >= recoveryMaxHp) return;
 
     const recoveryEndsAtMs = Date.parse(recoveryEndsAt);
