@@ -221,7 +221,7 @@ function TrainingDummyGround({
   }, [isPlaybackComplete, result]);
 
   useEffect(() => {
-    if (!autoHuntEnabled || isSubmitting || isResolving || isBattleInProgress) return;
+    if (!autoHuntEnabled || isSubmitting || isResolving || isBattleInProgress || isRecovering) return;
     if (hasEncounteredMonster) {
       const key = `battle-${result?.startedAt}`;
       if (autoActionRef.current === key) return;
@@ -240,7 +240,7 @@ function TrainingDummyGround({
     if (autoActionRef.current === key) return;
     autoActionRef.current = key;
     window.setTimeout(() => void handleEncounter(), 180);
-  }, [autoHuntEnabled, autoHuntRemaining, canEncounter, hasEncounteredMonster, isBattleInProgress, isResolving, isSubmitting, result?.startedAt]);
+  }, [autoHuntEnabled, autoHuntRemaining, canEncounter, hasEncounteredMonster, isBattleInProgress, isRecovering, isResolving, isSubmitting, now, result?.startedAt]);
 
   async function handleHunt() {
     if (!canStartBattle) return;
