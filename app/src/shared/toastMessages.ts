@@ -19,8 +19,8 @@ export const toastMessages = {
     completed: (gainedCredits: number): ToastInput => ({ message: `알바 완료 +${gainedCredits.toLocaleString()} CR`, tone: "common" }),
   },
   hunt: {
-    defeated: (): ToastInput => ({ message: "전투에서 패배했습니다.", tone: "error" }),
-    timedOut: (): ToastInput => ({ message: "시간 제한에 도달해 전투를 종료했습니다.", tone: "system" }),
+    defeated: (): ToastInput => ({ message: "전투 패배 · 10초간 회복", tone: "error" }),
+    timedOut: (): ToastInput => ({ message: "전투 종료 · 시간 제한 도달", tone: "system" }),
     completed: (gainedExperience: number): ToastInput => ({ message: `전투 완료 · +${gainedExperience} EXP`, tone: "system" }),
     autoBattleStarted: (level: number, name: string): ToastInput => ({ message: `자동 전투 시작 · LV.${level} ${name}`, tone: "system" }),
     autoHuntStarted: (): ToastInput => ({ message: "자동사냥을 시작했습니다.", tone: "system" }),
