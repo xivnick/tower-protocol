@@ -28,6 +28,7 @@ const AUTH_ERROR_MESSAGES: Array<[RegExp, string]> = [
   [/hunt_defeat_recovery/i, "패배 후 회복 중입니다."],
   [/hunt_retreat_recovery/i, "후퇴 후 회복 중입니다."],
   [/training_charges_empty/i, "훈련 보관이 비어 있습니다."],
+  [/part_time_job_charges_empty/i, "알바 보관이 비어 있습니다."],
   [/training_dummy_not_defeated/i, "허수아비 전투를 완료하지 못했습니다."],
   [/monster_already_encountered/i, "이미 조우한 몬스터가 있습니다."],
   [/monster_encountered/i, "조우한 몬스터와의 전투를 먼저 완료해주세요."],
