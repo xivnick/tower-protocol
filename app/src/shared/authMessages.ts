@@ -29,6 +29,9 @@ const AUTH_ERROR_MESSAGES: Array<[RegExp, string]> = [
   [/hunt_retreat_recovery/i, "후퇴 후 회복 중입니다."],
   [/training_charges_empty/i, "훈련 보관이 비어 있습니다."],
   [/training_dummy_not_defeated/i, "허수아비 전투를 완료하지 못했습니다."],
+  [/monster_already_encountered/i, "이미 조우한 몬스터가 있습니다."],
+  [/monster_encountered/i, "조우한 몬스터와의 전투를 먼저 완료해주세요."],
+  [/no_monster_encounter/i, "먼저 몬스터를 찾아주세요."],
   [/shared_name_conflict/i, "이미 사용 중인 이름입니다."],
   [/duplicate key value/i, "이미 사용 중인 값입니다."],
 ];

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
+import { encounterHuntMonster, fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
@@ -94,6 +94,7 @@ function TrainingDummyGround({
   const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
   const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
   const isBattleInProgress = result?.status === "in_progress";
+  const hasEncounteredMonster = result?.status === "encountered";
   const recoveredPlayerHp = getRecoveredPlayerHp(huntState, now);
   const playerHp = isBattleInProgress
     ? playerLogs.length > 0 ? playerLogs[playerLogs.length - 1].targetHp : result?.player.startHp ?? result?.player.maxHp ?? combatStats.maxHp
@@ -105,7 +106,8 @@ function TrainingDummyGround({
   const recoveryLockStartedAt = huntState?.playerRecoveryStartedAt ? Date.parse(huntState.playerRecoveryStartedAt) : 0;
   const isRecoveryLocked = Boolean(recoveryLockStartedAt && (recoveryLockStatus === "defeated" || recoveryLockStatus === "fled") && recoveryLockStartedAt + 10_000 > now);
   const isRetreatLocked = Boolean(isRecoveryLocked && recoveryLockStatus === "fled");
-  const canHunt = !isSubmitting && !isResolving && !isRecoveryLocked && remainingTenths === 0 && (!result || !isBattleInProgress);
+  const canEncounter = !isSubmitting && !isResolving && !isRecoveryLocked && remainingTenths === 0 && !hasEncounteredMonster && (!result || !isBattleInProgress);
+  const canStartBattle = !isSubmitting && !isResolving && hasEncounteredMonster;
   const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
   const displayLevel = result ? (isPlaybackComplete ? result.levelAfter : result.player.level) : character.level;
   const displayExperience = result ? (isPlaybackComplete ? result.experienceAfter : result.player.experience ?? 0) : character.experience;
@@ -125,7 +127,7 @@ function TrainingDummyGround({
       const restoredResult = { ok: true, character: null, huntState: nextState.state, ...battle, message: "" };
       onHuntStateChange(nextState.state);
       setResult(restoredResult);
-      if (battle.status !== "in_progress") setLastResult(restoredResult);
+      if (battle.status !== "in_progress" && battle.status !== "encountered") setLastResult(restoredResult);
       setPlaybackTenths(getElapsedTenths(battle.startedAt, battle.durationTicks));
     });
 
@@ -156,7 +158,7 @@ function TrainingDummyGround({
   }, [visibleLogs.length]);
 
   useEffect(() => {
-    if (!result || !isPlaybackComplete || completedResultRef.current === result) return;
+    if (!result || hasEncounteredMonster || isBattleInProgress || !isPlaybackComplete || completedResultRef.current === result) return;
 
     if (result.status === "timed_out") {
       if (!result.character) return;
@@ -185,7 +187,7 @@ function TrainingDummyGround({
     if (result.levelAfter > result.levelBefore) {
       onToast({ message: `레벨업! -> LV.${result.levelAfter}`, tone: "epic" });
     }
-  }, [isPlaybackComplete, onCharacterChange, onToast, result]);
+  }, [hasEncounteredMonster, isBattleInProgress, isPlaybackComplete, onCharacterChange, onToast, result]);
 
   useEffect(() => {
     if (!result || result.status !== "in_progress" || !isPlaybackComplete || isResolving || settlementAttemptRef.current === result.startedAt) return;
@@ -215,7 +217,7 @@ function TrainingDummyGround({
   }, [isPlaybackComplete, result]);
 
   async function handleHunt() {
-    if (!canHunt) return;
+    if (!canStartBattle) return;
 
     setIsSubmitting(true);
     setResult(null);
@@ -234,6 +236,27 @@ function TrainingDummyGround({
     setHuntState(nextResult.huntState);
     onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
+  }
+
+  async function handleEncounter() {
+    if (!canEncounter) return;
+
+    setIsSubmitting(true);
+    setResult(null);
+    setPlaybackTenths(0);
+    const nextResult = await encounterHuntMonster();
+    setIsSubmitting(false);
+
+    if (!nextResult.ok) {
+      onToast({ message: nextResult.message, tone: "error" });
+      void onCharacterRefresh();
+      return;
+    }
+
+    setHuntState(nextResult.huntState);
+    onHuntStateChange(nextResult.huntState);
+    setResult(nextResult);
+    onToast({ message: nextResult.message, tone: "system" });
   }
 
   async function handleGroundChange(huntGroundId: string) {
@@ -316,9 +339,12 @@ function TrainingDummyGround({
             </div>
             <div className="hunt-action-buttons">
               {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망치기</button>}
-              <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
-                {isSubmitting || isResolving || isBattleInProgress ? "전투 중..." : isRetreatLocked ? "후퇴 후 회복 중.." : isRecoveryLocked ? "회복 중..." : "전투 시작"}
-              </button>
+              {!hasEncounteredMonster && <button className="btn primary" type="button" onClick={handleEncounter} disabled={!canEncounter}>
+                {isSubmitting || isResolving ? "탐색 중..." : isBattleInProgress ? "전투 중..." : isRetreatLocked ? "후퇴 후 회복 중.." : isRecoveryLocked ? "회복 중..." : "몬스터 찾기"}
+              </button>}
+              {hasEncounteredMonster && <button className="btn primary" type="button" onClick={handleHunt} disabled={!canStartBattle}>
+                {isSubmitting ? "전투 준비 중..." : "전투 시작"}
+              </button>}
             </div>
           </div>
           <div className="combat-hp-grid">
@@ -352,7 +378,7 @@ function TrainingDummyGround({
                 ))}
               </>
             ) : (
-              <li className="is-empty">전투 시작을 기다리고 있습니다.</li>
+              <li className="is-empty">{hasEncounteredMonster ? "조우 완료. 전투를 시작하세요." : "몬스터 찾기를 기다리고 있습니다."}</li>
             )}
           </ol>
       </article>
