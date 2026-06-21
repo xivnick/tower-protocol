@@ -364,7 +364,7 @@ function TrainingDummyGround({
                 {isSubmitting || isResolving ? "탐색 중..." : isBattleInProgress ? "전투 중..." : isRetreatLocked ? "후퇴 후 회복 중.." : isRecoveryLocked ? "회복 중..." : "몬스터 찾기"}
               </button>}
               {hasEncounteredMonster && <button className="btn primary" type="button" onClick={handleHunt} disabled={!canStartBattle}>
-                {isSubmitting ? "전투 준비 중..." : "전투 시작"}
+                {isResolving ? "도망치는 중.." : isSubmitting ? "전투 준비 중..." : "전투 시작"}
               </button>}
             </div>
           </div>
