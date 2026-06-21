@@ -60,6 +60,7 @@ export function AppShell({
   const settlementAttemptRef = useRef<string | null>(null);
   const recoveryToastRef = useRef<string | null>(null);
   const autoHuntActionRef = useRef<string | null>(null);
+  const autoEncounterDuringRecoveryRef = useRef(false);
   const location = useLocation();
   const navigate = useNavigate();
   const nickname = profile?.nickname ?? "UNKNOWN";
@@ -135,12 +136,18 @@ export function AppShell({
       }
       if (autoHuntActionRef.current === battle.startedAt) return;
       autoHuntActionRef.current = battle.startedAt;
-      void huntTrainingDummy().then((next) => {
+      const delay = autoEncounterDuringRecoveryRef.current ? 0 : 500;
+      let isActive = true;
+      const timeoutId = window.setTimeout(() => void huntTrainingDummy().then((next) => {
+        if (!isActive) return;
         if (!next.ok || !next.huntState) return;
         setActiveHuntState(next.huntState);
-        showToast({ message: `자동사냥 · LV.${next.enemy.level} ${next.enemy.name}와 조우했습니다.`, tone: "system" });
-      });
-      return;
+        showToast({ message: `자동 전투 시작 · LV.${next.enemy.level} ${next.enemy.name}`, tone: "system" });
+      }), delay);
+      return () => {
+        isActive = false;
+        window.clearTimeout(timeoutId);
+      };
     }
     if (activeHuntState.autoHuntRemaining === 0) {
       if (autoHuntActionRef.current === "complete") return;
@@ -165,11 +172,18 @@ export function AppShell({
     const key = `encounter-${activeHuntState.autoHuntRemaining}-${battle?.startedAt ?? "ready"}`;
     if (autoHuntActionRef.current === key) return;
     autoHuntActionRef.current = key;
-    void encounterHuntMonster().then((next) => {
+    const recoveryEndsAt = activeHuntState.recoveryEndsAt ? Date.parse(activeHuntState.recoveryEndsAt) : 0;
+    autoEncounterDuringRecoveryRef.current = recoveryEndsAt > Date.now();
+    let isActive = true;
+    const timeoutId = window.setTimeout(() => void encounterHuntMonster().then((next) => {
+      if (!isActive) return;
       if (!next.ok || !next.huntState) return;
       setActiveHuntState(next.huntState);
-      showToast({ message: `자동사냥 · LV.${next.enemy.level} ${next.enemy.name}와 조우했습니다.`, tone: "system" });
-    });
+    }), 500);
+    return () => {
+      isActive = false;
+      window.clearTimeout(timeoutId);
+    };
   }, [activeHuntState, location.pathname]);
 
   useEffect(() => {
@@ -177,6 +191,7 @@ export function AppShell({
     const recoveryStartHp = activeHuntState?.playerRecoveryStartHp;
     const recoveryMaxHp = activeHuntState?.playerMaxHp;
     if (!recoveryEndsAt || recoveryToastRef.current === recoveryEndsAt) return;
+    if (activeHuntState?.autoHuntEnabled && activeHuntState.lastBattle?.status === "encountered") return;
     if (recoveryStartHp !== null && recoveryStartHp !== undefined && recoveryMaxHp !== null && recoveryMaxHp !== undefined && recoveryStartHp >= recoveryMaxHp) return;
 
     const recoveryEndsAtMs = Date.parse(recoveryEndsAt);

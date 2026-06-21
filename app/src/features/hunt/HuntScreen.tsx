@@ -82,6 +82,7 @@ function TrainingDummyGround({
   const completedResultRef = useRef<HuntResult | null>(null);
   const settlementAttemptRef = useRef<string | null>(null);
   const autoActionRef = useRef<string | null>(null);
+  const autoEncounterDuringRecoveryRef = useRef(false);
   const huntAvailableAt = result?.huntState?.availableAt ?? huntState?.availableAt;
   const availableAt = huntAvailableAt ? Date.parse(huntAvailableAt) : 0;
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
@@ -228,7 +229,8 @@ function TrainingDummyGround({
       const key = `battle-${result?.startedAt}`;
       if (autoActionRef.current === key) return;
       autoActionRef.current = key;
-      const timeoutId = window.setTimeout(() => void handleHunt(), 180);
+      const delay = autoEncounterDuringRecoveryRef.current ? 0 : 500;
+      const timeoutId = window.setTimeout(() => void handleHunt(), delay);
       return () => window.clearTimeout(timeoutId);
     }
     if (autoHuntRemaining === 0) {
@@ -241,7 +243,8 @@ function TrainingDummyGround({
     const key = `encounter-${autoHuntRemaining}-${huntState?.lastBattle?.startedAt ?? "ready"}`;
     if (autoActionRef.current === key) return;
     autoActionRef.current = key;
-    const timeoutId = window.setTimeout(() => void handleEncounter(), 180);
+    autoEncounterDuringRecoveryRef.current = isRecovering;
+    const timeoutId = window.setTimeout(() => void handleEncounter(), 500);
     return () => window.clearTimeout(timeoutId);
   }, [autoHuntEnabled, autoHuntRemaining, canAutoEncounter, hasEncounteredMonster, isBattleInProgress, isRecovering, isResolving, isSubmitting, result?.startedAt]);
 
@@ -265,6 +268,7 @@ function TrainingDummyGround({
     setHuntState(nextResult.huntState);
     onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
+    if (autoHuntEnabled) onToast({ message: `자동 전투 시작 · LV.${nextResult.enemy.level} ${nextResult.enemy.name}`, tone: "system" });
   }
 
   async function handleEncounter() {
@@ -285,7 +289,6 @@ function TrainingDummyGround({
     onHuntStateChange(nextResult.huntState);
     setPlaybackTenths(0);
     setResult(nextResult);
-    onToast({ message: `LV.${nextResult.enemy.level} ${nextResult.enemy.name} 조우`, tone: "system" });
   }
 
   async function handleAutoHunt(enabled: boolean, completionMessage?: string) {
