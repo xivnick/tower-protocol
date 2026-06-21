@@ -18,6 +18,11 @@ export const toastMessages = {
   partTimeJob: {
     completed: (gainedCredits: number): ToastInput => ({ message: `알바 완료 +${gainedCredits.toLocaleString()} CR`, tone: "common" }),
   },
+  equipment: {
+    weaponFound: (weapon: string): ToastInput => ({ message: `무기 획득 · ${weapon}`, tone: "rare" }),
+    equipped: (weapon: string): ToastInput => ({ message: `무기 장착 · ${weapon}`, tone: "system" }),
+    unequipped: (): ToastInput => ({ message: "무기를 해제했습니다.", tone: "system" }),
+  },
   hunt: {
     defeated: (): ToastInput => ({ message: "전투 패배 · 10초간 회복", tone: "error" }),
     timedOut: (): ToastInput => ({ message: "전투 종료 · 시간 제한 도달", tone: "system" }),

@@ -776,6 +776,43 @@ button:disabled {
   gap: 8px;
 }
 
+.equipment-actions {
+  margin-top: 12px;
+}
+
+.weapon-list {
+  display: grid;
+  gap: 8px;
+}
+
+.weapon-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 10px;
+}
+
+.weapon-card.is-equipped {
+  border-color: var(--acc);
+}
+
+.weapon-card > div {
+  display: grid;
+  gap: 4px;
+}
+
+.weapon-card strong {
+  color: var(--txt-bright);
+}
+
+.weapon-card span {
+  color: var(--mut);
+  font-size: 13px;
+}
+
 .stat-meter-row {
   display: flex;
   flex-wrap: wrap;
