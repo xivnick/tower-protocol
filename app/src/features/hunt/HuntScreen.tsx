@@ -74,6 +74,8 @@ function TrainingDummyGround({
   const [huntState, setHuntState] = useState<HuntState | null>(null);
   const [isMonsterInfoOpen, setIsMonsterInfoOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEncountering, setIsEncountering] = useState(false);
+  const [isStartingBattle, setIsStartingBattle] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -110,9 +112,10 @@ function TrainingDummyGround({
   const isRetreatLocked = Boolean(isRecoveryLocked && recoveryLockStatus === "fled");
   const canEncounter = !isSubmitting && !isResolving && !isRecoveryLocked && remainingTenths === 0 && !hasEncounteredMonster && (!result || !isBattleInProgress);
   const canAutoEncounter = !isSubmitting && !isResolving && !isRecoveryLocked && remainingTenths === 0 && !hasEncounteredMonster && (!result || !isBattleInProgress);
-  const canStartBattle = !isSubmitting && !isResolving && hasEncounteredMonster;
-  const canFleeEncounter = Boolean(hasEncounteredMonster && !isSubmitting && !isResolving);
+  const canStartBattle = !isSubmitting && !isResolving && !isStartingBattle && hasEncounteredMonster;
+  const canFleeEncounter = Boolean(hasEncounteredMonster && !isSubmitting && !isResolving && !isStartingBattle);
   const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
+  const showFleeButton = Boolean(hasEncounteredMonster || isBattleInProgress || isStartingBattle);
   const autoHuntEnabled = huntState?.autoHuntEnabled ?? false;
   const autoHuntRemaining = huntState?.autoHuntRemaining ?? 0;
   const displayLevel = result ? (isPlaybackComplete ? result.levelAfter : result.player.level) : character.level;
@@ -244,18 +247,20 @@ function TrainingDummyGround({
     if (autoActionRef.current === key) return;
     autoActionRef.current = key;
     autoEncounterDuringRecoveryRef.current = isRecovering;
-    const timeoutId = window.setTimeout(() => void handleEncounter(), 500);
+    const timeoutId = window.setTimeout(() => void handleEncounter(false), 500);
     return () => window.clearTimeout(timeoutId);
   }, [autoHuntEnabled, autoHuntRemaining, canAutoEncounter, hasEncounteredMonster, isBattleInProgress, isRecovering, isResolving, isSubmitting, result?.startedAt]);
 
   async function handleHunt() {
     if (!canStartBattle) return;
 
+    setIsStartingBattle(true);
     setIsSubmitting(true);
     const nextResult = await huntTrainingDummy();
     setIsSubmitting(false);
 
     if (!nextResult.ok) {
+      setIsStartingBattle(false);
       autoActionRef.current = null;
       onToast({ message: nextResult.message, tone: "error" });
       void onCharacterRefresh();
@@ -268,15 +273,21 @@ function TrainingDummyGround({
     setHuntState(nextResult.huntState);
     onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
+    setIsStartingBattle(false);
     if (autoHuntEnabled) onToast({ message: `자동 전투 시작 · LV.${nextResult.enemy.level} ${nextResult.enemy.name}`, tone: "system" });
   }
 
-  async function handleEncounter() {
+  async function handleEncounter(showSearching = true) {
     if (!canEncounter) return;
 
+    const startedAt = Date.now();
+    if (showSearching) setIsEncountering(true);
     setIsSubmitting(true);
     const nextResult = await encounterHuntMonster();
+    const remainingTransitionMs = showSearching ? Math.max(0, 500 - (Date.now() - startedAt)) : 0;
+    if (remainingTransitionMs > 0) await new Promise<void>((resolve) => window.setTimeout(resolve, remainingTransitionMs));
     setIsSubmitting(false);
+    if (showSearching) setIsEncountering(false);
 
     if (!nextResult.ok) {
       autoActionRef.current = null;
@@ -409,12 +420,11 @@ function TrainingDummyGround({
               <h2>전투</h2>
             </div>
             <div className="hunt-action-buttons">
-              {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망치기</button>}
-              {canFleeEncounter && <button className="btn ghost" type="button" onClick={handleEncounterFlee} disabled={isResolving}>도망치기</button>}
-              {!hasEncounteredMonster && <button className="btn primary" type="button" onClick={handleEncounter} disabled={!canEncounter}>
-                {isSubmitting || isResolving ? "탐색 중..." : isBattleInProgress ? "전투 중..." : remainingTenths > 0 ? "도망치는 중.." : isRetreatLocked ? "후퇴 후 회복 중.." : isRecoveryLocked ? "회복 중..." : "몬스터 찾기"}
+              {showFleeButton && <button className="btn ghost" type="button" onClick={isBattleInProgress ? handleFlee : handleEncounterFlee} disabled={isResolving || isSubmitting || (!canFlee && !canFleeEncounter)}>도망치기</button>}
+              {!hasEncounteredMonster && !isBattleInProgress && !isStartingBattle && <button className="btn primary" type="button" onClick={() => void handleEncounter()} disabled={!canEncounter}>
+                {isEncountering ? "찾는 중.." : isResolving ? "탐색 중..." : remainingTenths > 0 ? "도망치는 중.." : isRetreatLocked ? "후퇴 후 회복 중.." : isRecoveryLocked ? "회복 중..." : "몬스터 찾기"}
               </button>}
-              {hasEncounteredMonster && <button className="btn primary" type="button" onClick={handleHunt} disabled={!canStartBattle}>
+              {hasEncounteredMonster && !isStartingBattle && <button className="btn primary" type="button" onClick={handleHunt} disabled={!canStartBattle}>
                 {isSubmitting ? "전투 준비 중..." : "전투 시작"}
               </button>}
             </div>
