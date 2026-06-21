@@ -76,22 +76,21 @@ export function DashboardScreen({
 
       {character && (
         <article className="panel">
-          <div className="panel-head">
-            <span>AUTO BATTLE</span>
-            <h2>자동 전투 현황</h2>
+          <div className="panel-head compact action-head">
+            <div>
+              <span>AUTO BATTLE</span>
+              <h2>자동 전투 현황</h2>
+            </div>
+            <Link className="text-button" to="/hunt">사냥터 바로가기</Link>
           </div>
           <div className="kv-grid">
             <Kv label="상태" value={getAutoHuntStatus(huntState)} />
             {huntState?.autoHuntEnabled && (
               <>
                 <Kv label="남은 횟수" value={`${huntState.autoHuntRemaining}회`} />
-                {huntState.lastBattle && <Kv label="대상" value={`LV.${huntState.lastBattle.enemy.level} ${huntState.lastBattle.enemy.name}`} />}
+                {huntState.lastBattle && <Kv label="상대" value={`LV.${huntState.lastBattle.enemy.level} ${huntState.lastBattle.enemy.name}`} />}
               </>
             )}
-          </div>
-          <div className="panel-action-body">
-            {!huntState?.autoHuntEnabled && <p className="panel-message">사냥터에서 자동 전투를 시작하세요.</p>}
-            <Link className="btn ghost panel-primary-action" to="/hunt">사냥터로 이동</Link>
           </div>
         </article>
       )}
