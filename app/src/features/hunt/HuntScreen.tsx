@@ -6,6 +6,8 @@ import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../share
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
 import type { Character } from "../../types/character";
 import type { ToastInput } from "../../types/toast";
+import { toastMessages } from "../../shared/toastMessages";
+import { useToast } from "../toast/ToastProvider";
 
 const trainingDummy = {
   maxHp(level: number) {
@@ -24,13 +26,11 @@ export function HuntScreen({
   onCharacterChange,
   onCharacterRefresh,
   onHuntStateChange,
-  onToast,
 }: {
   character: Character | null;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
   onHuntStateChange: (huntState: HuntState | null) => void;
-  onToast: (toast: ToastInput) => void;
 }) {
   useEffect(() => {
     void onCharacterRefresh();
@@ -53,7 +53,7 @@ export function HuntScreen({
     );
   }
 
-  return <TrainingDummyGround character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={onHuntStateChange} onToast={onToast} />;
+  return <TrainingDummyGround character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={onHuntStateChange} />;
 }
 
 function TrainingDummyGround({
@@ -61,14 +61,13 @@ function TrainingDummyGround({
   onCharacterChange,
   onCharacterRefresh,
   onHuntStateChange,
-  onToast,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
   onHuntStateChange: (huntState: HuntState | null) => void;
-  onToast: (toast: ToastInput) => void;
 }) {
+  const { showToast } = useToast();
   const [result, setResult] = useState<HuntResult | null>(null);
   const [lastResult, setLastResult] = useState<HuntResult | null>(null);
   const [huntState, setHuntState] = useState<HuntState | null>(null);
@@ -173,7 +172,7 @@ function TrainingDummyGround({
       if (!result.character) return;
       completedResultRef.current = result;
       onCharacterChange(result.character);
-      onToast({ message: "시간 제한에 도달해 전투를 종료했습니다.", tone: "system" });
+      showToast(toastMessages.hunt.timedOut());
       return;
     }
 
@@ -181,7 +180,7 @@ function TrainingDummyGround({
       if (!result.character) return;
       completedResultRef.current = result;
       onCharacterChange(result.character);
-      onToast({ message: "전투에서 패배했습니다.", tone: "error" });
+      showToast(toastMessages.hunt.defeated());
       return;
     }
 
@@ -191,12 +190,12 @@ function TrainingDummyGround({
 
     completedResultRef.current = result;
     onCharacterChange(result.character);
-    onToast({ message: `전투 완료 · +${result.gainedExperience} EXP`, tone: "system" });
+    showToast(toastMessages.hunt.completed(result.gainedExperience));
 
     if (result.levelAfter > result.levelBefore) {
-      onToast({ message: `레벨업! -> LV.${result.levelAfter}`, tone: "epic" });
+      showToast(toastMessages.character.levelUp(result.levelAfter));
     }
-  }, [hasEncounteredMonster, isBattleInProgress, isPlaybackComplete, onCharacterChange, onToast, result]);
+  }, [hasEncounteredMonster, isBattleInProgress, isPlaybackComplete, onCharacterChange, result, showToast]);
 
   useEffect(() => {
     if (!result || result.status !== "in_progress" || !isPlaybackComplete || isResolving || settlementAttemptRef.current === result.startedAt) return;
@@ -209,7 +208,7 @@ function TrainingDummyGround({
         if (!isActive) return;
         setIsResolving(false);
         if (!nextResult.ok) {
-          onToast({ message: nextResult.message, tone: "error" });
+          showToast({ message: nextResult.message, tone: "error" });
           return;
         }
         setHuntState(nextResult.huntState);
@@ -239,7 +238,7 @@ function TrainingDummyGround({
     if (autoHuntRemaining === 0) {
       if (autoActionRef.current === "complete") return;
       autoActionRef.current = "complete";
-      void handleAutoHunt(false, "자동사냥이 종료되었습니다.");
+      void handleAutoHunt(false, toastMessages.hunt.autoHuntCompleted());
       return;
     }
     if (!canAutoEncounter) return;
@@ -262,7 +261,7 @@ function TrainingDummyGround({
     if (!nextResult.ok) {
       setIsStartingBattle(false);
       autoActionRef.current = null;
-      onToast({ message: nextResult.message, tone: "error" });
+      showToast({ message: nextResult.message, tone: "error" });
       void onCharacterRefresh();
       return;
     }
@@ -274,7 +273,7 @@ function TrainingDummyGround({
     onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
     setIsStartingBattle(false);
-    if (autoHuntEnabled) onToast({ message: `자동 전투 시작 · LV.${nextResult.enemy.level} ${nextResult.enemy.name}`, tone: "system" });
+    if (autoHuntEnabled) showToast(toastMessages.hunt.autoBattleStarted(nextResult.enemy.level, nextResult.enemy.name));
   }
 
   async function handleEncounter(showSearching = true) {
@@ -291,7 +290,7 @@ function TrainingDummyGround({
 
     if (!nextResult.ok) {
       autoActionRef.current = null;
-      onToast({ message: nextResult.message, tone: "error" });
+      showToast({ message: nextResult.message, tone: "error" });
       void onCharacterRefresh();
       return;
     }
@@ -302,16 +301,16 @@ function TrainingDummyGround({
     setResult(nextResult);
   }
 
-  async function handleAutoHunt(enabled: boolean, completionMessage?: string) {
+  async function handleAutoHunt(enabled: boolean, completionToast?: ToastInput) {
     const nextState = await configureAutoHunt(enabled);
     if (!nextState.ok || !nextState.state) {
-      onToast({ message: nextState.message, tone: "error" });
+      showToast({ message: nextState.message, tone: "error" });
       return;
     }
     autoActionRef.current = null;
     setHuntState(nextState.state);
     onHuntStateChange(nextState.state);
-    onToast({ message: completionMessage ?? (enabled ? (autoHuntEnabled ? "자동전투 횟수를 갱신했습니다." : "자동사냥을 시작했습니다.") : "자동사냥을 중단했습니다."), tone: "system" });
+    showToast(completionToast ?? (enabled ? (autoHuntEnabled ? toastMessages.hunt.autoHuntUpdated() : toastMessages.hunt.autoHuntStarted()) : toastMessages.hunt.autoHuntStopped()));
   }
 
   async function handleGroundChange(huntGroundId: string) {
@@ -319,7 +318,7 @@ function TrainingDummyGround({
     if (huntGroundId === selectedGroundId) return;
     const nextState = await selectHuntGround(huntGroundId);
     if (!nextState.ok || !nextState.state) {
-      onToast({ message: nextState.message, tone: "error" });
+      showToast({ message: nextState.message, tone: "error" });
       return;
     }
     setHuntState((currentState) => currentState ? {
@@ -337,7 +336,7 @@ function TrainingDummyGround({
     setIsResolving(false);
 
     if (!nextState.ok || !nextState.state) {
-      onToast({ message: nextState.message, tone: "error" });
+      showToast({ message: nextState.message, tone: "error" });
       return;
     }
 
@@ -345,7 +344,7 @@ function TrainingDummyGround({
     onHuntStateChange(nextState.state);
     setResult(null);
     setPlaybackTenths(0);
-    onToast({ message: nextState.message, tone: "system" });
+    showToast({ message: nextState.message, tone: "system" });
   }
 
   async function handleFlee() {
@@ -359,7 +358,7 @@ function TrainingDummyGround({
 
     if (!nextResult.ok) {
       setLastResult(previousLastResult);
-      onToast({ message: nextResult.message, tone: "error" });
+      showToast({ message: nextResult.message, tone: "error" });
       return;
     }
 
@@ -367,7 +366,7 @@ function TrainingDummyGround({
     onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
     setPlaybackTenths(getFleeTenths(nextResult));
-    onToast({ message: nextResult.message, tone: "system" });
+    showToast({ message: nextResult.message, tone: "system" });
   }
 
   return (

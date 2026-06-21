@@ -1,26 +1,26 @@
 import type { FormEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { allocateCharacterStats, checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, getMyTrainingState, resetCharacterStats, trainMyCharacter } from "../../api/characterApi";
-import type { CharacterStatAllocation, TrainingRewardTier, TrainingState } from "../../api/characterApi";
+import type { CharacterStatAllocation, TrainingState } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
 import { BASE_PRIMARY_STAT, calculateCombatStats, COMBAT_STAT_LABELS, PRIMARY_STATS } from "../../shared/stats";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
 import type { Character } from "../../types/character";
-import type { ToastInput, ToastTone } from "../../types/toast";
+import type { ToastInput } from "../../types/toast";
 import { getMyPartTimeJobState, workPartTime } from "../../api/partTimeJobApi";
 import type { PartTimeJobState } from "../../api/partTimeJobApi";
+import { toastMessages } from "../../shared/toastMessages";
+import { useToast } from "../toast/ToastProvider";
 
 export function CharacterScreen({
   character,
   onCharacterChange,
   onCharacterRefresh,
-  onToast,
 }: {
   character: Character | null;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
-  onToast: (toast: ToastInput) => void;
 }) {
   useDocumentTitle("TOWER://CHARACTER");
 
@@ -44,35 +44,35 @@ export function CharacterScreen({
           </div>
         </article>
 
-        <CharacterStatsPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
-        <CharacterTrainingPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
-        <CharacterPartTimeJobPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
-        <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
+        <CharacterStatsPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
+        <CharacterTrainingPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
+        <CharacterPartTimeJobPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
+        <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
       </section>
     );
   }
 
-  return <CharacterCreatePanel onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />;
+  return <CharacterCreatePanel onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />;
 }
 
 function handleCharacterActionFailure({
   message,
   setMessage,
   onCharacterRefresh,
-  onToast,
+  showToast,
 }: {
   message: string;
   setMessage: (message: string) => void;
   onCharacterRefresh: () => Promise<boolean>;
-  onToast: (toast: ToastInput) => void;
+  showToast: (toast: ToastInput) => void;
 }) {
   setMessage(message);
-  onToast({ message, tone: "error" });
+  showToast({ message, tone: "error" });
 
   void onCharacterRefresh()
     .then((isRefreshed) => {
       if (isRefreshed) {
-        onToast({ message: "최신 캐릭터 정보를 반영했습니다.", tone: "system" });
+        showToast(toastMessages.character.refreshed());
       }
     })
     .catch(() => {});
@@ -81,12 +81,11 @@ function handleCharacterActionFailure({
 function CharacterCreatePanel({
   onCharacterChange,
   onCharacterRefresh,
-  onToast,
 }: {
   onCharacterChange: (character: Character) => void;
   onCharacterRefresh: () => Promise<boolean>;
-  onToast: (toast: ToastInput) => void;
 }) {
+  const { showToast } = useToast();
   const [name, setName] = useState("");
   const [hint, setHint] = useState("");
   const [hintType, setHintType] = useState<"is-ok" | "is-error" | "">("");
@@ -154,7 +153,7 @@ function CharacterCreatePanel({
     setIsSubmitting(false);
 
     if (!result.ok || !result.character) {
-      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, showToast });
       setMessageType("error");
       return;
     }
@@ -203,13 +202,12 @@ function CharacterStatsPanel({
   character,
   onCharacterChange,
   onCharacterRefresh,
-  onToast,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
-  onToast: (toast: ToastInput) => void;
 }) {
+  const { showToast } = useToast();
   const [pendingStats, setPendingStats] = useState<CharacterStatAllocation>(createEmptyStatAllocation());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -313,12 +311,12 @@ function CharacterStatsPanel({
     setIsSubmitting(false);
 
     if (!result.ok || !result.character) {
-      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, showToast });
       return;
     }
 
     onCharacterChange(result.character);
-    onToast({ message: "능력치를 적용했습니다.", tone: "system" });
+    showToast(toastMessages.character.statsApplied());
   }
 
   async function handleResetStats() {
@@ -334,12 +332,12 @@ function CharacterStatsPanel({
     setIsResetting(false);
 
     if (!result.ok || !result.character) {
-      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, showToast });
       return;
     }
 
     onCharacterChange(result.character);
-    onToast({ message: "능력치를 초기화했습니다.", tone: "system" });
+    showToast(toastMessages.character.statsReset());
   }
 
   return (
@@ -459,13 +457,12 @@ function CharacterTrainingPanel({
   character,
   onCharacterChange,
   onCharacterRefresh,
-  onToast,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
-  onToast: (toast: ToastInput) => void;
 }) {
+  const { showToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [trainingState, setTrainingState] = useState<TrainingState | null>(null);
@@ -513,7 +510,7 @@ function CharacterTrainingPanel({
     setIsSubmitting(false);
 
     if (!result.ok || !result.character) {
-      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, showToast });
       return;
     }
 
@@ -522,11 +519,11 @@ function CharacterTrainingPanel({
       setTrainingState(result.trainingState);
       setNow(Date.now());
     }
-    onToast(formatTrainingToast(result.gainedExperience, result.rewardTier));
+    showToast(toastMessages.training.completed(result.gainedExperience, result.rewardTier));
 
     if (result.levelAfter > result.levelBefore) {
       window.setTimeout(() => {
-        onToast({ message: `레벨업! -> LV.${result.levelAfter}`, tone: "epic" });
+        showToast(toastMessages.character.levelUp(result.levelAfter));
       }, 300);
     }
   }
@@ -552,13 +549,12 @@ function CharacterPartTimeJobPanel({
   character,
   onCharacterChange,
   onCharacterRefresh,
-  onToast,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
-  onToast: (toast: ToastInput) => void;
 }) {
+  const { showToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [jobState, setJobState] = useState<PartTimeJobState | null>(null);
@@ -598,14 +594,14 @@ function CharacterPartTimeJobPanel({
     setIsSubmitting(false);
 
     if (!result.ok || !result.character || !result.state) {
-      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, showToast });
       return;
     }
 
     onCharacterChange(result.character);
     setJobState(result.state);
     setNow(Date.now());
-    onToast({ message: `알바 완료 +${result.gainedCredits.toLocaleString()} CR`, tone: "common" });
+    showToast(toastMessages.partTimeJob.completed(result.gainedCredits));
   }
 
   return (
@@ -668,20 +664,6 @@ function getPartTimeJobButtonLabel({
   if (!jobState) return "알바 상태 확인 중...";
   if (displayedJobState.charges === 0) return `알바까지 ${displayedJobState.secondsUntilNextCharge ?? 0}초...`;
   return `알바 실행 (${displayedJobState.charges}/${jobState.maxCharges})`;
-}
-
-function formatTrainingToast(gainedExperience: number, rewardTier: TrainingRewardTier): ToastInput {
-  const label = rewardTier === "great" ? "훈련 대성공" : rewardTier === "good" ? "훈련 성공" : "훈련 완료";
-  return {
-    message: `${label} +${gainedExperience.toLocaleString()} EXP`,
-    tone: getTrainingRewardTone(rewardTier),
-  };
-}
-
-function getTrainingRewardTone(rewardTier: TrainingRewardTier): ToastTone {
-  if (rewardTier === "great") return "rare";
-  if (rewardTier === "good") return "uncommon";
-  return "common";
 }
 
 function wait(ms: number) {
@@ -767,13 +749,12 @@ function CharacterDeletePanel({
   character,
   onCharacterChange,
   onCharacterRefresh,
-  onToast,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
-  onToast: (toast: ToastInput) => void;
 }) {
+  const { showToast } = useToast();
   const [confirmName, setConfirmName] = useState("");
   const [isConfirming, setIsConfirming] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -796,12 +777,12 @@ function CharacterDeletePanel({
     setIsSubmitting(false);
 
     if (!result.ok) {
-      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, onToast });
+      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, showToast });
       return;
     }
 
     onCharacterChange(null);
-    onToast({ message: "캐릭터를 삭제했습니다.", tone: "system" });
+    showToast(toastMessages.character.deleted());
   }
 
   return (
