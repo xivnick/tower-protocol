@@ -108,6 +108,7 @@ function TrainingDummyGround({
   const isRecoveryLocked = Boolean(recoveryLockStartedAt && (recoveryLockStatus === "defeated" || recoveryLockStatus === "fled") && recoveryLockStartedAt + 10_000 > now);
   const isRetreatLocked = Boolean(isRecoveryLocked && recoveryLockStatus === "fled");
   const canEncounter = !isSubmitting && !isResolving && !isRecoveryLocked && remainingTenths === 0 && !hasEncounteredMonster && (!result || !isBattleInProgress);
+  const canAutoEncounter = !isSubmitting && !isResolving && remainingTenths === 0 && !hasEncounteredMonster && (!result || !isBattleInProgress);
   const canStartBattle = !isSubmitting && !isResolving && hasEncounteredMonster;
   const canFleeEncounter = Boolean(hasEncounteredMonster && !isSubmitting && !isResolving);
   const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
@@ -236,13 +237,13 @@ function TrainingDummyGround({
       void handleAutoHunt(false, "자동사냥이 종료되었습니다.");
       return;
     }
-    if (!canEncounter) return;
+    if (!canAutoEncounter) return;
     const key = `encounter-${autoHuntRemaining}-${huntState?.lastBattle?.startedAt ?? "ready"}`;
     if (autoActionRef.current === key) return;
     autoActionRef.current = key;
     const timeoutId = window.setTimeout(() => void handleEncounter(), 180);
     return () => window.clearTimeout(timeoutId);
-  }, [autoHuntEnabled, autoHuntRemaining, canEncounter, hasEncounteredMonster, isBattleInProgress, isRecovering, isResolving, isSubmitting, now, result?.startedAt]);
+  }, [autoHuntEnabled, autoHuntRemaining, canAutoEncounter, hasEncounteredMonster, isBattleInProgress, isRecovering, isResolving, isSubmitting, now, result?.startedAt]);
 
   async function handleHunt() {
     if (!canStartBattle) return;
