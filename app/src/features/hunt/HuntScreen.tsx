@@ -563,9 +563,9 @@ function getRecoveredPlayerHp(huntState: HuntState | null, now: number) {
   const recoveredSteps = Math.max(0, Math.floor((now - startedAtMs) / 1000));
   const recoveryDurationSeconds = Math.round((recoveryEndsAtMs - startedAtMs) / 1000);
   if (recoveryDurationSeconds >= 10) {
-    return Math.min(maxHp, startHp + ((maxHp - startHp) * recoveredSteps / recoveryDurationSeconds));
+    return Math.min(maxHp, Math.floor(startHp + ((maxHp - startHp) * recoveredSteps / recoveryDurationSeconds)));
   }
-  return Math.min(maxHp, startHp + (maxHp * 0.2 * recoveredSteps));
+  return Math.min(maxHp, Math.floor(startHp + (maxHp * 0.2 * recoveredSteps)));
 }
 
 function getElapsedTenths(startedAt: string, durationTicks: number) {
