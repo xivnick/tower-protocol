@@ -4,7 +4,7 @@ import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "reac
 import type { Profile } from "../../api/profileApi";
 import type { Character } from "../../types/character";
 import type { ToastInput, ToastTone } from "../../types/toast";
-import { getMyHuntState, settleTrainingDummyHunt } from "../../api/characterApi";
+import { configureAutoHunt, encounterHuntMonster, getMyHuntState, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntState } from "../../api/characterApi";
 import { CharacterScreen } from "../character/CharacterScreen";
 import { DashboardScreen } from "../dashboard/DashboardScreen";
@@ -59,6 +59,8 @@ export function AppShell({
   const toastIdRef = useRef(0);
   const settlementAttemptRef = useRef<string | null>(null);
   const recoveryToastRef = useRef<string | null>(null);
+  const autoHuntActionRef = useRef<string | null>(null);
+  const autoEncounterDuringRecoveryRef = useRef(false);
   const location = useLocation();
   const navigate = useNavigate();
   const nickname = profile?.nickname ?? "UNKNOWN";
@@ -100,7 +102,7 @@ export function AppShell({
 
         onCharacterChange(nextResult.character);
         if (nextResult.status === "defeated") {
-          showToast({ message: "패배..", tone: "error" });
+          showToast({ message: "전투에서 패배했습니다.", tone: "error" });
         } else if (nextResult.status === "timed_out") {
           showToast({ message: "시간 제한에 도달해 전투를 종료했습니다.", tone: "system" });
         } else {
@@ -119,10 +121,77 @@ export function AppShell({
   }, [activeHuntState, location.pathname, onCharacterChange]);
 
   useEffect(() => {
+    if (location.pathname.startsWith("/hunt") || !activeHuntState?.autoHuntEnabled) return;
+    const battle = activeHuntState.lastBattle;
+    if (battle?.status === "in_progress") return;
+    if (battle?.status === "encountered") {
+      const recoveryEndsAt = activeHuntState.recoveryEndsAt ? Date.parse(activeHuntState.recoveryEndsAt) : 0;
+      if (recoveryEndsAt > Date.now()) {
+        const timeoutId = window.setTimeout(() => {
+          void getMyHuntState().then((next) => {
+            if (next.ok && next.state) setActiveHuntState(next.state);
+          });
+        }, recoveryEndsAt - Date.now() + 50);
+        return () => window.clearTimeout(timeoutId);
+      }
+      if (autoHuntActionRef.current === battle.startedAt) return;
+      autoHuntActionRef.current = battle.startedAt;
+      const delay = autoEncounterDuringRecoveryRef.current ? 0 : 500;
+      let isActive = true;
+      const timeoutId = window.setTimeout(() => void huntTrainingDummy().then((next) => {
+        if (!isActive) return;
+        if (!next.ok || !next.huntState) return;
+        setActiveHuntState(next.huntState);
+        showToast({ message: `자동 전투 시작 · LV.${next.enemy.level} ${next.enemy.name}`, tone: "system" });
+      }), delay);
+      return () => {
+        isActive = false;
+        window.clearTimeout(timeoutId);
+      };
+    }
+    if (activeHuntState.autoHuntRemaining === 0) {
+      if (autoHuntActionRef.current === "complete") return;
+      autoHuntActionRef.current = "complete";
+      void configureAutoHunt(false).then((next) => {
+        if (next.ok && next.state) setActiveHuntState(next.state);
+        showToast({ message: "자동사냥이 종료되었습니다.", tone: "system" });
+      });
+      return;
+    }
+    const defeatRecoveryEndsAt = activeHuntState.isDefeatRecovery && activeHuntState.playerRecoveryStartedAt
+      ? Date.parse(activeHuntState.playerRecoveryStartedAt) + 10_000
+      : 0;
+    if (defeatRecoveryEndsAt > Date.now()) {
+      const timeoutId = window.setTimeout(() => {
+        void getMyHuntState().then((next) => {
+          if (next.ok && next.state) setActiveHuntState(next.state);
+        });
+      }, defeatRecoveryEndsAt - Date.now() + 50);
+      return () => window.clearTimeout(timeoutId);
+    }
+    const key = `encounter-${activeHuntState.autoHuntRemaining}-${battle?.startedAt ?? "ready"}`;
+    if (autoHuntActionRef.current === key) return;
+    autoHuntActionRef.current = key;
+    const recoveryEndsAt = activeHuntState.recoveryEndsAt ? Date.parse(activeHuntState.recoveryEndsAt) : 0;
+    autoEncounterDuringRecoveryRef.current = recoveryEndsAt > Date.now();
+    let isActive = true;
+    const timeoutId = window.setTimeout(() => void encounterHuntMonster().then((next) => {
+      if (!isActive) return;
+      if (!next.ok || !next.huntState) return;
+      setActiveHuntState(next.huntState);
+    }), 500);
+    return () => {
+      isActive = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [activeHuntState, location.pathname]);
+
+  useEffect(() => {
     const recoveryEndsAt = activeHuntState?.recoveryEndsAt;
     const recoveryStartHp = activeHuntState?.playerRecoveryStartHp;
     const recoveryMaxHp = activeHuntState?.playerMaxHp;
     if (!recoveryEndsAt || recoveryToastRef.current === recoveryEndsAt) return;
+    if (activeHuntState?.autoHuntEnabled) return;
     if (recoveryStartHp !== null && recoveryStartHp !== undefined && recoveryMaxHp !== null && recoveryMaxHp !== undefined && recoveryStartHp >= recoveryMaxHp) return;
 
     const recoveryEndsAtMs = Date.parse(recoveryEndsAt);

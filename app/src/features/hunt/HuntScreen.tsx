@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
+import { configureAutoHunt, encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
@@ -74,6 +74,8 @@ function TrainingDummyGround({
   const [huntState, setHuntState] = useState<HuntState | null>(null);
   const [isMonsterInfoOpen, setIsMonsterInfoOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEncountering, setIsEncountering] = useState(false);
+  const [isStartingBattle, setIsStartingBattle] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -81,6 +83,8 @@ function TrainingDummyGround({
   const logRef = useRef<HTMLOListElement>(null);
   const completedResultRef = useRef<HuntResult | null>(null);
   const settlementAttemptRef = useRef<string | null>(null);
+  const autoActionRef = useRef<string | null>(null);
+  const autoEncounterDuringRecoveryRef = useRef(false);
   const huntAvailableAt = result?.huntState?.availableAt ?? huntState?.availableAt;
   const availableAt = huntAvailableAt ? Date.parse(huntAvailableAt) : 0;
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
@@ -107,9 +111,13 @@ function TrainingDummyGround({
   const isRecoveryLocked = Boolean(recoveryLockStartedAt && (recoveryLockStatus === "defeated" || recoveryLockStatus === "fled") && recoveryLockStartedAt + 10_000 > now);
   const isRetreatLocked = Boolean(isRecoveryLocked && recoveryLockStatus === "fled");
   const canEncounter = !isSubmitting && !isResolving && !isRecoveryLocked && remainingTenths === 0 && !hasEncounteredMonster && (!result || !isBattleInProgress);
-  const canStartBattle = !isSubmitting && !isResolving && hasEncounteredMonster;
-  const canFleeEncounter = Boolean(hasEncounteredMonster && !isSubmitting && !isResolving);
+  const canAutoEncounter = !isSubmitting && !isResolving && !isRecoveryLocked && remainingTenths === 0 && !hasEncounteredMonster && (!result || !isBattleInProgress);
+  const canStartBattle = !isSubmitting && !isResolving && !isStartingBattle && hasEncounteredMonster;
+  const canFleeEncounter = Boolean(hasEncounteredMonster && !isSubmitting && !isResolving && !isStartingBattle);
   const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
+  const showFleeButton = Boolean(hasEncounteredMonster || isBattleInProgress || isStartingBattle);
+  const autoHuntEnabled = huntState?.autoHuntEnabled ?? false;
+  const autoHuntRemaining = huntState?.autoHuntRemaining ?? 0;
   const displayLevel = result ? (isPlaybackComplete ? result.levelAfter : result.player.level) : character.level;
   const displayExperience = result ? (isPlaybackComplete ? result.experienceAfter : result.player.experience ?? 0) : character.experience;
   const requiredExperience = getRequiredExperienceForLevel(displayLevel + 1) ?? 1;
@@ -173,7 +181,7 @@ function TrainingDummyGround({
       if (!result.character) return;
       completedResultRef.current = result;
       onCharacterChange(result.character);
-      onToast({ message: "패배..", tone: "error" });
+      onToast({ message: "전투에서 패배했습니다.", tone: "error" });
       return;
     }
 
@@ -217,16 +225,43 @@ function TrainingDummyGround({
     };
   }, [isPlaybackComplete, result]);
 
+  useEffect(() => {
+    if (!autoHuntEnabled || isSubmitting || isResolving || isBattleInProgress) return;
+    if (hasEncounteredMonster) {
+      if (isRecovering) return;
+      const key = `battle-${result?.startedAt}`;
+      if (autoActionRef.current === key) return;
+      autoActionRef.current = key;
+      const delay = autoEncounterDuringRecoveryRef.current ? 0 : 500;
+      const timeoutId = window.setTimeout(() => void handleHunt(), delay);
+      return () => window.clearTimeout(timeoutId);
+    }
+    if (autoHuntRemaining === 0) {
+      if (autoActionRef.current === "complete") return;
+      autoActionRef.current = "complete";
+      void handleAutoHunt(false, "자동사냥이 종료되었습니다.");
+      return;
+    }
+    if (!canAutoEncounter) return;
+    const key = `encounter-${autoHuntRemaining}-${huntState?.lastBattle?.startedAt ?? "ready"}`;
+    if (autoActionRef.current === key) return;
+    autoActionRef.current = key;
+    autoEncounterDuringRecoveryRef.current = isRecovering;
+    const timeoutId = window.setTimeout(() => void handleEncounter(false), 500);
+    return () => window.clearTimeout(timeoutId);
+  }, [autoHuntEnabled, autoHuntRemaining, canAutoEncounter, hasEncounteredMonster, isBattleInProgress, isRecovering, isResolving, isSubmitting, result?.startedAt]);
+
   async function handleHunt() {
     if (!canStartBattle) return;
 
+    setIsStartingBattle(true);
     setIsSubmitting(true);
-    setResult(null);
-    setPlaybackTenths(0);
     const nextResult = await huntTrainingDummy();
     setIsSubmitting(false);
 
     if (!nextResult.ok) {
+      setIsStartingBattle(false);
+      autoActionRef.current = null;
       onToast({ message: nextResult.message, tone: "error" });
       void onCharacterRefresh();
       return;
@@ -234,21 +269,28 @@ function TrainingDummyGround({
 
     completedResultRef.current = null;
     settlementAttemptRef.current = null;
+    setPlaybackTenths(0);
     setHuntState(nextResult.huntState);
     onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
+    setIsStartingBattle(false);
+    if (autoHuntEnabled) onToast({ message: `자동 전투 시작 · LV.${nextResult.enemy.level} ${nextResult.enemy.name}`, tone: "system" });
   }
 
-  async function handleEncounter() {
+  async function handleEncounter(showSearching = true) {
     if (!canEncounter) return;
 
+    const startedAt = Date.now();
+    if (showSearching) setIsEncountering(true);
     setIsSubmitting(true);
-    setResult(null);
-    setPlaybackTenths(0);
     const nextResult = await encounterHuntMonster();
+    const remainingTransitionMs = showSearching ? Math.max(0, 500 - (Date.now() - startedAt)) : 0;
+    if (remainingTransitionMs > 0) await new Promise<void>((resolve) => window.setTimeout(resolve, remainingTransitionMs));
     setIsSubmitting(false);
+    if (showSearching) setIsEncountering(false);
 
     if (!nextResult.ok) {
+      autoActionRef.current = null;
       onToast({ message: nextResult.message, tone: "error" });
       void onCharacterRefresh();
       return;
@@ -256,8 +298,20 @@ function TrainingDummyGround({
 
     setHuntState(nextResult.huntState);
     onHuntStateChange(nextResult.huntState);
+    setPlaybackTenths(0);
     setResult(nextResult);
-    onToast({ message: `LV.${nextResult.enemy.level} ${nextResult.enemy.name} 조우`, tone: "system" });
+  }
+
+  async function handleAutoHunt(enabled: boolean, completionMessage?: string) {
+    const nextState = await configureAutoHunt(enabled);
+    if (!nextState.ok || !nextState.state) {
+      onToast({ message: nextState.message, tone: "error" });
+      return;
+    }
+    autoActionRef.current = null;
+    setHuntState(nextState.state);
+    onHuntStateChange(nextState.state);
+    onToast({ message: completionMessage ?? (enabled ? (autoHuntEnabled ? "자동전투 횟수를 갱신했습니다." : "자동사냥을 시작했습니다.") : "자동사냥을 중단했습니다."), tone: "system" });
   }
 
   async function handleGroundChange(huntGroundId: string) {
@@ -351,6 +405,14 @@ function TrainingDummyGround({
           </div>
         )}
       </div>
+      <article className="auto-hunt-panel">
+        <span>자동 전투</span>
+        <strong>{autoHuntRemaining.toString().padStart(2, "0")} / 10</strong>
+        <div>
+          <button className="btn ghost" type="button" onClick={() => void handleAutoHunt(false)} disabled={!autoHuntEnabled}>중단</button>
+          <button className="btn primary" type="button" onClick={() => void handleAutoHunt(true)}>{autoHuntEnabled ? "갱신" : "시작"}</button>
+        </div>
+      </article>
       <article className="panel combat-record-panel">
           <div className="panel-head compact action-head">
             <div>
@@ -358,13 +420,15 @@ function TrainingDummyGround({
               <h2>전투</h2>
             </div>
             <div className="hunt-action-buttons">
-              {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망치기</button>}
-              {canFleeEncounter && <button className="btn ghost" type="button" onClick={handleEncounterFlee} disabled={isResolving}>도망치기</button>}
-              {!hasEncounteredMonster && <button className="btn primary" type="button" onClick={handleEncounter} disabled={!canEncounter}>
-                {isSubmitting || isResolving ? "탐색 중..." : isBattleInProgress ? "전투 중..." : remainingTenths > 0 ? "도망치는 중.." : isRetreatLocked ? "후퇴 후 회복 중.." : isRecoveryLocked ? "회복 중..." : "몬스터 찾기"}
+              {showFleeButton && <button className="btn ghost" type="button" onClick={isBattleInProgress ? handleFlee : handleEncounterFlee} disabled={isResolving || isSubmitting || (!canFlee && !canFleeEncounter)}>도망치기</button>}
+              {!hasEncounteredMonster && !isBattleInProgress && !isStartingBattle && <button className="btn primary" type="button" onClick={() => void handleEncounter()} disabled={!canEncounter}>
+                {isEncountering ? "찾는 중.." : isResolving ? "탐색 중..." : remainingTenths > 0 ? "도망치는 중.." : isRetreatLocked ? "후퇴 후 회복 중.." : isRecoveryLocked ? "회복 중..." : "몬스터 찾기"}
               </button>}
-              {hasEncounteredMonster && <button className="btn primary" type="button" onClick={handleHunt} disabled={!canStartBattle}>
+              {hasEncounteredMonster && !isStartingBattle && <button className="btn primary" type="button" onClick={handleHunt} disabled={!canStartBattle}>
                 {isSubmitting ? "전투 준비 중..." : "전투 시작"}
+              </button>}
+              {(isBattleInProgress || isStartingBattle) && <button className="btn primary" type="button" disabled>
+                전투 중...
               </button>}
             </div>
           </div>
@@ -517,7 +581,7 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
   const totalDamage = result.status === "fled"
     ? result.logs.filter((entry) => entry.timeTenths <= fledAt && (entry.kind === "attack" || entry.kind === "critical")).reduce((total, entry) => total + entry.amount, 0)
     : result.totalDamage;
-  const resultStatus = result.status === "fled" ? "도망침" : result.status === "timed_out" ? "시간 초과" : result.status === "defeated" ? "패배.." : null;
+  const resultStatus = result.status === "fled" ? "도망침" : result.status === "timed_out" ? "시간 초과" : result.status === "defeated" ? "전투에서 패배했습니다." : null;
   const seconds = durationTicks / 10;
   const dps = seconds > 0 ? (totalDamage / seconds).toFixed(1) : "0.0";
 
@@ -545,7 +609,7 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   const recovery = <b className="combat-log-recovery">+{formatAmount(entry.amount)} HP</b>;
   if (entry.kind === "encounter") return `LV.${enemyLevel} ${enemyName}과 조우했습니다.`;
   if (entry.kind === "defeat") return `전투 승리 +${gainedExperience} EXP`;
-  if (entry.kind === "player_defeat") return "패배..";
+  if (entry.kind === "player_defeat") return "전투에서 패배했습니다.";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
   if (entry.kind === "miss") return <><b className="combat-log-player">{playerName}</b> 공격이 빗나갔습니다.</>;
