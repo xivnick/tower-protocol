@@ -256,7 +256,7 @@ function TrainingDummyGround({
     setHuntState(nextResult.huntState);
     onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
-    onToast({ message: `LV.${nextResult.enemy.level} ${nextResult.enemy.name}과 조우했습니다.`, tone: "system" });
+    onToast({ message: `LV.${nextResult.enemy.level} ${nextResult.enemy.name} 조우`, tone: "system" });
   }
 
   async function handleGroundChange(huntGroundId: string) {
