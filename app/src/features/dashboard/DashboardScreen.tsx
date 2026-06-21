@@ -74,7 +74,7 @@ export function DashboardScreen({
               <span>AUTO BATTLE</span>
               <h2>자동 전투 현황</h2>
             </div>
-            <Link className="text-button" to="/hunt">사냥터 바로가기</Link>
+            <Link className="text-button" to="/hunt">바로가기</Link>
           </div>
           <div className="kv-grid">
             <Kv label="상태" value={getAutoHuntStatus(huntState)} />
