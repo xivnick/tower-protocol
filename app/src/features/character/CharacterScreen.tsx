@@ -8,6 +8,7 @@ import { BASE_PRIMARY_STAT, calculateCombatStats, COMBAT_STAT_LABELS, PRIMARY_ST
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
 import type { Character } from "../../types/character";
 import type { ToastInput, ToastTone } from "../../types/toast";
+import { CreditVaultPanel } from "./CreditVaultPanel";
 
 export function CharacterScreen({
   character,
@@ -42,6 +43,7 @@ export function CharacterScreen({
           </div>
         </article>
 
+        <CreditVaultPanel character={character} onCharacterChange={onCharacterChange} onToast={onToast} />
         <CharacterStatsPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
         <CharacterTrainingPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
         <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onToast={onToast} />
