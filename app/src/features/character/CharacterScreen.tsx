@@ -1,15 +1,16 @@
 import type { FormEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { allocateCharacterStats, checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, getMyTrainingState, resetCharacterStats, trainMyCharacter } from "../../api/characterApi";
-import type { CharacterStatAllocation, TrainingRewardTier, TrainingState } from "../../api/characterApi";
+import type { CharacterStatAllocation, TrainingState } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
 import { BASE_PRIMARY_STAT, calculateCombatStats, COMBAT_STAT_LABELS, PRIMARY_STATS } from "../../shared/stats";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
 import type { Character } from "../../types/character";
-import type { ToastInput, ToastTone } from "../../types/toast";
+import type { ToastInput } from "../../types/toast";
 import { getMyPartTimeJobState, workPartTime } from "../../api/partTimeJobApi";
 import type { PartTimeJobState } from "../../api/partTimeJobApi";
+import { toastMessages } from "../../shared/toastMessages";
 import { useToast } from "../toast/ToastProvider";
 
 export function CharacterScreen({
@@ -71,7 +72,7 @@ function handleCharacterActionFailure({
   void onCharacterRefresh()
     .then((isRefreshed) => {
       if (isRefreshed) {
-        showToast({ message: "최신 캐릭터 정보를 반영했습니다.", tone: "system" });
+        showToast(toastMessages.character.refreshed());
       }
     })
     .catch(() => {});
@@ -315,7 +316,7 @@ function CharacterStatsPanel({
     }
 
     onCharacterChange(result.character);
-    showToast({ message: "능력치를 적용했습니다.", tone: "system" });
+    showToast(toastMessages.character.statsApplied());
   }
 
   async function handleResetStats() {
@@ -336,7 +337,7 @@ function CharacterStatsPanel({
     }
 
     onCharacterChange(result.character);
-    showToast({ message: "능력치를 초기화했습니다.", tone: "system" });
+    showToast(toastMessages.character.statsReset());
   }
 
   return (
@@ -518,11 +519,11 @@ function CharacterTrainingPanel({
       setTrainingState(result.trainingState);
       setNow(Date.now());
     }
-    showToast(formatTrainingToast(result.gainedExperience, result.rewardTier));
+    showToast(toastMessages.training.completed(result.gainedExperience, result.rewardTier));
 
     if (result.levelAfter > result.levelBefore) {
       window.setTimeout(() => {
-        showToast({ message: `레벨업! -> LV.${result.levelAfter}`, tone: "epic" });
+        showToast(toastMessages.character.levelUp(result.levelAfter));
       }, 300);
     }
   }
@@ -600,7 +601,7 @@ function CharacterPartTimeJobPanel({
     onCharacterChange(result.character);
     setJobState(result.state);
     setNow(Date.now());
-    showToast({ message: `알바 완료 +${result.gainedCredits.toLocaleString()} CR`, tone: "common" });
+    showToast(toastMessages.partTimeJob.completed(result.gainedCredits));
   }
 
   return (
@@ -663,20 +664,6 @@ function getPartTimeJobButtonLabel({
   if (!jobState) return "알바 상태 확인 중...";
   if (displayedJobState.charges === 0) return `알바까지 ${displayedJobState.secondsUntilNextCharge ?? 0}초...`;
   return `알바 실행 (${displayedJobState.charges}/${jobState.maxCharges})`;
-}
-
-function formatTrainingToast(gainedExperience: number, rewardTier: TrainingRewardTier): ToastInput {
-  const label = rewardTier === "great" ? "훈련 대성공" : rewardTier === "good" ? "훈련 성공" : "훈련 완료";
-  return {
-    message: `${label} +${gainedExperience.toLocaleString()} EXP`,
-    tone: getTrainingRewardTone(rewardTier),
-  };
-}
-
-function getTrainingRewardTone(rewardTier: TrainingRewardTier): ToastTone {
-  if (rewardTier === "great") return "rare";
-  if (rewardTier === "good") return "uncommon";
-  return "common";
 }
 
 function wait(ms: number) {
@@ -795,7 +782,7 @@ function CharacterDeletePanel({
     }
 
     onCharacterChange(null);
-    showToast({ message: "캐릭터를 삭제했습니다.", tone: "system" });
+    showToast(toastMessages.character.deleted());
   }
 
   return (

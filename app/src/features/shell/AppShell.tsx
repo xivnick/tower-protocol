@@ -3,6 +3,7 @@ import type { Session } from "@supabase/supabase-js";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
 import type { Character } from "../../types/character";
+import { toastMessages } from "../../shared/toastMessages";
 import { configureAutoHunt, encounterHuntMonster, getMyHuntState, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntState } from "../../api/characterApi";
 import { CharacterScreen } from "../character/CharacterScreen";
@@ -90,14 +91,14 @@ export function AppShell({
 
         onCharacterChange(nextResult.character);
         if (nextResult.status === "defeated") {
-          showToast({ message: "전투에서 패배했습니다.", tone: "error" });
+          showToast(toastMessages.hunt.defeated());
         } else if (nextResult.status === "timed_out") {
-          showToast({ message: "시간 제한에 도달해 전투를 종료했습니다.", tone: "system" });
+          showToast(toastMessages.hunt.timedOut());
         } else {
-          showToast({ message: `전투 완료 · +${nextResult.gainedExperience} EXP`, tone: "system" });
+          showToast(toastMessages.hunt.completed(nextResult.gainedExperience));
         }
         if (nextResult.status === "victory" && nextResult.levelAfter > nextResult.levelBefore) {
-          showToast({ message: `레벨업! -> LV.${nextResult.levelAfter}`, tone: "epic" });
+          showToast(toastMessages.character.levelUp(nextResult.levelAfter));
         }
       });
     }, Math.max(0, endsAt - Date.now()) + 180);
@@ -130,7 +131,7 @@ export function AppShell({
         if (!isActive) return;
         if (!next.ok || !next.huntState) return;
         setActiveHuntState(next.huntState);
-        showToast({ message: `자동 전투 시작 · LV.${next.enemy.level} ${next.enemy.name}`, tone: "system" });
+        showToast(toastMessages.hunt.autoBattleStarted(next.enemy.level, next.enemy.name));
       }), delay);
       return () => {
         isActive = false;
@@ -142,7 +143,7 @@ export function AppShell({
       autoHuntActionRef.current = "complete";
       void configureAutoHunt(false).then((next) => {
         if (next.ok && next.state) setActiveHuntState(next.state);
-        showToast({ message: "자동사냥이 종료되었습니다.", tone: "system" });
+        showToast(toastMessages.hunt.autoHuntCompleted());
       });
       return;
     }
@@ -188,7 +189,7 @@ export function AppShell({
     const timeoutId = window.setTimeout(() => {
       if (recoveryToastRef.current === recoveryEndsAt) return;
       recoveryToastRef.current = recoveryEndsAt;
-      showToast({ message: "체력이 모두 회복되었습니다.", tone: "system" });
+      showToast(toastMessages.recovery.completed());
     }, recoveryEndsAtMs - Date.now());
 
     return () => window.clearTimeout(timeoutId);

@@ -5,6 +5,8 @@ import type { HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
 import type { Character } from "../../types/character";
+import type { ToastInput } from "../../types/toast";
+import { toastMessages } from "../../shared/toastMessages";
 import { useToast } from "../toast/ToastProvider";
 
 const trainingDummy = {
@@ -170,7 +172,7 @@ function TrainingDummyGround({
       if (!result.character) return;
       completedResultRef.current = result;
       onCharacterChange(result.character);
-      showToast({ message: "시간 제한에 도달해 전투를 종료했습니다.", tone: "system" });
+      showToast(toastMessages.hunt.timedOut());
       return;
     }
 
@@ -178,7 +180,7 @@ function TrainingDummyGround({
       if (!result.character) return;
       completedResultRef.current = result;
       onCharacterChange(result.character);
-      showToast({ message: "전투에서 패배했습니다.", tone: "error" });
+      showToast(toastMessages.hunt.defeated());
       return;
     }
 
@@ -188,10 +190,10 @@ function TrainingDummyGround({
 
     completedResultRef.current = result;
     onCharacterChange(result.character);
-    showToast({ message: `전투 완료 · +${result.gainedExperience} EXP`, tone: "system" });
+    showToast(toastMessages.hunt.completed(result.gainedExperience));
 
     if (result.levelAfter > result.levelBefore) {
-      showToast({ message: `레벨업! -> LV.${result.levelAfter}`, tone: "epic" });
+      showToast(toastMessages.character.levelUp(result.levelAfter));
     }
   }, [hasEncounteredMonster, isBattleInProgress, isPlaybackComplete, onCharacterChange, result, showToast]);
 
@@ -236,7 +238,7 @@ function TrainingDummyGround({
     if (autoHuntRemaining === 0) {
       if (autoActionRef.current === "complete") return;
       autoActionRef.current = "complete";
-      void handleAutoHunt(false, "자동사냥이 종료되었습니다.");
+      void handleAutoHunt(false, toastMessages.hunt.autoHuntCompleted());
       return;
     }
     if (!canAutoEncounter) return;
@@ -271,7 +273,7 @@ function TrainingDummyGround({
     onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
     setIsStartingBattle(false);
-    if (autoHuntEnabled) showToast({ message: `자동 전투 시작 · LV.${nextResult.enemy.level} ${nextResult.enemy.name}`, tone: "system" });
+    if (autoHuntEnabled) showToast(toastMessages.hunt.autoBattleStarted(nextResult.enemy.level, nextResult.enemy.name));
   }
 
   async function handleEncounter(showSearching = true) {
@@ -299,7 +301,7 @@ function TrainingDummyGround({
     setResult(nextResult);
   }
 
-  async function handleAutoHunt(enabled: boolean, completionMessage?: string) {
+  async function handleAutoHunt(enabled: boolean, completionToast?: ToastInput) {
     const nextState = await configureAutoHunt(enabled);
     if (!nextState.ok || !nextState.state) {
       showToast({ message: nextState.message, tone: "error" });
@@ -308,7 +310,7 @@ function TrainingDummyGround({
     autoActionRef.current = null;
     setHuntState(nextState.state);
     onHuntStateChange(nextState.state);
-    showToast({ message: completionMessage ?? (enabled ? (autoHuntEnabled ? "자동전투 횟수를 갱신했습니다." : "자동사냥을 시작했습니다.") : "자동사냥을 중단했습니다."), tone: "system" });
+    showToast(completionToast ?? (enabled ? (autoHuntEnabled ? toastMessages.hunt.autoHuntUpdated() : toastMessages.hunt.autoHuntStarted()) : toastMessages.hunt.autoHuntStopped()));
   }
 
   async function handleGroundChange(huntGroundId: string) {
