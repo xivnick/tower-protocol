@@ -221,13 +221,14 @@ function TrainingDummyGround({
   }, [isPlaybackComplete, result]);
 
   useEffect(() => {
-    if (!autoHuntEnabled || isSubmitting || isResolving || isBattleInProgress || isRecovering) return;
+    if (!autoHuntEnabled || isSubmitting || isResolving || isBattleInProgress) return;
     if (hasEncounteredMonster) {
+      if (isRecovering) return;
       const key = `battle-${result?.startedAt}`;
       if (autoActionRef.current === key) return;
       autoActionRef.current = key;
-      window.setTimeout(() => void handleHunt(), 180);
-      return;
+      const timeoutId = window.setTimeout(() => void handleHunt(), 180);
+      return () => window.clearTimeout(timeoutId);
     }
     if (autoHuntRemaining === 0) {
       if (autoActionRef.current === "complete") return;
@@ -239,15 +240,14 @@ function TrainingDummyGround({
     const key = `encounter-${autoHuntRemaining}-${huntState?.lastBattle?.startedAt ?? "ready"}`;
     if (autoActionRef.current === key) return;
     autoActionRef.current = key;
-    window.setTimeout(() => void handleEncounter(), 180);
+    const timeoutId = window.setTimeout(() => void handleEncounter(), 180);
+    return () => window.clearTimeout(timeoutId);
   }, [autoHuntEnabled, autoHuntRemaining, canEncounter, hasEncounteredMonster, isBattleInProgress, isRecovering, isResolving, isSubmitting, now, result?.startedAt]);
 
   async function handleHunt() {
     if (!canStartBattle) return;
 
     setIsSubmitting(true);
-    setResult(null);
-    setPlaybackTenths(0);
     const nextResult = await huntTrainingDummy();
     setIsSubmitting(false);
 
@@ -259,6 +259,7 @@ function TrainingDummyGround({
 
     completedResultRef.current = null;
     settlementAttemptRef.current = null;
+    setPlaybackTenths(0);
     setHuntState(nextResult.huntState);
     onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
@@ -268,8 +269,6 @@ function TrainingDummyGround({
     if (!canEncounter) return;
 
     setIsSubmitting(true);
-    setResult(null);
-    setPlaybackTenths(0);
     const nextResult = await encounterHuntMonster();
     setIsSubmitting(false);
 
@@ -281,6 +280,7 @@ function TrainingDummyGround({
 
     setHuntState(nextResult.huntState);
     onHuntStateChange(nextResult.huntState);
+    setPlaybackTenths(0);
     setResult(nextResult);
     onToast({ message: `LV.${nextResult.enemy.level} ${nextResult.enemy.name} 조우`, tone: "system" });
   }

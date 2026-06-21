@@ -123,16 +123,16 @@ export function AppShell({
     if (location.pathname.startsWith("/hunt") || !activeHuntState?.autoHuntEnabled) return;
     const battle = activeHuntState.lastBattle;
     if (battle?.status === "in_progress") return;
-    const recoveryEndsAt = activeHuntState.recoveryEndsAt ? Date.parse(activeHuntState.recoveryEndsAt) : 0;
-    if (recoveryEndsAt > Date.now()) {
-      const timeoutId = window.setTimeout(() => {
-        void getMyHuntState().then((next) => {
-          if (next.ok && next.state) setActiveHuntState(next.state);
-        });
-      }, recoveryEndsAt - Date.now() + 50);
-      return () => window.clearTimeout(timeoutId);
-    }
     if (battle?.status === "encountered") {
+      const recoveryEndsAt = activeHuntState.recoveryEndsAt ? Date.parse(activeHuntState.recoveryEndsAt) : 0;
+      if (recoveryEndsAt > Date.now()) {
+        const timeoutId = window.setTimeout(() => {
+          void getMyHuntState().then((next) => {
+            if (next.ok && next.state) setActiveHuntState(next.state);
+          });
+        }, recoveryEndsAt - Date.now() + 50);
+        return () => window.clearTimeout(timeoutId);
+      }
       if (autoHuntActionRef.current === battle.startedAt) return;
       autoHuntActionRef.current = battle.startedAt;
       void huntTrainingDummy().then((next) => {
