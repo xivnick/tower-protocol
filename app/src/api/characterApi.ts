@@ -76,6 +76,8 @@ export type HuntState = {
   playerRecoveryStartedAt: string | null;
   recoveryEndsAt: string | null;
   isDefeatRecovery: boolean;
+  autoHuntEnabled: boolean;
+  autoHuntRemaining: number;
 };
 
 export type MonsterInfo = {
@@ -168,6 +170,8 @@ type HuntStatePayload = {
   player_recovery_started_at?: string | null;
   recovery_ends_at?: string | null;
   is_defeat_recovery?: boolean;
+  auto_hunt_enabled?: boolean;
+  auto_hunt_remaining?: number;
 };
 
 type MonsterInfoPayload = {
@@ -456,6 +460,13 @@ export async function getMyHuntState(): Promise<{ ok: boolean; state: HuntState 
   return { ok: true, state: mapHuntState(data as HuntStatePayload), message: "" };
 }
 
+export async function configureAutoHunt(enabled: boolean): Promise<{ ok: boolean; state: HuntState | null; message: string }> {
+  if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
+  const { data, error } = await supabase.rpc("configure_auto_hunt", { enabled });
+  if (error) return { ok: false, state: null, message: toKoreanAuthMessage(error.message, "자동사냥을 변경하지 못했습니다.") };
+  return { ok: true, state: mapHuntState(data as HuntStatePayload), message: "" };
+}
+
 export async function selectHuntGround(huntGroundId: string): Promise<{ ok: boolean; state: HuntState | null; message: string }> {
   if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
   const { data, error } = await supabase.rpc("select_hunt_ground", { target_hunt_ground_id: huntGroundId });
@@ -507,6 +518,8 @@ function mapHuntState(payload: HuntStatePayload | undefined): HuntState {
     playerRecoveryStartedAt: payload?.player_recovery_started_at ?? null,
     recoveryEndsAt: payload?.recovery_ends_at ?? null,
     isDefeatRecovery: payload?.is_defeat_recovery ?? false,
+    autoHuntEnabled: payload?.auto_hunt_enabled ?? false,
+    autoHuntRemaining: payload?.auto_hunt_remaining ?? 0,
   };
 }
 

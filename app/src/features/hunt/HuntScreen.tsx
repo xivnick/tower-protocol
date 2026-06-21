@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
+import { configureAutoHunt, encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
@@ -81,6 +81,7 @@ function TrainingDummyGround({
   const logRef = useRef<HTMLOListElement>(null);
   const completedResultRef = useRef<HuntResult | null>(null);
   const settlementAttemptRef = useRef<string | null>(null);
+  const autoActionRef = useRef<string | null>(null);
   const huntAvailableAt = result?.huntState?.availableAt ?? huntState?.availableAt;
   const availableAt = huntAvailableAt ? Date.parse(huntAvailableAt) : 0;
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
@@ -110,6 +111,8 @@ function TrainingDummyGround({
   const canStartBattle = !isSubmitting && !isResolving && hasEncounteredMonster;
   const canFleeEncounter = Boolean(hasEncounteredMonster && !isSubmitting && !isResolving);
   const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
+  const autoHuntEnabled = huntState?.autoHuntEnabled ?? false;
+  const autoHuntRemaining = huntState?.autoHuntRemaining ?? 0;
   const displayLevel = result ? (isPlaybackComplete ? result.levelAfter : result.player.level) : character.level;
   const displayExperience = result ? (isPlaybackComplete ? result.experienceAfter : result.player.experience ?? 0) : character.experience;
   const requiredExperience = getRequiredExperienceForLevel(displayLevel + 1) ?? 1;
@@ -217,6 +220,28 @@ function TrainingDummyGround({
     };
   }, [isPlaybackComplete, result]);
 
+  useEffect(() => {
+    if (!autoHuntEnabled || isSubmitting || isResolving || isBattleInProgress) return;
+    if (hasEncounteredMonster) {
+      const key = `battle-${result?.startedAt}`;
+      if (autoActionRef.current === key) return;
+      autoActionRef.current = key;
+      window.setTimeout(() => void handleHunt(), 180);
+      return;
+    }
+    if (autoHuntRemaining === 0) {
+      if (autoActionRef.current === "complete") return;
+      autoActionRef.current = "complete";
+      void handleAutoHunt(false, "자동사냥이 종료되었습니다.");
+      return;
+    }
+    if (!canEncounter) return;
+    const key = `encounter-${autoHuntRemaining}-${huntState?.lastBattle?.startedAt ?? "ready"}`;
+    if (autoActionRef.current === key) return;
+    autoActionRef.current = key;
+    window.setTimeout(() => void handleEncounter(), 180);
+  }, [autoHuntEnabled, autoHuntRemaining, canEncounter, hasEncounteredMonster, isBattleInProgress, isResolving, isSubmitting, result?.startedAt]);
+
   async function handleHunt() {
     if (!canStartBattle) return;
 
@@ -258,6 +283,18 @@ function TrainingDummyGround({
     onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
     onToast({ message: `LV.${nextResult.enemy.level} ${nextResult.enemy.name} 조우`, tone: "system" });
+  }
+
+  async function handleAutoHunt(enabled: boolean, completionMessage?: string) {
+    const nextState = await configureAutoHunt(enabled);
+    if (!nextState.ok || !nextState.state) {
+      onToast({ message: nextState.message, tone: "error" });
+      return;
+    }
+    autoActionRef.current = null;
+    setHuntState(nextState.state);
+    onHuntStateChange(nextState.state);
+    onToast({ message: completionMessage ?? (enabled ? "자동사냥을 시작했습니다." : "자동사냥을 중단했습니다."), tone: "system" });
   }
 
   async function handleGroundChange(huntGroundId: string) {
@@ -351,6 +388,14 @@ function TrainingDummyGround({
           </div>
         )}
       </div>
+      <article className="auto-hunt-panel">
+        <span>AUTO HUNT</span>
+        <strong>{autoHuntRemaining.toString().padStart(2, "0")} / 10</strong>
+        <div>
+          <button className="btn ghost" type="button" onClick={() => void handleAutoHunt(true)}>자동사냥 시작 또는 갱신</button>
+          <button className="btn ghost" type="button" onClick={() => void handleAutoHunt(false)} disabled={!autoHuntEnabled}>중단</button>
+        </div>
+      </article>
       <article className="panel combat-record-panel">
           <div className="panel-head compact action-head">
             <div>

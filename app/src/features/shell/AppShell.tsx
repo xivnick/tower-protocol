@@ -4,7 +4,7 @@ import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "reac
 import type { Profile } from "../../api/profileApi";
 import type { Character } from "../../types/character";
 import type { ToastInput, ToastTone } from "../../types/toast";
-import { getMyHuntState, settleTrainingDummyHunt } from "../../api/characterApi";
+import { configureAutoHunt, encounterHuntMonster, getMyHuntState, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntState } from "../../api/characterApi";
 import { CharacterScreen } from "../character/CharacterScreen";
 import { DashboardScreen } from "../dashboard/DashboardScreen";
@@ -59,6 +59,7 @@ export function AppShell({
   const toastIdRef = useRef(0);
   const settlementAttemptRef = useRef<string | null>(null);
   const recoveryToastRef = useRef<string | null>(null);
+  const autoHuntActionRef = useRef<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const nickname = profile?.nickname ?? "UNKNOWN";
@@ -117,6 +118,39 @@ export function AppShell({
       window.clearTimeout(timeoutId);
     };
   }, [activeHuntState, location.pathname, onCharacterChange]);
+
+  useEffect(() => {
+    if (location.pathname.startsWith("/hunt") || !activeHuntState?.autoHuntEnabled) return;
+    const battle = activeHuntState.lastBattle;
+    if (battle?.status === "in_progress") return;
+    if (battle?.status === "encountered") {
+      if (autoHuntActionRef.current === battle.startedAt) return;
+      autoHuntActionRef.current = battle.startedAt;
+      void huntTrainingDummy().then((next) => {
+        if (!next.ok || !next.huntState) return;
+        setActiveHuntState(next.huntState);
+        showToast({ message: `자동사냥 · LV.${next.enemy.level} ${next.enemy.name}와 조우했습니다.`, tone: "system" });
+      });
+      return;
+    }
+    if (activeHuntState.autoHuntRemaining === 0) {
+      if (autoHuntActionRef.current === "complete") return;
+      autoHuntActionRef.current = "complete";
+      void configureAutoHunt(false).then((next) => {
+        if (next.ok && next.state) setActiveHuntState(next.state);
+        showToast({ message: "자동사냥이 종료되었습니다.", tone: "system" });
+      });
+      return;
+    }
+    const key = `encounter-${activeHuntState.autoHuntRemaining}-${battle?.startedAt ?? "ready"}`;
+    if (autoHuntActionRef.current === key) return;
+    autoHuntActionRef.current = key;
+    void encounterHuntMonster().then((next) => {
+      if (!next.ok || !next.huntState) return;
+      setActiveHuntState(next.huntState);
+      showToast({ message: `자동사냥 · LV.${next.enemy.level} ${next.enemy.name}와 조우했습니다.`, tone: "system" });
+    });
+  }, [activeHuntState, location.pathname]);
 
   useEffect(() => {
     const recoveryEndsAt = activeHuntState?.recoveryEndsAt;

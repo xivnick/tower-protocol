@@ -935,6 +935,20 @@ button:disabled {
   z-index: 2;
 }
 
+.auto-hunt-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  background: var(--surf);
+  padding: 8px 12px;
+}
+
+.auto-hunt-panel > span { color: var(--acc); font-size: 11px; font-weight: 800; }
+.auto-hunt-panel > strong { color: var(--txt-bright); font-size: 12px; }
+.auto-hunt-panel > div { display: flex; gap: 6px; margin-left: auto; }
+.auto-hunt-panel .btn { min-height: 30px; padding: 4px 8px; font-size: 11px; }
+
 .hunt-location-strip {
   width: 100%;
   display: flex;
