@@ -20,28 +20,30 @@ export function CreditVaultPanel({
   const [mask, setMask] = useState<number | null>(null);
   const [moves, setMoves] = useState<number[]>([]);
   const [message, setMessage] = useState("");
-  const [availableAt, setAvailableAt] = useState<string | null>(null);
+  const [charges, setCharges] = useState(10);
+  const [nextChargeAt, setNextChargeAt] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
   const [isComplete, setIsComplete] = useState(false);
-  const isCoolingDown = Boolean(availableAt && Date.parse(availableAt) > now);
+  const displayCharges = getDisplayCharges(charges, nextChargeAt, now);
 
   useEffect(() => {
-    if (!isCoolingDown) return;
+    if (displayCharges >= 10 || !nextChargeAt) return;
 
     const intervalId = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(intervalId);
-  }, [isCoolingDown]);
+  }, [displayCharges, nextChargeAt]);
 
   async function handleOpen() {
     setIsOpen(true);
     setIsLoading(true);
     setIsComplete(false);
-    setMessage("금고 연결 중...");
+    setMessage("");
 
     const result = await openCreditVault();
 
     setIsLoading(false);
-    setAvailableAt(result.availableAt);
+    setCharges(result.charges);
+    setNextChargeAt(result.nextChargeAt);
 
     if (!result.ok || !result.state) {
       setMask(null);
@@ -75,7 +77,6 @@ export function CreditVaultPanel({
       return;
     }
 
-    setAvailableAt(result.availableAt);
     setIsComplete(true);
     setMessage(result.message);
     onCharacterChange(result.character);
@@ -89,12 +90,11 @@ export function CreditVaultPanel({
         <h2>고대 금고</h2>
       </div>
       <div className="panel-action-body">
-        <p className="panel-message">룬 회로를 모두 점등해 20 CR을 확보하세요.</p>
         <div className="button-row">
-          <button className="btn primary" type="button" onClick={handleOpen} disabled={isCoolingDown}>
-            {isCoolingDown ? `재가동 ${formatRemainingTime(availableAt, now)}` : "금고 해제"}
+          <button className="btn primary" type="button" onClick={handleOpen}>
+            금고 해제
           </button>
-          <small className="credit-vault-reward">보상 20 CR</small>
+          <small className="credit-vault-reward">{displayCharges}/10 · 20 CR{displayCharges < 10 ? ` · ${formatRemainingTime(nextChargeAt, now)}` : ""}</small>
         </div>
       </div>
 
@@ -111,7 +111,6 @@ export function CreditVaultPanel({
               <p className="panel-message">금고 연결 중...</p>
             ) : mask !== null ? (
               <>
-                <p className="credit-vault-instruction">룬 하나를 조작하면 인접한 룬도 함께 반전됩니다.</p>
                 <div className="rune-grid" aria-label="룬 회로">
                   {Array.from({ length: 9 }, (_, cellIndex) => (
                     <button
@@ -131,7 +130,7 @@ export function CreditVaultPanel({
             {message && <p className={`auth-message ${isComplete ? "" : "is-error"}`} role="status">{message}</p>}
             <div className="button-row credit-vault-actions">
               <button className="btn ghost" type="button" onClick={() => setIsOpen(false)} disabled={isSubmitting}>
-                {isComplete ? "닫기" : "나중에"}
+                닫기
               </button>
             </div>
           </section>
@@ -152,9 +151,18 @@ function toggleRune(mask: number, cellIndex: number) {
   return mask ^ toggleMask;
 }
 
-function formatRemainingTime(availableAt: string | null, now: number) {
-  if (!availableAt) return "";
+function getDisplayCharges(charges: number, nextChargeAt: string | null, now: number) {
+  if (!nextChargeAt) return charges;
 
-  const seconds = Math.max(0, Math.ceil((Date.parse(availableAt) - now) / 1000));
+  const nextChargeAtMs = Date.parse(nextChargeAt);
+  if (Number.isNaN(nextChargeAtMs) || nextChargeAtMs > now) return charges;
+
+  return Math.min(10, charges + Math.floor((now - nextChargeAtMs) / 30_000) + 1);
+}
+
+function formatRemainingTime(nextChargeAt: string | null, now: number) {
+  if (!nextChargeAt) return "";
+
+  const seconds = Math.max(0, Math.ceil((Date.parse(nextChargeAt) - now) / 1000));
   return `${seconds}초`;
 }

@@ -705,12 +705,6 @@ button:disabled {
   padding: 20px;
 }
 
-.credit-vault-instruction {
-  margin: 16px 0;
-  color: var(--mut);
-  line-height: 1.55;
-}
-
 .rune-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
