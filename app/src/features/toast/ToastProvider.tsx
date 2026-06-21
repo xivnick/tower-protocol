@@ -12,7 +12,6 @@ type ToastMessage = Required<Pick<ToastInput, "message">> & {
 
 type ToastContextValue = {
   showToast: (input: ToastInput) => void;
-  closeToast: (id: number) => void;
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -80,7 +79,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <ToastContext.Provider value={{ showToast, closeToast }}>
+    <ToastContext.Provider value={{ showToast }}>
       {children}
       {toasts.length > 0 && (
         <div className="toast-stack" role="status" aria-live="polite">
@@ -99,7 +98,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   {toast.action.label}
                 </button>
               ))}
-              <button className="toast-close" type="button" onClick={() => closeToast(toast.id)} aria-label="알림 닫기">×</button>
             </div>
           ))}
         </div>

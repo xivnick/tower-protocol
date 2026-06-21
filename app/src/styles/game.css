@@ -430,8 +430,7 @@ button:disabled {
   min-width: 0;
 }
 
-.toast-action,
-.toast-close {
+.toast-action {
   border: 0;
   background: transparent;
   color: var(--acc);
@@ -444,17 +443,8 @@ button:disabled {
 }
 
 .toast-action:hover,
-.toast-action:focus-visible,
-.toast-close:hover,
-.toast-close:focus-visible {
+.toast-action:focus-visible {
   color: var(--txt-bright);
-}
-
-.toast-close {
-  margin-left: auto;
-  padding: 2px;
-  color: var(--txt-dim);
-  font-size: 16px;
 }
 
 .toast.is-common {
