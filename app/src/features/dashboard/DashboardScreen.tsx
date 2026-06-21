@@ -46,11 +46,10 @@ export function DashboardScreen({
           <span>DASHBOARD</span>
           <h2>접속 상태</h2>
         </div>
-        <div className="kv-grid">
-          <Kv label="닉네임" value={nickname} />
-          <Kv label="계정" value={email} />
-          <Kv
-            label="캐릭터"
+          <div className="kv-grid">
+            <Kv label="닉네임" value={nickname} />
+            <Kv
+              label="캐릭터"
             value={
               character ? (
                 <Link className="character-link" to="/character" aria-label={`${character.name} 캐릭터 정보 보기`}>
@@ -63,8 +62,9 @@ export function DashboardScreen({
                 "없음"
               )
             }
-          />
-        </div>
+            />
+            <Kv label="계정" value={email} />
+          </div>
       </article>
 
       {character && (
