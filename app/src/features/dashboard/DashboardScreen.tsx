@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Link } from "react-router-dom";
+import type { HuntState } from "../../api/characterApi";
 import type { Profile } from "../../api/profileApi";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
@@ -12,10 +13,12 @@ export function DashboardScreen({
   session,
   profile,
   character,
+  huntState,
 }: {
   session: Session | null;
   profile: Profile | null;
   character: Character | null;
+  huntState: HuntState | null;
 }) {
   useDocumentTitle("TOWER://DASHBOARD");
 
@@ -71,10 +74,39 @@ export function DashboardScreen({
         </div>
       </article>
 
+      {character && (
+        <article className="panel">
+          <div className="panel-head">
+            <span>AUTO BATTLE</span>
+            <h2>자동 전투 현황</h2>
+          </div>
+          <div className="kv-grid">
+            <Kv label="상태" value={getAutoHuntStatus(huntState)} />
+            {huntState?.autoHuntEnabled && (
+              <>
+                <Kv label="남은 횟수" value={`${huntState.autoHuntRemaining}회`} />
+                {huntState.lastBattle && <Kv label="대상" value={`LV.${huntState.lastBattle.enemy.level} ${huntState.lastBattle.enemy.name}`} />}
+              </>
+            )}
+          </div>
+          <div className="panel-action-body">
+            {!huntState?.autoHuntEnabled && <p className="panel-message">사냥터에서 자동 전투를 시작하세요.</p>}
+            <Link className="btn ghost panel-primary-action" to="/hunt">사냥터로 이동</Link>
+          </div>
+        </article>
+      )}
+
       <RankingSummary />
       <PatchNotesSummary />
     </section>
   );
+}
+
+function getAutoHuntStatus(huntState: HuntState | null) {
+  if (!huntState?.autoHuntEnabled) return "중지";
+  if (huntState.lastBattle?.status === "in_progress") return "전투 중";
+  if (huntState.lastBattle?.status === "encountered") return "조우 중";
+  return "탐색 중";
 }
 
 function Kv({ label, value }: { label: string; value: ReactNode }) {
