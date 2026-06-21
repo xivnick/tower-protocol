@@ -53,7 +53,7 @@ export function DashboardScreen({
             value={
               character ? (
                 <Link className="character-link" to="/character" aria-label={`${character.name} 캐릭터 정보 보기`}>
-                  <span>{character.name}</span>
+                  <span>{`LV.${character.level} ${character.name}`}</span>
                   <svg aria-hidden="true" viewBox="0 0 16 16">
                     <path d="M6.5 3.5h6v6M12.5 3.5 7 9m3 3.5H3.5v-6" />
                   </svg>
