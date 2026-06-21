@@ -793,7 +793,7 @@ button:disabled {
 }
 
 .box-open-action small.is-insufficient {
-  color: var(--neg);
+  color: color-mix(in srgb, var(--neg) 65%, var(--mut));
 }
 
 .weapon-list {
