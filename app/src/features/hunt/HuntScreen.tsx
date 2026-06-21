@@ -256,7 +256,7 @@ function TrainingDummyGround({
     setHuntState(nextResult.huntState);
     onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
-    onToast({ message: nextResult.message, tone: "system" });
+    onToast({ message: `LV.${nextResult.enemy.level} ${nextResult.enemy.name}과 조우했습니다.`, tone: "system" });
   }
 
   async function handleGroundChange(huntGroundId: string) {
@@ -373,7 +373,7 @@ function TrainingDummyGround({
                 {displayedLogs.map((log, index) => (
                   <li className={`is-${log.kind}`} key={`${log.timeTenths}-${log.kind}-${index}`}>
                     <time className={getLogTimeTone(log.entries[0])}>[{formatTime(log.timeTenths)}]</time>
-                    <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(log.entries[0], result.player.name, result.enemy.name, result.gainedExperience)}</span>
+                    <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(log.entries[0], result.player.name, result.enemy.name, result.enemy.level, result.gainedExperience)}</span>
                   </li>
                 ))}
               </>
@@ -519,10 +519,10 @@ function Kv({ label, value }: { label: string; value: string }) {
   return <div><span>{label}</span><strong>{value}</strong></div>;
 }
 
-function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: string, gainedExperience: number): ReactNode {
+function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: string, enemyLevel: number, gainedExperience: number): ReactNode {
   const damage = <b className="combat-log-damage">-{formatAmount(entry.amount)} HP</b>;
   const recovery = <b className="combat-log-recovery">+{formatAmount(entry.amount)} HP</b>;
-  if (entry.kind === "encounter") return `${enemyName}${getWithJosa(enemyName)} 조우했습니다.`;
+  if (entry.kind === "encounter") return `LV.${enemyLevel} ${enemyName}과 조우했습니다.`;
   if (entry.kind === "defeat") return `전투 승리 +${gainedExperience} EXP`;
   if (entry.kind === "player_defeat") return "패배..";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
@@ -534,11 +534,6 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "enemy_attack") return <><b className="combat-log-enemy">{enemyName}</b> 공격 <i className="combat-log-arrow is-enemy">≫</i> {playerName} {damage}</>;
   if (entry.kind === "critical") return <><b className="combat-log-player">{playerName}</b> <b className="combat-log-critical">치명타</b> <i className="combat-log-arrow is-player">≫</i> {enemyName} {damage}</>;
   return <><b className="combat-log-player">{playerName}</b> 공격 <i className="combat-log-arrow is-player">≫</i> {enemyName} {damage}</>;
-}
-
-function getWithJosa(name: string) {
-  const lastCode = name.charCodeAt(name.length - 1);
-  return lastCode >= 0xac00 && lastCode <= 0xd7a3 && (lastCode - 0xac00) % 28 !== 0 ? "과" : "와";
 }
 
 function getLogTimeTone(entry: HuntLogEntry) {
