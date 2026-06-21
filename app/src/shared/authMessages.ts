@@ -25,6 +25,8 @@ const AUTH_ERROR_MESSAGES: Array<[RegExp, string]> = [
   [/empty_stat_delta/i, "배분할 스탯을 선택해주세요."],
   [/insufficient_stat_points/i, "스탯 포인트가 부족합니다."],
   [/hunt_on_cooldown/i, "전투 재정비 중입니다."],
+  [/hunt_defeat_recovery/i, "패배 후 회복 중입니다."],
+  [/hunt_retreat_recovery/i, "후퇴 후 회복 중입니다."],
   [/training_charges_empty/i, "훈련 보관이 비어 있습니다."],
   [/training_dummy_not_defeated/i, "허수아비 전투를 완료하지 못했습니다."],
   [/shared_name_conflict/i, "이미 사용 중인 이름입니다."],

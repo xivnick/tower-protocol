@@ -930,24 +930,38 @@ button:disabled {
   align-content: start;
 }
 
+.hunt-location-picker {
+  position: relative;
+  z-index: 2;
+}
+
 .hunt-location-strip {
+  width: 100%;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: flex-start;
   gap: 14px;
   border: 1px solid var(--line);
   background: var(--surf);
   padding: 10px 14px;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
 }
 
 .hunt-location-strip strong {
-  margin-left: 8px;
   color: var(--txt-bright);
   font-size: 12px;
 }
 
+.hunt-location-strip:hover,
+.hunt-location-strip[aria-expanded="true"] {
+  border-color: var(--acc-dim);
+  background: var(--surf-2);
+}
+
 .hunt-location-strip small {
-  margin-left: 4px;
+  margin-left: auto;
   color: var(--mut);
   font-size: 12px;
 }
@@ -956,6 +970,72 @@ button:disabled {
   color: var(--acc);
   font-size: 12px;
   font-weight: 800;
+}
+
+.hunt-location-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--acc);
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: square;
+  stroke-width: 1.5;
+  transition: transform 140ms ease;
+}
+
+.hunt-location-strip[aria-expanded="true"] .hunt-location-icon {
+  transform: rotate(180deg);
+}
+
+.hunt-location-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  overflow: hidden;
+  border: 1px solid var(--line-3);
+  background: var(--surf);
+  box-shadow: 0 14px 28px rgb(0 0 0 / 58%);
+  animation: dropdown-in 120ms ease-out;
+}
+
+.hunt-location-menu button {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  padding: 12px 14px;
+  color: var(--txt);
+  cursor: pointer;
+  text-align: left;
+}
+
+.hunt-location-menu button:last-child {
+  border-bottom: 0;
+}
+
+.hunt-location-menu button:hover,
+.hunt-location-menu button.is-selected {
+  background: var(--surf-2);
+}
+
+.hunt-location-menu button.is-selected strong::before {
+  content: "> ";
+  color: var(--acc);
+}
+
+.hunt-location-menu strong {
+  color: var(--txt-bright);
+  font-size: 12px;
+}
+
+.hunt-location-menu small {
+  color: var(--mut);
+  font-size: 11px;
 }
 
 .hunt-status-stack {
@@ -1234,6 +1314,7 @@ button:disabled {
   gap: 10px;
   color: var(--txt);
   font-size: 12px;
+  animation: combat-log-in 160ms ease-out both;
 }
 
 .combat-log li.is-empty {
@@ -1245,18 +1326,47 @@ button:disabled {
   color: var(--mut-2);
 }
 
-.combat-log .is-critical span {
-  color: var(--acc-2);
-  font-weight: 800;
-}
+.combat-log-damage { color: var(--neg); }
+.combat-log-recovery { color: var(--txt); }
+
+.combat-log-player { color: var(--acc); }
+.combat-log-critical { color: var(--acc-2); }
+.combat-log-enemy { color: #ff9b78; }
+.combat-log-arrow { display: inline-block; margin: 0 2px; font-style: normal; font-weight: 900; }
+.combat-log-arrow.is-player { color: var(--acc); }
+.combat-log-arrow.is-enemy { color: var(--neg); }
 
 .combat-log .is-regeneration span {
-  color: var(--acc-dim);
+  color: var(--txt);
+}
+
+.combat-log .is-player_regeneration span {
+  color: var(--txt);
+}
+
+.combat-log .is-regeneration .combat-log-recovery,
+.combat-log .is-player_regeneration .combat-log-recovery {
+  color: var(--txt);
+  font-weight: 400;
+}
+
+.combat-log .is-combined_regeneration .combat-log-recovery {
+  color: var(--txt);
+  font-weight: 400;
 }
 
 .combat-log .is-defeat span {
-  color: var(--acc);
+  color: var(--acc-2);
   font-weight: 900;
+}
+
+.combat-log .is-player_defeat span {
+  color: var(--danger);
+  font-weight: 900;
+}
+
+.combat-log .is-enemy_attack span {
+  color: var(--txt-bright);
 }
 
 .combat-log .is-timeout span {
@@ -1265,8 +1375,13 @@ button:disabled {
 }
 
 .combat-log .is-encounter span {
-  color: var(--acc);
-  font-weight: 800;
+  color: var(--mut);
+  font-weight: 400;
+}
+
+@keyframes combat-log-in {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .hunt-result-footnote {

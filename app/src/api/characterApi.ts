@@ -33,9 +33,10 @@ export type TrainingState = {
 
 export type HuntLogEntry = {
   timeTenths: number;
-  kind: "encounter" | "attack" | "critical" | "regeneration" | "defeat" | "fled" | "timeout";
+  kind: "encounter" | "attack" | "critical" | "regeneration" | "player_regeneration" | "defeat" | "fled" | "timeout" | "enemy_attack" | "player_defeat";
   amount: number;
   targetHp: number;
+  target?: "enemy" | "player";
 };
 
 export type HuntCombatant = {
@@ -43,14 +44,15 @@ export type HuntCombatant = {
   level: number;
   maxHp: number;
   experience?: number;
+  info?: MonsterInfo;
 };
 
 export type HuntBattle = {
   huntGroundId: string;
-  status: "in_progress" | "victory" | "fled" | "timed_out";
+  status: "in_progress" | "victory" | "fled" | "timed_out" | "defeated";
   startedAt: string;
   endsAt?: string;
-  player: HuntCombatant;
+  player: HuntCombatant & { startHp?: number; currentHp?: number };
   enemy: HuntCombatant;
   gainedExperience: number;
   levelBefore: number;
@@ -67,6 +69,13 @@ export type HuntBattle = {
 export type HuntState = {
   availableAt: string | null;
   lastBattle: HuntBattle | null;
+  selectedHuntGroundId: string;
+  playerCurrentHp: number | null;
+  playerMaxHp: number | null;
+  playerRecoveryStartHp: number | null;
+  playerRecoveryStartedAt: string | null;
+  recoveryEndsAt: string | null;
+  isDefeatRecovery: boolean;
 };
 
 export type MonsterInfo = {
@@ -129,8 +138,8 @@ type HuntBattlePayload = {
   status?: HuntBattle["status"];
   started_at?: string;
   ends_at?: string;
-  player?: { name?: string; level?: number; max_hp?: number; experience?: number };
-  enemy?: { name?: string; level?: number; max_hp?: number };
+  player?: { name?: string; level?: number; max_hp?: number; experience?: number; start_hp?: number; current_hp?: number };
+  enemy?: { name?: string; level?: number; max_hp?: number; combat_stats?: MonsterInfoPayload };
   gained_experience?: number;
   level_before?: number;
   level_after?: number;
@@ -145,12 +154,26 @@ type HuntBattlePayload = {
     kind: HuntLogEntry["kind"];
     amount: number;
     target_hp: number;
+    target?: HuntLogEntry["target"];
   }>;
 };
 
 type HuntStatePayload = {
   available_at?: string | null;
   last_battle?: HuntBattlePayload | null;
+  selected_hunt_ground_id?: string;
+  player_current_hp?: number | null;
+  player_max_hp?: number | null;
+  player_recovery_start_hp?: number | null;
+  player_recovery_started_at?: string | null;
+  recovery_ends_at?: string | null;
+  is_defeat_recovery?: boolean;
+};
+
+type MonsterInfoPayload = {
+  physical_attack?: number; magic_attack?: number; physical_defense?: number; magic_defense?: number; max_hp?: number;
+  regeneration?: number; attacks_per_second?: number; cooldown_reduction?: number; accuracy?: number; evasion_rate?: number;
+  critical_chance?: number; critical_damage?: number;
 };
 
 const characterSelectFields = "id,user_id,name,level,experience,strength,agility,dexterity,vitality,endurance,intelligence,wisdom,stat_points,bonus_stat_points,hunt_available_at,created_at,updated_at";
@@ -403,6 +426,13 @@ export async function getMyHuntState(): Promise<{ ok: boolean; state: HuntState 
   return { ok: true, state: mapHuntState(data as HuntStatePayload), message: "" };
 }
 
+export async function selectHuntGround(huntGroundId: string): Promise<{ ok: boolean; state: HuntState | null; message: string }> {
+  if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
+  const { data, error } = await supabase.rpc("select_hunt_ground", { target_hunt_ground_id: huntGroundId });
+  if (error) return { ok: false, state: null, message: toKoreanAuthMessage(error.message, "사냥터를 변경하지 못했습니다.") };
+  return { ok: true, state: mapHuntState(data as HuntStatePayload), message: "" };
+}
+
 export async function getTrainingDummyInfo(): Promise<{ ok: boolean; info: MonsterInfo | null; message: string }> {
   if (!supabase) return { ok: false, info: null, message: "Supabase 설정을 확인해주세요." };
 
@@ -440,6 +470,13 @@ function mapHuntState(payload: HuntStatePayload | undefined): HuntState {
   return {
     availableAt: payload?.available_at ?? null,
     lastBattle: payload?.last_battle ? mapHuntBattle(payload.last_battle) : null,
+    selectedHuntGroundId: payload?.selected_hunt_ground_id ?? "training-dummy",
+    playerCurrentHp: payload?.player_current_hp ?? null,
+    playerMaxHp: payload?.player_max_hp ?? null,
+    playerRecoveryStartHp: payload?.player_recovery_start_hp ?? null,
+    playerRecoveryStartedAt: payload?.player_recovery_started_at ?? null,
+    recoveryEndsAt: payload?.recovery_ends_at ?? null,
+    isDefeatRecovery: payload?.is_defeat_recovery ?? false,
   };
 }
 
@@ -454,8 +491,13 @@ function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
       level: payload.player?.level ?? 0,
       maxHp: payload.player?.max_hp ?? 0,
       experience: payload.player?.experience ?? 0,
+      startHp: payload.player?.start_hp,
+      currentHp: payload.player?.current_hp,
     },
-    enemy: { name: payload.enemy?.name ?? "허수아비", level: payload.enemy?.level ?? 0, maxHp: payload.enemy?.max_hp ?? 0 },
+    enemy: {
+      name: payload.enemy?.name ?? "허수아비", level: payload.enemy?.level ?? 0, maxHp: payload.enemy?.max_hp ?? 0,
+      info: payload.enemy?.combat_stats ? mapMonsterInfo(payload.enemy.combat_stats) : undefined,
+    },
     gainedExperience: payload.gained_experience ?? 0,
     levelBefore: payload.level_before ?? 0,
     levelAfter: payload.level_after ?? 0,
@@ -465,7 +507,17 @@ function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
     attackCount: payload.attack_count ?? 0,
     criticalCount: payload.critical_count ?? 0,
     totalRegeneration: payload.total_regeneration ?? 0,
-    logs: (payload.logs ?? []).map((log) => ({ timeTenths: log.time_tenths, kind: log.kind, amount: log.amount, targetHp: log.target_hp })),
+    logs: (payload.logs ?? []).map((log) => ({ timeTenths: log.time_tenths, kind: log.kind, amount: log.amount, targetHp: log.target_hp, target: log.target })),
+  };
+}
+
+function mapMonsterInfo(payload: MonsterInfoPayload): MonsterInfo {
+  return {
+    name: "", level: 0, physicalAttack: payload.physical_attack ?? 0, magicAttack: payload.magic_attack ?? 0,
+    physicalDefense: payload.physical_defense ?? 0, magicDefense: payload.magic_defense ?? 0, maxHp: payload.max_hp ?? 0,
+    regeneration: payload.regeneration ?? 0, attacksPerSecond: payload.attacks_per_second ?? 0,
+    cooldownReduction: payload.cooldown_reduction ?? 0, accuracy: payload.accuracy ?? 0,
+    evasionRate: payload.evasion_rate ?? 0, criticalChance: payload.critical_chance ?? 0, criticalDamage: payload.critical_damage ?? 0,
   };
 }
 

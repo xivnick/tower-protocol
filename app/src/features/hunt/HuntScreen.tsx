@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { fleeTrainingDummyHunt, getMyHuntState, getTrainingDummyInfo, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
+import { fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
@@ -13,6 +13,11 @@ const trainingDummy = {
     return 100 + (level * 20) + (vitality * 10);
   },
 };
+
+const HUNT_GROUNDS = [
+  { id: "training-dummy", name: "허수아비 훈련장", recommendedLevel: "추천 LV.1–100" },
+  { id: "wooden-doll", name: "목각인형 훈련장", recommendedLevel: "추천 LV.1–100" },
+];
 
 export function HuntScreen({
   character,
@@ -66,12 +71,11 @@ function TrainingDummyGround({
 }) {
   const [result, setResult] = useState<HuntResult | null>(null);
   const [lastResult, setLastResult] = useState<HuntResult | null>(null);
-  const [message, setMessage] = useState("");
   const [huntState, setHuntState] = useState<HuntState | null>(null);
-  const [monsterInfo, setMonsterInfo] = useState<MonsterInfo | null>(null);
   const [isMonsterInfoOpen, setIsMonsterInfoOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
+  const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [playbackTenths, setPlaybackTenths] = useState(0);
   const logRef = useRef<HTMLOListElement>(null);
@@ -82,11 +86,26 @@ function TrainingDummyGround({
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
   const combatStats = calculateCombatStats(character);
   const visibleLogs = useMemo(() => result?.logs.filter((entry) => entry.timeTenths <= playbackTenths) ?? [], [playbackTenths, result]);
+  const displayedLogs = useMemo(() => groupCombatLogs(visibleLogs), [visibleLogs]);
+  const selectedGroundId = huntState?.selectedHuntGroundId ?? "training-dummy";
+  const selectedGround = HUNT_GROUNDS.find((ground) => ground.id === selectedGroundId) ?? HUNT_GROUNDS[0];
   const dummyMaxHp = result?.enemy.maxHp ?? trainingDummy.maxHp(character.level);
-  const targetHp = visibleLogs.length > 0 ? visibleLogs[visibleLogs.length - 1].targetHp : dummyMaxHp;
+  const enemyLogs = visibleLogs.filter((entry) => entry.target !== "player");
+  const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
+  const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
   const isBattleInProgress = result?.status === "in_progress";
+  const recoveredPlayerHp = getRecoveredPlayerHp(huntState, now);
+  const playerHp = isBattleInProgress
+    ? playerLogs.length > 0 ? playerLogs[playerLogs.length - 1].targetHp : result?.player.startHp ?? result?.player.maxHp ?? combatStats.maxHp
+    : recoveredPlayerHp ?? huntState?.playerCurrentHp ?? result?.player.currentHp ?? result?.player.startHp ?? result?.player.maxHp ?? combatStats.maxHp;
+  const isGoingToDifferentGround = Boolean(isBattleInProgress && result && selectedGroundId !== result.huntGroundId);
   const isPlaybackComplete = Boolean(result && (!isBattleInProgress || playbackTenths >= result.durationTicks));
-  const canHunt = !isSubmitting && !isResolving && remainingTenths === 0 && (!result || !isBattleInProgress);
+  const isRecovering = Boolean(!isBattleInProgress && huntState?.recoveryEndsAt && Date.parse(huntState.recoveryEndsAt) > now);
+  const recoveryLockStatus = huntState?.lastBattle?.status ?? result?.status;
+  const recoveryLockStartedAt = huntState?.playerRecoveryStartedAt ? Date.parse(huntState.playerRecoveryStartedAt) : 0;
+  const isRecoveryLocked = Boolean(recoveryLockStartedAt && (recoveryLockStatus === "defeated" || recoveryLockStatus === "fled") && recoveryLockStartedAt + 10_000 > now);
+  const isRetreatLocked = Boolean(isRecoveryLocked && recoveryLockStatus === "fled");
+  const canHunt = !isSubmitting && !isResolving && !isRecoveryLocked && remainingTenths === 0 && (!result || !isBattleInProgress);
   const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
   const displayLevel = result ? (isPlaybackComplete ? result.levelAfter : result.player.level) : character.level;
   const displayExperience = result ? (isPlaybackComplete ? result.experienceAfter : result.player.experience ?? 0) : character.experience;
@@ -114,19 +133,11 @@ function TrainingDummyGround({
   }, []);
 
   useEffect(() => {
-    let isActive = true;
-    void getTrainingDummyInfo().then((nextInfo) => {
-      if (isActive && nextInfo.ok) setMonsterInfo(nextInfo.info);
-    });
-    return () => { isActive = false; };
-  }, [character.level]);
-
-  useEffect(() => {
-    if (remainingTenths === 0) return;
+    if (remainingTenths === 0 && !isRecovering && !isRecoveryLocked) return;
 
     const intervalId = window.setInterval(() => setNow(Date.now()), 100);
     return () => window.clearInterval(intervalId);
-  }, [remainingTenths]);
+  }, [isRecovering, isRecoveryLocked, remainingTenths]);
 
   useEffect(() => {
     if (!result || !isBattleInProgress || isPlaybackComplete) return;
@@ -155,6 +166,14 @@ function TrainingDummyGround({
       return;
     }
 
+    if (result.status === "defeated") {
+      if (!result.character) return;
+      completedResultRef.current = result;
+      onCharacterChange(result.character);
+      onToast({ message: "패배..", tone: "error" });
+      return;
+    }
+
     if (result.status !== "victory") return;
 
     if (!result.character) return;
@@ -179,7 +198,7 @@ function TrainingDummyGround({
         if (!isActive) return;
         setIsResolving(false);
         if (!nextResult.ok) {
-          setMessage(nextResult.message);
+          onToast({ message: nextResult.message, tone: "error" });
           return;
         }
         setHuntState(nextResult.huntState);
@@ -199,14 +218,12 @@ function TrainingDummyGround({
     if (!canHunt) return;
 
     setIsSubmitting(true);
-    setMessage("");
     setResult(null);
     setPlaybackTenths(0);
     const nextResult = await huntTrainingDummy();
     setIsSubmitting(false);
 
     if (!nextResult.ok) {
-      setMessage(nextResult.message);
       onToast({ message: nextResult.message, tone: "error" });
       void onCharacterRefresh();
       return;
@@ -219,19 +236,29 @@ function TrainingDummyGround({
     setResult(nextResult);
   }
 
+  async function handleGroundChange(huntGroundId: string) {
+    setIsLocationMenuOpen(false);
+    if (huntGroundId === selectedGroundId) return;
+    const nextState = await selectHuntGround(huntGroundId);
+    if (!nextState.ok || !nextState.state) {
+      onToast({ message: nextState.message, tone: "error" });
+      return;
+    }
+    setHuntState(nextState.state);
+    onHuntStateChange(nextState.state);
+  }
+
   async function handleFlee() {
     if (!canFlee || !result) return;
 
     const previousLastResult = lastResult;
     setIsResolving(true);
-    setMessage("");
     setLastResult({ ...result, status: "fled", durationTicks: playbackTenths });
     const nextResult = await fleeTrainingDummyHunt();
     setIsResolving(false);
 
     if (!nextResult.ok) {
       setLastResult(previousLastResult);
-      setMessage(nextResult.message);
       onToast({ message: nextResult.message, tone: "error" });
       return;
     }
@@ -245,10 +272,38 @@ function TrainingDummyGround({
 
   return (
     <section className="screen-panel hunt-screen">
-      <div className="hunt-location-strip">
-        <span>LOCATION</span>
-        <strong>허수아비 훈련소</strong>
-        <small>권장 LV.1–100</small>
+      <div className="hunt-location-picker">
+        <button
+          className="hunt-location-strip"
+          type="button"
+          aria-expanded={isLocationMenuOpen}
+          aria-controls="hunt-location-menu"
+          onClick={() => setIsLocationMenuOpen((current) => !current)}
+        >
+          <span>{isGoingToDifferentGround ? "GOING TO.." : "LOCATION"}</span>
+          <strong>{selectedGround.name}</strong>
+          <small>{selectedGround.recommendedLevel}</small>
+          <svg className="hunt-location-icon" aria-hidden="true" viewBox="0 0 16 16">
+            <path d="m4 6 4 4 4-4" />
+          </svg>
+        </button>
+        {isLocationMenuOpen && (
+          <div className="hunt-location-menu" id="hunt-location-menu" role="menu" aria-label="사냥터 선택">
+            {HUNT_GROUNDS.map((ground) => (
+              <button
+                className={ground.id === selectedGroundId ? "is-selected" : ""}
+                type="button"
+                role="menuitemradio"
+                aria-checked={ground.id === selectedGroundId}
+                key={ground.id}
+                onClick={() => void handleGroundChange(ground.id)}
+              >
+                <strong>{ground.name}</strong>
+                <small>{ground.recommendedLevel}</small>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <article className="panel combat-record-panel">
           <div className="panel-head compact action-head">
@@ -259,7 +314,7 @@ function TrainingDummyGround({
             <div className="hunt-action-buttons">
               {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망치기</button>}
               <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
-                {isSubmitting || isResolving || isBattleInProgress ? "전투 중..." : "전투 시작"}
+                {isSubmitting || isResolving || isBattleInProgress ? "전투 중..." : isRetreatLocked ? "후퇴 후 회복 중.." : isRecoveryLocked ? "회복 중..." : "전투 시작"}
               </button>
             </div>
           </div>
@@ -267,8 +322,8 @@ function TrainingDummyGround({
             <CombatHpCard
               label="PLAYER"
               name={result ? `LV.${result.player.level} ${result.player.name}` : `LV.${character.level} ${character.name}`}
-              currentHp={result?.player.maxHp ?? combatStats.maxHp}
-              maxHp={result?.player.maxHp ?? combatStats.maxHp}
+              currentHp={playerHp}
+              maxHp={result?.player.maxHp ?? huntState?.playerMaxHp ?? combatStats.maxHp}
               detail={{ value: `EXP ${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()}`, percent: experiencePercent, isExperience: true }}
               linkToCharacter
             />
@@ -277,20 +332,19 @@ function TrainingDummyGround({
               name={result ? `LV.${result.enemy.level} ${result.enemy.name}` : "???"}
               currentHp={result ? targetHp : null}
               maxHp={result ? dummyMaxHp : null}
-              onInfoClick={() => setIsMonsterInfoOpen((current) => !current)}
+              onInfoClick={result?.enemy.info ? () => setIsMonsterInfoOpen((current) => !current) : undefined}
               isInfoOpen={isMonsterInfoOpen}
               isExpanded={isMonsterInfoOpen}
-              expandedContent={monsterInfo ? <MonsterInfoStats info={monsterInfo} /> : null}
+              expandedContent={result?.enemy.info ? <MonsterInfoStats info={result.enemy.info} /> : null}
             />
           </div>
-          {message && <p className="panel-message is-error" role="status">{message}</p>}
           <ol className="combat-log" aria-label="전투 로그" ref={logRef}>
             {result ? (
               <>
-                {visibleLogs.map((entry, index) => (
-                  <li className={`is-${entry.kind}`} key={`${entry.timeTenths}-${entry.kind}-${index}`}>
-                    <time>[{formatTime(entry.timeTenths)}]</time>
-                    <span>{formatLogEntry(entry, dummyMaxHp, result.gainedExperience)}</span>
+                {displayedLogs.map((log, index) => (
+                  <li className={`is-${log.kind}`} key={`${log.timeTenths}-${log.kind}-${index}`}>
+                    <time className={getLogTimeTone(log.entries[0])}>[{formatTime(log.timeTenths)}]</time>
+                    <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(log.entries[0], result.player.name, result.enemy.name, result.gainedExperience)}</span>
                   </li>
                 ))}
               </>
@@ -413,7 +467,7 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
   const totalDamage = result.status === "fled"
     ? result.logs.filter((entry) => entry.timeTenths <= fledAt && (entry.kind === "attack" || entry.kind === "critical")).reduce((total, entry) => total + entry.amount, 0)
     : result.totalDamage;
-  const resultStatus = result.status === "fled" ? "도망침" : result.status === "timed_out" ? "시간 초과" : null;
+  const resultStatus = result.status === "fled" ? "도망침" : result.status === "timed_out" ? "시간 초과" : result.status === "defeated" ? "패배.." : null;
   const seconds = durationTicks / 10;
   const dps = seconds > 0 ? (totalDamage / seconds).toFixed(1) : "0.0";
 
@@ -436,14 +490,54 @@ function Kv({ label, value }: { label: string; value: string }) {
   return <div><span>{label}</span><strong>{value}</strong></div>;
 }
 
-function formatLogEntry(entry: HuntLogEntry, dummyMaxHp: number, gainedExperience: number) {
-  if (entry.kind === "encounter") return "허수아비와 조우했습니다.";
+function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: string, gainedExperience: number): ReactNode {
+  const damage = <b className="combat-log-damage">-{formatAmount(entry.amount)} HP</b>;
+  const recovery = <b className="combat-log-recovery">+{formatAmount(entry.amount)} HP</b>;
+  if (entry.kind === "encounter") return `${enemyName}${getWithJosa(enemyName)} 조우했습니다.`;
   if (entry.kind === "defeat") return `전투 승리 +${gainedExperience} EXP`;
+  if (entry.kind === "player_defeat") return "패배..";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
-  if (entry.kind === "regeneration") return `허수아비 재생 -> 허수아비 · +${formatAmount(entry.amount)} HP`;
-  if (entry.kind === "critical") return `치명타! -> 허수아비 · -${entry.amount} HP`;
-  return `일반 공격 -> 허수아비 · -${entry.amount} HP`;
+  if (entry.kind === "regeneration") return <><b className="combat-log-enemy">{enemyName}</b> 재생 {recovery}</>;
+  if (entry.kind === "player_regeneration") return <><b className="combat-log-player">{playerName}</b> 재생 {recovery}</>;
+  if (entry.kind === "enemy_attack") return <><b className="combat-log-enemy">{enemyName}</b> 공격 <i className="combat-log-arrow is-enemy">≫</i> {playerName} {damage}</>;
+  if (entry.kind === "critical") return <><b className="combat-log-player">{playerName}</b> <b className="combat-log-critical">치명타</b> <i className="combat-log-arrow is-player">≫</i> {enemyName} {damage}</>;
+  return <><b className="combat-log-player">{playerName}</b> 공격 <i className="combat-log-arrow is-player">≫</i> {enemyName} {damage}</>;
+}
+
+function getWithJosa(name: string) {
+  const lastCode = name.charCodeAt(name.length - 1);
+  return lastCode >= 0xac00 && lastCode <= 0xd7a3 && (lastCode - 0xac00) % 28 !== 0 ? "과" : "와";
+}
+
+function getLogTimeTone(entry: HuntLogEntry) {
+  if (entry.kind === "enemy_attack") return "is-enemy-action";
+  if (entry.kind === "attack" || entry.kind === "critical") return "is-player-action";
+  return "";
+}
+
+function groupCombatLogs(logs: HuntLogEntry[]) {
+  const groups: Array<{ kind: HuntLogEntry["kind"] | "combined_regeneration"; timeTenths: number; entries: HuntLogEntry[] }> = [];
+  for (const entry of logs) {
+    const previous = groups[groups.length - 1];
+    const isRegeneration = entry.kind === "regeneration" || entry.kind === "player_regeneration";
+    if (isRegeneration && previous?.kind === "combined_regeneration" && previous.timeTenths === entry.timeTenths) {
+      previous.entries.push(entry);
+      continue;
+    }
+    groups.push({ kind: isRegeneration ? "combined_regeneration" : entry.kind, timeTenths: entry.timeTenths, entries: [entry] });
+  }
+  return groups;
+}
+
+function formatCombinedRegeneration(entries: HuntLogEntry[]): ReactNode {
+  const player = entries.find((entry) => entry.kind === "player_regeneration");
+  const enemy = entries.find((entry) => entry.kind === "regeneration");
+  return <>
+    재생
+    {player && <> <i className="combat-log-arrow is-player">≫</i> <b className="combat-log-recovery">+{formatAmount(player.amount)} HP</b></>}
+    {enemy && <> <i className="combat-log-arrow is-enemy">≫</i> <b className="combat-log-recovery">+{formatAmount(enemy.amount)} HP</b></>}
+  </>;
 }
 
 function formatTime(tenths: number) {
@@ -452,6 +546,26 @@ function formatTime(tenths: number) {
 
 function formatAmount(value: number) {
   return Number.isInteger(value) ? value.toLocaleString() : value.toFixed(1);
+}
+
+function getRecoveredPlayerHp(huntState: HuntState | null, now: number) {
+  const startHp = huntState?.playerRecoveryStartHp;
+  const maxHp = huntState?.playerMaxHp;
+  const startedAt = huntState?.playerRecoveryStartedAt;
+  const recoveryEndsAt = huntState?.recoveryEndsAt;
+  if (startHp === null || startHp === undefined || maxHp === null || maxHp === undefined || !startedAt || !recoveryEndsAt) return null;
+
+  const startedAtMs = Date.parse(startedAt);
+  const recoveryEndsAtMs = Date.parse(recoveryEndsAt);
+  if (Number.isNaN(startedAtMs) || Number.isNaN(recoveryEndsAtMs)) return null;
+  if (now >= recoveryEndsAtMs) return maxHp;
+
+  const recoveredSteps = Math.max(0, Math.floor((now - startedAtMs) / 1000));
+  const recoveryDurationSeconds = Math.round((recoveryEndsAtMs - startedAtMs) / 1000);
+  if (recoveryDurationSeconds >= 10) {
+    return Math.min(maxHp, Math.floor(startHp + ((maxHp - startHp) * recoveredSteps / recoveryDurationSeconds)));
+  }
+  return Math.min(maxHp, Math.floor(startHp + (maxHp * 0.2 * recoveredSteps)));
 }
 
 function getElapsedTenths(startedAt: string, durationTicks: number) {
