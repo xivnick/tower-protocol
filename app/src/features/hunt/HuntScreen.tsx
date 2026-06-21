@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
+import { encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
@@ -94,6 +94,7 @@ function TrainingDummyGround({
   const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
   const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
   const isBattleInProgress = result?.status === "in_progress";
+  const hasEncounteredMonster = result?.status === "encountered";
   const recoveredPlayerHp = getRecoveredPlayerHp(huntState, now);
   const playerHp = isBattleInProgress
     ? playerLogs.length > 0 ? playerLogs[playerLogs.length - 1].targetHp : result?.player.startHp ?? result?.player.maxHp ?? combatStats.maxHp
@@ -105,7 +106,9 @@ function TrainingDummyGround({
   const recoveryLockStartedAt = huntState?.playerRecoveryStartedAt ? Date.parse(huntState.playerRecoveryStartedAt) : 0;
   const isRecoveryLocked = Boolean(recoveryLockStartedAt && (recoveryLockStatus === "defeated" || recoveryLockStatus === "fled") && recoveryLockStartedAt + 10_000 > now);
   const isRetreatLocked = Boolean(isRecoveryLocked && recoveryLockStatus === "fled");
-  const canHunt = !isSubmitting && !isResolving && !isRecoveryLocked && remainingTenths === 0 && (!result || !isBattleInProgress);
+  const canEncounter = !isSubmitting && !isResolving && !isRecoveryLocked && remainingTenths === 0 && !hasEncounteredMonster && (!result || !isBattleInProgress);
+  const canStartBattle = !isSubmitting && !isResolving && hasEncounteredMonster;
+  const canFleeEncounter = Boolean(hasEncounteredMonster && !isSubmitting && !isResolving);
   const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
   const displayLevel = result ? (isPlaybackComplete ? result.levelAfter : result.player.level) : character.level;
   const displayExperience = result ? (isPlaybackComplete ? result.experienceAfter : result.player.experience ?? 0) : character.experience;
@@ -125,7 +128,7 @@ function TrainingDummyGround({
       const restoredResult = { ok: true, character: null, huntState: nextState.state, ...battle, message: "" };
       onHuntStateChange(nextState.state);
       setResult(restoredResult);
-      if (battle.status !== "in_progress") setLastResult(restoredResult);
+      if (battle.status !== "in_progress" && battle.status !== "encountered") setLastResult(restoredResult);
       setPlaybackTenths(getElapsedTenths(battle.startedAt, battle.durationTicks));
     });
 
@@ -156,7 +159,7 @@ function TrainingDummyGround({
   }, [visibleLogs.length]);
 
   useEffect(() => {
-    if (!result || !isPlaybackComplete || completedResultRef.current === result) return;
+    if (!result || hasEncounteredMonster || isBattleInProgress || !isPlaybackComplete || completedResultRef.current === result) return;
 
     if (result.status === "timed_out") {
       if (!result.character) return;
@@ -185,7 +188,7 @@ function TrainingDummyGround({
     if (result.levelAfter > result.levelBefore) {
       onToast({ message: `레벨업! -> LV.${result.levelAfter}`, tone: "epic" });
     }
-  }, [isPlaybackComplete, onCharacterChange, onToast, result]);
+  }, [hasEncounteredMonster, isBattleInProgress, isPlaybackComplete, onCharacterChange, onToast, result]);
 
   useEffect(() => {
     if (!result || result.status !== "in_progress" || !isPlaybackComplete || isResolving || settlementAttemptRef.current === result.startedAt) return;
@@ -215,7 +218,7 @@ function TrainingDummyGround({
   }, [isPlaybackComplete, result]);
 
   async function handleHunt() {
-    if (!canHunt) return;
+    if (!canStartBattle) return;
 
     setIsSubmitting(true);
     setResult(null);
@@ -236,6 +239,27 @@ function TrainingDummyGround({
     setResult(nextResult);
   }
 
+  async function handleEncounter() {
+    if (!canEncounter) return;
+
+    setIsSubmitting(true);
+    setResult(null);
+    setPlaybackTenths(0);
+    const nextResult = await encounterHuntMonster();
+    setIsSubmitting(false);
+
+    if (!nextResult.ok) {
+      onToast({ message: nextResult.message, tone: "error" });
+      void onCharacterRefresh();
+      return;
+    }
+
+    setHuntState(nextResult.huntState);
+    onHuntStateChange(nextResult.huntState);
+    setResult(nextResult);
+    onToast({ message: `LV.${nextResult.enemy.level} ${nextResult.enemy.name} 조우`, tone: "system" });
+  }
+
   async function handleGroundChange(huntGroundId: string) {
     setIsLocationMenuOpen(false);
     if (huntGroundId === selectedGroundId) return;
@@ -249,6 +273,25 @@ function TrainingDummyGround({
       selectedHuntGroundId: nextState.state!.selectedHuntGroundId,
     } : nextState.state);
     onHuntStateChange(nextState.state);
+  }
+
+  async function handleEncounterFlee() {
+    if (!canFleeEncounter) return;
+
+    setIsResolving(true);
+    const nextState = await fleeHuntEncounter();
+    setIsResolving(false);
+
+    if (!nextState.ok || !nextState.state) {
+      onToast({ message: nextState.message, tone: "error" });
+      return;
+    }
+
+    setHuntState(nextState.state);
+    onHuntStateChange(nextState.state);
+    setResult(null);
+    setPlaybackTenths(0);
+    onToast({ message: nextState.message, tone: "system" });
   }
 
   async function handleFlee() {
@@ -316,9 +359,13 @@ function TrainingDummyGround({
             </div>
             <div className="hunt-action-buttons">
               {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망치기</button>}
-              <button className="btn primary" type="button" onClick={handleHunt} disabled={!canHunt}>
-                {isSubmitting || isResolving || isBattleInProgress ? "전투 중..." : isRetreatLocked ? "후퇴 후 회복 중.." : isRecoveryLocked ? "회복 중..." : "전투 시작"}
-              </button>
+              {canFleeEncounter && <button className="btn ghost" type="button" onClick={handleEncounterFlee} disabled={isResolving}>도망치기</button>}
+              {!hasEncounteredMonster && <button className="btn primary" type="button" onClick={handleEncounter} disabled={!canEncounter}>
+                {isSubmitting || isResolving ? "탐색 중..." : isBattleInProgress ? "전투 중..." : remainingTenths > 0 ? "도망치는 중.." : isRetreatLocked ? "후퇴 후 회복 중.." : isRecoveryLocked ? "회복 중..." : "몬스터 찾기"}
+              </button>}
+              {hasEncounteredMonster && <button className="btn primary" type="button" onClick={handleHunt} disabled={!canStartBattle}>
+                {isSubmitting ? "전투 준비 중..." : "전투 시작"}
+              </button>}
             </div>
           </div>
           <div className="combat-hp-grid">
@@ -347,12 +394,12 @@ function TrainingDummyGround({
                 {displayedLogs.map((log, index) => (
                   <li className={`is-${log.kind}`} key={`${log.timeTenths}-${log.kind}-${index}`}>
                     <time className={getLogTimeTone(log.entries[0])}>[{formatTime(log.timeTenths)}]</time>
-                    <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(log.entries[0], result.player.name, result.enemy.name, result.gainedExperience)}</span>
+                    <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(log.entries[0], result.player.name, result.enemy.name, result.enemy.level, result.gainedExperience)}</span>
                   </li>
                 ))}
               </>
             ) : (
-              <li className="is-empty">전투 시작을 기다리고 있습니다.</li>
+              <li className="is-empty">{hasEncounteredMonster ? "조우 완료. 전투를 시작하세요." : "몬스터 찾기를 기다리고 있습니다."}</li>
             )}
           </ol>
       </article>
@@ -493,10 +540,10 @@ function Kv({ label, value }: { label: string; value: string }) {
   return <div><span>{label}</span><strong>{value}</strong></div>;
 }
 
-function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: string, gainedExperience: number): ReactNode {
+function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: string, enemyLevel: number, gainedExperience: number): ReactNode {
   const damage = <b className="combat-log-damage">-{formatAmount(entry.amount)} HP</b>;
   const recovery = <b className="combat-log-recovery">+{formatAmount(entry.amount)} HP</b>;
-  if (entry.kind === "encounter") return `${enemyName}${getWithJosa(enemyName)} 조우했습니다.`;
+  if (entry.kind === "encounter") return `LV.${enemyLevel} ${enemyName}과 조우했습니다.`;
   if (entry.kind === "defeat") return `전투 승리 +${gainedExperience} EXP`;
   if (entry.kind === "player_defeat") return "패배..";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
@@ -508,11 +555,6 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "enemy_attack") return <><b className="combat-log-enemy">{enemyName}</b> 공격 <i className="combat-log-arrow is-enemy">≫</i> {playerName} {damage}</>;
   if (entry.kind === "critical") return <><b className="combat-log-player">{playerName}</b> <b className="combat-log-critical">치명타</b> <i className="combat-log-arrow is-player">≫</i> {enemyName} {damage}</>;
   return <><b className="combat-log-player">{playerName}</b> 공격 <i className="combat-log-arrow is-player">≫</i> {enemyName} {damage}</>;
-}
-
-function getWithJosa(name: string) {
-  const lastCode = name.charCodeAt(name.length - 1);
-  return lastCode >= 0xac00 && lastCode <= 0xd7a3 && (lastCode - 0xac00) % 28 !== 0 ? "과" : "와";
 }
 
 function getLogTimeTone(entry: HuntLogEntry) {

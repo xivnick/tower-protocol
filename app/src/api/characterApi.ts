@@ -49,7 +49,7 @@ export type HuntCombatant = {
 
 export type HuntBattle = {
   huntGroundId: string;
-  status: "in_progress" | "victory" | "fled" | "timed_out" | "defeated";
+  status: "encountered" | "in_progress" | "victory" | "fled" | "timed_out" | "defeated";
   startedAt: string;
   endsAt?: string;
   player: HuntCombatant & { startHp?: number; currentHp?: number };
@@ -407,6 +407,26 @@ export async function huntTrainingDummy(): Promise<HuntResult> {
   };
 }
 
+export async function encounterHuntMonster(): Promise<HuntResult> {
+  const emptyResult: HuntResult = {
+    ok: false, character: null, huntState: null, huntGroundId: "training-dummy", status: "encountered", startedAt: new Date(0).toISOString(),
+    player: { name: "", level: 0, maxHp: 0 }, enemy: { name: "", level: 0, maxHp: 0 }, gainedExperience: 0,
+    levelBefore: 0, levelAfter: 0, experienceAfter: 0, durationTicks: 0, totalDamage: 0,
+    attackCount: 0, criticalCount: 0, totalRegeneration: 0, logs: [], message: "몬스터를 찾지 못했습니다.",
+  };
+  if (!supabase) return { ...emptyResult, message: "Supabase 설정을 확인해주세요." };
+
+  const { data, error } = await supabase.rpc("encounter_hunt_monster");
+  if (error) return { ...emptyResult, message: toKoreanAuthMessage(error.message, "몬스터를 찾지 못했습니다.") };
+
+  const payload = data as HuntPayload;
+  const huntState = mapHuntState(payload.hunt_state);
+  const battle = huntState.lastBattle;
+  if (!battle) return { ...emptyResult, huntState, message: "조우 정보를 불러오지 못했습니다." };
+
+  return { ok: true, character: payload.character ?? null, huntState, ...battle, message: "몬스터와 조우했습니다." };
+}
+
 export async function settleTrainingDummyHunt(): Promise<HuntResult> {
   const result = await resolveHuntAction("settle_training_dummy_hunt", "전투를 정산하지 못했습니다.", "전투를 완료했습니다.");
   if (!result.ok || result.status !== "timed_out") return result;
@@ -415,6 +435,16 @@ export async function settleTrainingDummyHunt(): Promise<HuntResult> {
 
 export async function fleeTrainingDummyHunt(): Promise<HuntResult> {
   return resolveHuntAction("flee_training_dummy_hunt", "도망치지 못했습니다.", "전투에서 도망쳤습니다.");
+}
+
+export async function fleeHuntEncounter(): Promise<{ ok: boolean; state: HuntState | null; message: string }> {
+  if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
+
+  const { data, error } = await supabase.rpc("flee_hunt_encounter");
+  if (error) return { ok: false, state: null, message: toKoreanAuthMessage(error.message, "조우에서 벗어나지 못했습니다.") };
+
+  const payload = data as HuntPayload;
+  return { ok: true, state: mapHuntState(payload.hunt_state), message: "조우에서 벗어났습니다." };
 }
 
 export async function getMyHuntState(): Promise<{ ok: boolean; state: HuntState | null; message: string }> {
