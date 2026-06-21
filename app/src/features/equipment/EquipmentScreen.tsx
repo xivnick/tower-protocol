@@ -89,10 +89,15 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
       </article>
 
       <article className="panel">
-        <div className="panel-head"><span>BOX</span><h2>무기 상자</h2></div>
+        <div className="panel-head action-head">
+          <div><span>BOX</span><h2>무기 상자</h2></div>
+          <div className="box-open-action">
+            <button className="btn primary" type="button" onClick={handleOpenBox} disabled={isSubmitting || character.credits < 100}>{isSubmitting ? "개봉 중..." : "무기 상자 개봉"}</button>
+            <small>100 CR</small>
+          </div>
+        </div>
         <div className="panel-action-body">
-          <p className="panel-message">현재 레벨 무기 1개를 무작위로 획득합니다. 비용: 100 CR</p>
-          <button className="btn primary panel-primary-action" type="button" onClick={handleOpenBox} disabled={isSubmitting || character.credits < 100}>{isSubmitting ? "개봉 중..." : "무기 상자 개봉 (100 CR)"}</button>
+          <p className="panel-message">무기 1개를 무작위로 획득합니다.</p>
           {character.credits < 100 && <p className="panel-message is-error">크레딧이 부족합니다.</p>}
         </div>
       </article>

@@ -780,6 +780,18 @@ button:disabled {
   margin-top: 12px;
 }
 
+.box-open-action {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
+.box-open-action small {
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .weapon-list {
   display: grid;
   gap: 8px;
