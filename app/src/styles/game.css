@@ -1331,6 +1331,7 @@ button:disabled {
 
 .combat-log-player { color: var(--acc); }
 .combat-log-critical { color: var(--acc-2); }
+.combat-log-evasion { color: var(--acc-2); }
 .combat-log-enemy { color: #ff9b78; }
 .combat-log-arrow { display: inline-block; margin: 0 2px; font-style: normal; font-weight: 900; }
 .combat-log-arrow.is-player { color: var(--acc); }
