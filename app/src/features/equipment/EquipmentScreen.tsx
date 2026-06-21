@@ -22,7 +22,10 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
   const [equippedWeaponId, setEquippedWeaponId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOpeningBox, setIsOpeningBox] = useState(false);
+  const [pendingWeaponId, setPendingWeaponId] = useState<string | null>(null);
+  const [isUnequipping, setIsUnequipping] = useState(false);
+  const isBusy = isOpeningBox || pendingWeaponId !== null || isUnequipping;
 
   async function loadWeapons() {
     setIsLoading(true);
@@ -39,10 +42,10 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
   useEffect(() => { if (character) void loadWeapons(); }, [character?.id]);
 
   async function handleOpenBox() {
-    setIsSubmitting(true);
+    setIsOpeningBox(true);
     setMessage("");
     const result = await openWeaponBox();
-    setIsSubmitting(false);
+    setIsOpeningBox(false);
     if (!result.ok || !result.weapon) {
       setMessage(result.message || "무기 상자를 열지 못했습니다.");
       return;
@@ -53,10 +56,10 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
   }
 
   async function handleEquip(weapon: Weapon) {
-    setIsSubmitting(true);
+    setPendingWeaponId(weapon.id);
     setMessage("");
     const result = await equipWeapon(weapon.id);
-    setIsSubmitting(false);
+    setPendingWeaponId(null);
     if (!result.ok) { setMessage(result.message); return; }
     setWeapons(result.inventory.weapons);
     setEquippedWeaponId(result.inventory.equippedWeaponId);
@@ -64,10 +67,10 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
   }
 
   async function handleUnequip() {
-    setIsSubmitting(true);
+    setIsUnequipping(true);
     setMessage("");
     const result = await unequipWeapon();
-    setIsSubmitting(false);
+    setIsUnequipping(false);
     if (!result.ok) { setMessage(result.message); return; }
     setWeapons(result.inventory.weapons);
     setEquippedWeaponId(null);
@@ -85,14 +88,14 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
           <div className="kv"><span>장착 무기</span><strong>{equippedWeapon ? weaponLabel(equippedWeapon) : "장착한 무기 없음"}</strong></div>
           {equippedWeapon && <div className="kv"><span>효과</span><strong>{weaponEffect(equippedWeapon)}</strong></div>}
         </div>
-        {equippedWeapon && <div className="button-row equipment-actions"><button className="btn ghost" type="button" onClick={handleUnequip} disabled={isSubmitting}>무기 해제</button></div>}
+        {equippedWeapon && <div className="button-row equipment-actions"><button className="btn ghost" type="button" onClick={handleUnequip} disabled={isBusy}>{isUnequipping ? "해제 중..." : "무기 해제"}</button></div>}
       </article>
 
       <article className="panel">
         <div className="panel-head action-head">
           <div><span>BOX</span><h2>무기 상자</h2></div>
           <div className="box-open-action">
-            <button className="btn primary" type="button" onClick={handleOpenBox} disabled={isSubmitting || character.credits < 100}>{isSubmitting ? "개봉 중..." : "무기 상자 개봉"}</button>
+            <button className="btn primary" type="button" onClick={handleOpenBox} disabled={isBusy || character.credits < 100}>{isOpeningBox ? "개봉 중..." : "무기 상자 개봉"}</button>
             <small className={character.credits < 100 ? "is-insufficient" : ""}>100 CR</small>
           </div>
         </div>
@@ -103,7 +106,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
 
       <article className="panel">
         <div className="panel-head"><span>INVENTORY</span><h2>보유 무기</h2></div>
-        {isLoading ? <p className="panel-message">무기를 불러오는 중...</p> : weapons.length === 0 ? <p className="panel-message">보유한 무기가 없습니다.</p> : <div className="weapon-list">{weapons.map((weapon) => <article className={`weapon-card ${weapon.id === equippedWeaponId ? "is-equipped" : ""}`} key={weapon.id}><div><strong>{weaponLabel(weapon)}</strong><span>{weaponEffect(weapon)}</span></div><button className="btn ghost" type="button" disabled={isSubmitting || weapon.id === equippedWeaponId} onClick={() => handleEquip(weapon)}>{weapon.id === equippedWeaponId ? "장착 중" : "장착"}</button></article>)}</div>}
+        {isLoading ? <p className="panel-message">무기를 불러오는 중...</p> : weapons.length === 0 ? <p className="panel-message">보유한 무기가 없습니다.</p> : <div className="weapon-list">{weapons.map((weapon) => <article className={`weapon-card ${weapon.id === equippedWeaponId ? "is-equipped" : ""}`} key={weapon.id}><div><strong>{weaponLabel(weapon)}</strong><span>{weaponEffect(weapon)}</span></div><button className="btn ghost" type="button" disabled={isBusy || weapon.id === equippedWeaponId} onClick={() => handleEquip(weapon)}>{weapon.id === equippedWeaponId ? "장착 중" : pendingWeaponId === weapon.id ? "장착 중..." : "장착"}</button></article>)}</div>}
         {message && <p className="auth-message is-error" role="status">{message}</p>}
       </article>
     </section>
