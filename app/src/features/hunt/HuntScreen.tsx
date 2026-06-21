@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { encounterHuntMonster, fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
+import { encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
@@ -108,6 +108,7 @@ function TrainingDummyGround({
   const isRetreatLocked = Boolean(isRecoveryLocked && recoveryLockStatus === "fled");
   const canEncounter = !isSubmitting && !isResolving && !isRecoveryLocked && remainingTenths === 0 && !hasEncounteredMonster && (!result || !isBattleInProgress);
   const canStartBattle = !isSubmitting && !isResolving && hasEncounteredMonster;
+  const canFleeEncounter = Boolean(hasEncounteredMonster && !isSubmitting && !isResolving);
   const canFlee = Boolean(result && isBattleInProgress && !isResolving && playbackTenths < result.durationTicks);
   const displayLevel = result ? (isPlaybackComplete ? result.levelAfter : result.player.level) : character.level;
   const displayExperience = result ? (isPlaybackComplete ? result.experienceAfter : result.player.experience ?? 0) : character.experience;
@@ -274,6 +275,25 @@ function TrainingDummyGround({
     onHuntStateChange(nextState.state);
   }
 
+  async function handleEncounterFlee() {
+    if (!canFleeEncounter) return;
+
+    setIsResolving(true);
+    const nextState = await fleeHuntEncounter();
+    setIsResolving(false);
+
+    if (!nextState.ok || !nextState.state) {
+      onToast({ message: nextState.message, tone: "error" });
+      return;
+    }
+
+    setHuntState(nextState.state);
+    onHuntStateChange(nextState.state);
+    setResult(null);
+    setPlaybackTenths(0);
+    onToast({ message: nextState.message, tone: "system" });
+  }
+
   async function handleFlee() {
     if (!canFlee || !result) return;
 
@@ -339,6 +359,7 @@ function TrainingDummyGround({
             </div>
             <div className="hunt-action-buttons">
               {canFlee && <button className="btn ghost" type="button" onClick={handleFlee} disabled={isResolving}>도망치기</button>}
+              {canFleeEncounter && <button className="btn ghost" type="button" onClick={handleEncounterFlee} disabled={isResolving}>도망치기</button>}
               {!hasEncounteredMonster && <button className="btn primary" type="button" onClick={handleEncounter} disabled={!canEncounter}>
                 {isSubmitting || isResolving ? "탐색 중..." : isBattleInProgress ? "전투 중..." : isRetreatLocked ? "후퇴 후 회복 중.." : isRecoveryLocked ? "회복 중..." : "몬스터 찾기"}
               </button>}

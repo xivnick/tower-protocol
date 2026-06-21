@@ -437,6 +437,16 @@ export async function fleeTrainingDummyHunt(): Promise<HuntResult> {
   return resolveHuntAction("flee_training_dummy_hunt", "도망치지 못했습니다.", "전투에서 도망쳤습니다.");
 }
 
+export async function fleeHuntEncounter(): Promise<{ ok: boolean; state: HuntState | null; message: string }> {
+  if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
+
+  const { data, error } = await supabase.rpc("flee_hunt_encounter");
+  if (error) return { ok: false, state: null, message: toKoreanAuthMessage(error.message, "조우에서 벗어나지 못했습니다.") };
+
+  const payload = data as HuntPayload;
+  return { ok: true, state: mapHuntState(payload.hunt_state), message: "조우에서 벗어났습니다." };
+}
+
 export async function getMyHuntState(): Promise<{ ok: boolean; state: HuntState | null; message: string }> {
   if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
 
