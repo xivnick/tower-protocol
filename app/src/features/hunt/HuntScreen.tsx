@@ -409,7 +409,7 @@ function TrainingDummyGround({
         <span>자동 전투</span>
         <strong>{autoHuntRemaining.toString().padStart(2, "0")} / 10</strong>
         <div>
-          <button className="btn ghost" type="button" onClick={() => void handleAutoHunt(true)}>{autoHuntEnabled ? "갱신" : "시작"}</button>
+          <button className="btn primary" type="button" onClick={() => void handleAutoHunt(true)}>{autoHuntEnabled ? "갱신" : "시작"}</button>
           <button className="btn ghost" type="button" onClick={() => void handleAutoHunt(false)} disabled={!autoHuntEnabled}>중단</button>
         </div>
       </article>
