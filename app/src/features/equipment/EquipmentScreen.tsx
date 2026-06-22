@@ -135,7 +135,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
           const isEquipped = weapon.id === equippedWeaponId;
           return <article className={`weapon-entry ${isSelected ? "is-open" : ""} ${isEquipped ? "is-equipped" : ""}`} key={weapon.id}>
             <button className="weapon-row" type="button" onClick={() => setSelectedWeaponId(isSelected ? null : weapon.id)} aria-expanded={isSelected}>
-              <strong>{weaponLabel(weapon)}</strong>
+              <div className="weapon-row-title"><strong>{weaponLabel(weapon)}</strong><small>{weaponSummary(weapon)}</small></div>
               <span>{isEquipped ? "장착 중" : "상세"}</span>
             </button>
             {isSelected && <div className="weapon-detail">
@@ -154,6 +154,15 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
 }
 
 function weaponLabel(weapon: Weapon) { return `LV.${weapon.weaponLevel} ${weaponNames[weapon.weaponType]}`; }
+
+function weaponSummary(weapon: Weapon) {
+  if (weapon.weaponType === "longsword") return "물리 공격력 증가";
+  if (weapon.weaponType === "greatsword") return "물리 공격력 증폭";
+  if (weapon.weaponType === "dagger") return "전체 공속 증가";
+  if (weapon.weaponType === "bow") return "추가 고정 피해";
+  if (weapon.weaponType === "wand") return "마법 공격력 증가";
+  return "마법 공격력 증폭";
+}
 
 function weaponEffect(weapon: Weapon) {
   const level = weapon.weaponLevel;

@@ -854,6 +854,18 @@ button:disabled {
   color: var(--txt-bright);
 }
 
+.weapon-row-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.weapon-row-title small {
+  color: var(--mut);
+  font-size: 12px;
+}
+
 .weapon-row span {
   color: var(--mut);
   font-size: 13px;
