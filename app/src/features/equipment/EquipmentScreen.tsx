@@ -140,10 +140,9 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
             </button>
             {isSelected && <div className="weapon-detail">
               <div className="weapon-detail-info"><span>효과</span><strong>{weaponEffect(weapon)}</strong></div>
-              <div className="weapon-detail-info"><span>획득</span><strong>{formatWeaponDate(weapon.createdAt)}</strong></div>
               <div className="button-row">
-                {!isEquipped && <button className="btn ghost" type="button" disabled={isBusy} onClick={() => handleEquip(weapon)}>{pendingWeaponId === weapon.id ? "장착 중..." : "장착"}</button>}
-                {isEquipped ? <span className="weapon-equipped-note">장착 중인 무기는 판매할 수 없습니다.</span> : <button className="btn danger" type="button" disabled={isBusy} onClick={() => handleSell(weapon)}>{sellingWeaponId === weapon.id ? "판매 중..." : "판매 (20 CR)"}</button>}
+                {!isEquipped && <button className="btn primary" type="button" disabled={isBusy} onClick={() => handleEquip(weapon)}>{pendingWeaponId === weapon.id ? "장착 중..." : "장착"}</button>}
+                {isEquipped ? <span className="weapon-equipped-note">장착 중인 무기는 판매할 수 없습니다.</span> : <div className="weapon-sale-action"><button className="btn ghost" type="button" disabled={isBusy} onClick={() => handleSell(weapon)}>{sellingWeaponId === weapon.id ? "판매 중..." : "판매"}</button><small>20 CR</small></div>}
               </div>
             </div>}
           </article>;
@@ -155,12 +154,6 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
 }
 
 function weaponLabel(weapon: Weapon) { return `LV.${weapon.weaponLevel} ${weaponNames[weapon.weaponType]}`; }
-
-function formatWeaponDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "기록 없음";
-  return new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
-}
 
 function weaponEffect(weapon: Weapon) {
   const level = weapon.weaponLevel;

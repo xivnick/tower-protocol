@@ -886,6 +886,18 @@ button:disabled {
   font-size: 13px;
 }
 
+.weapon-sale-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.weapon-sale-action small {
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .stat-meter-row {
   display: flex;
   flex-wrap: wrap;
