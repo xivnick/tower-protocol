@@ -257,9 +257,12 @@ export function AppShell({
               <span>TOWER://</span>
               <i aria-hidden="true" />
             </NavLink>
-            <button className="account-chip" type="button" onClick={toggleAccountMenu} aria-expanded={isAccountOpen}>
-              {nickname}
-            </button>
+            <div className="mobile-session-actions">
+              <span className="credit-chip">{(character?.credits ?? 0).toLocaleString()} CR</span>
+              <button className="account-chip" type="button" onClick={toggleAccountMenu} aria-expanded={isAccountOpen}>
+                {nickname}
+              </button>
+            </div>
           </div>
           {isAccountOpen && (
             <div className={`mobile-account-menu ${isAccountClosing ? "is-closing" : ""}`}>
@@ -336,9 +339,12 @@ export function AppShell({
               <span className="eyebrow">SESSION</span>
               <strong>{nickname}</strong>
             </div>
-            <button className="btn ghost" type="button" onClick={onSignOut}>
-              로그아웃
-            </button>
+            <div className="topbar-actions">
+              <span className="credit-chip">{(character?.credits ?? 0).toLocaleString()} CR</span>
+              <button className="btn ghost" type="button" onClick={onSignOut}>
+                로그아웃
+              </button>
+            </div>
           </header>
 
           <div className="workspace-body route-frame" key={`${location.pathname}:${routeRefreshKey}`}>
