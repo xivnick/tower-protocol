@@ -31,6 +31,7 @@ const AUTH_ERROR_MESSAGES: Array<[RegExp, string]> = [
   [/part_time_job_charges_empty/i, "알바 보관이 비어 있습니다."],
   [/insufficient_credits/i, "크레딧이 부족합니다."],
   [/weapon_not_owned/i, "보유하지 않은 무기입니다."],
+  [/equipped_weapon_cannot_be_sold/i, "장착 중인 무기는 판매할 수 없습니다."],
   [/training_dummy_not_defeated/i, "허수아비 전투를 완료하지 못했습니다."],
   [/monster_already_encountered/i, "이미 조우한 몬스터가 있습니다."],
   [/monster_encountered/i, "조우한 몬스터와의 전투를 먼저 완료해주세요."],

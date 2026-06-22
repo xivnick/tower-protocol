@@ -22,6 +22,7 @@ export const toastMessages = {
     weaponFound: (weapon: string): ToastInput => ({ message: `무기 획득 · ${weapon}`, tone: "rare" }),
     equipped: (weapon: string): ToastInput => ({ message: `무기 장착 · ${weapon}`, tone: "system" }),
     unequipped: (): ToastInput => ({ message: "무기를 해제했습니다.", tone: "system" }),
+    sold: (gainedCredits: number): ToastInput => ({ message: `무기 판매 · +${gainedCredits.toLocaleString()} CR`, tone: "common" }),
   },
   hunt: {
     defeated: (): ToastInput => ({ message: "전투 패배 · 10초간 회복", tone: "error" }),

@@ -801,31 +801,70 @@ button:disabled {
   gap: 8px;
 }
 
-.weapon-card {
+.weapon-filter {
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
+  color: var(--txt);
+  font: inherit;
+  font-size: 12px;
+  padding: 7px 28px 7px 9px;
+}
+
+.weapon-entry {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+}
+
+.weapon-entry.is-equipped {
+  border-color: var(--acc);
+}
+
+.weapon-row {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border: 1px solid var(--line);
-  background: var(--bg-2);
-  padding: 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 11px 10px;
+  text-align: left;
 }
 
-.weapon-card.is-equipped {
-  border-color: var(--acc);
-}
-
-.weapon-card > div {
-  display: grid;
-  gap: 4px;
-}
-
-.weapon-card strong {
+.weapon-row strong {
   color: var(--txt-bright);
 }
 
-.weapon-card span {
+.weapon-row span {
   color: var(--mut);
+  font-size: 13px;
+}
+
+.weapon-entry.is-open .weapon-row span {
+  color: var(--acc-2);
+}
+
+.weapon-detail {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding: 10px;
+}
+
+.weapon-detail-info {
+  display: grid;
+  gap: 3px;
+}
+
+.weapon-detail-info > span,
+.weapon-equipped-note {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.weapon-detail-info > strong {
+  color: var(--txt-bright);
   font-size: 13px;
 }
 

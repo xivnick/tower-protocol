@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { equipWeapon, getMyWeapons, openWeaponBox, unequipWeapon } from "../../api/equipmentApi";
+import { equipWeapon, getMyWeapons, openWeaponBox, sellWeapon, unequipWeapon } from "../../api/equipmentApi";
 import type { Weapon, WeaponType } from "../../api/equipmentApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { toastMessages } from "../../shared/toastMessages";
@@ -15,6 +15,8 @@ const weaponNames: Record<WeaponType, string> = {
   staff: "지팡이",
 };
 
+type WeaponFilter = "all" | WeaponType;
+
 export function EquipmentScreen({ character, onCharacterChange }: { character: Character | null; onCharacterChange: (character: Character | null) => void }) {
   useDocumentTitle("TOWER://EQUIPMENT");
   const { showToast } = useToast();
@@ -25,7 +27,10 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
   const [isOpeningBox, setIsOpeningBox] = useState(false);
   const [pendingWeaponId, setPendingWeaponId] = useState<string | null>(null);
   const [isUnequipping, setIsUnequipping] = useState(false);
-  const isBusy = isOpeningBox || pendingWeaponId !== null || isUnequipping;
+  const [sellingWeaponId, setSellingWeaponId] = useState<string | null>(null);
+  const [selectedWeaponId, setSelectedWeaponId] = useState<string | null>(null);
+  const [weaponFilter, setWeaponFilter] = useState<WeaponFilter>("all");
+  const isBusy = isOpeningBox || pendingWeaponId !== null || isUnequipping || sellingWeaponId !== null;
 
   async function loadWeapons() {
     setIsLoading(true);
@@ -77,9 +82,22 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
     showToast(toastMessages.equipment.unequipped());
   }
 
+  async function handleSell(weapon: Weapon) {
+    setSellingWeaponId(weapon.id);
+    setMessage("");
+    const result = await sellWeapon(weapon.id);
+    setSellingWeaponId(null);
+    if (!result.ok) { setMessage(result.message); return; }
+    if (result.character) onCharacterChange(result.character);
+    setWeapons((current) => current.filter((candidate) => candidate.id !== weapon.id));
+    setSelectedWeaponId(null);
+    showToast(toastMessages.equipment.sold(result.gainedCredits));
+  }
+
   if (!character) return <section className="screen-panel"><article className="panel"><p className="panel-message">캐릭터를 먼저 생성해주세요.</p></article></section>;
 
   const equippedWeapon = weapons.find((weapon) => weapon.id === equippedWeaponId) ?? null;
+  const filteredWeapons = weaponFilter === "all" ? weapons : weapons.filter((weapon) => weapon.weaponType === weaponFilter);
   return (
     <section className="screen-panel">
       <article className="panel">
@@ -105,8 +123,31 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
       </article>
 
       <article className="panel">
-        <div className="panel-head"><span>INVENTORY</span><h2>보유 무기</h2></div>
-        {isLoading ? <p className="panel-message">무기를 불러오는 중...</p> : weapons.length === 0 ? <p className="panel-message">보유한 무기가 없습니다.</p> : <div className="weapon-list">{weapons.map((weapon) => <article className={`weapon-card ${weapon.id === equippedWeaponId ? "is-equipped" : ""}`} key={weapon.id}><div><strong>{weaponLabel(weapon)}</strong><span>{weaponEffect(weapon)}</span></div><button className="btn ghost" type="button" disabled={isBusy || weapon.id === equippedWeaponId} onClick={() => handleEquip(weapon)}>{weapon.id === equippedWeaponId ? "장착 중" : pendingWeaponId === weapon.id ? "장착 중..." : "장착"}</button></article>)}</div>}
+        <div className="panel-head action-head">
+          <div><span>INVENTORY</span><h2>보유 무기</h2></div>
+          <select className="weapon-filter" aria-label="무기 종류 필터" value={weaponFilter} onChange={(event) => setWeaponFilter(event.target.value as WeaponFilter)} disabled={isBusy}>
+            <option value="all">전체 {weapons.length}</option>
+            {(Object.keys(weaponNames) as WeaponType[]).map((type) => <option value={type} key={type}>{weaponNames[type]}</option>)}
+          </select>
+        </div>
+        {isLoading ? <p className="panel-message">무기를 불러오는 중...</p> : weapons.length === 0 ? <p className="panel-message">보유한 무기가 없습니다.</p> : filteredWeapons.length === 0 ? <p className="panel-message">조건에 맞는 무기가 없습니다.</p> : <div className="weapon-list">{filteredWeapons.map((weapon) => {
+          const isSelected = weapon.id === selectedWeaponId;
+          const isEquipped = weapon.id === equippedWeaponId;
+          return <article className={`weapon-entry ${isSelected ? "is-open" : ""} ${isEquipped ? "is-equipped" : ""}`} key={weapon.id}>
+            <button className="weapon-row" type="button" onClick={() => setSelectedWeaponId(isSelected ? null : weapon.id)} aria-expanded={isSelected}>
+              <strong>{weaponLabel(weapon)}</strong>
+              <span>{isEquipped ? "장착 중" : "상세"}</span>
+            </button>
+            {isSelected && <div className="weapon-detail">
+              <div className="weapon-detail-info"><span>효과</span><strong>{weaponEffect(weapon)}</strong></div>
+              <div className="weapon-detail-info"><span>획득</span><strong>{formatWeaponDate(weapon.createdAt)}</strong></div>
+              <div className="button-row">
+                {!isEquipped && <button className="btn ghost" type="button" disabled={isBusy} onClick={() => handleEquip(weapon)}>{pendingWeaponId === weapon.id ? "장착 중..." : "장착"}</button>}
+                {isEquipped ? <span className="weapon-equipped-note">장착 중인 무기는 판매할 수 없습니다.</span> : <button className="btn danger" type="button" disabled={isBusy} onClick={() => handleSell(weapon)}>{sellingWeaponId === weapon.id ? "판매 중..." : "판매 (20 CR)"}</button>}
+              </div>
+            </div>}
+          </article>;
+        })}</div>}
         {message && <p className="auth-message is-error" role="status">{message}</p>}
       </article>
     </section>
@@ -114,6 +155,12 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
 }
 
 function weaponLabel(weapon: Weapon) { return `LV.${weapon.weaponLevel} ${weaponNames[weapon.weaponType]}`; }
+
+function formatWeaponDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "기록 없음";
+  return new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+}
 
 function weaponEffect(weapon: Weapon) {
   const level = weapon.weaponLevel;

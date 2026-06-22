@@ -68,3 +68,11 @@ export async function unequipWeapon(): Promise<{ ok: boolean; inventory: WeaponI
   if (error) return { ok: false, inventory: mapInventory(null), message: toKoreanAuthMessage(error.message, "무기를 해제하지 못했습니다.") };
   return { ok: true, inventory: mapInventory(data as InventoryPayload), message: "" };
 }
+
+export async function sellWeapon(weaponId: string): Promise<{ ok: boolean; character: Character | null; gainedCredits: number; message: string }> {
+  if (!supabase) return { ok: false, character: null, gainedCredits: 0, message: "Supabase 설정을 확인해주세요." };
+  const { data, error } = await supabase.rpc("sell_weapon", { target_weapon_id: weaponId });
+  if (error) return { ok: false, character: null, gainedCredits: 0, message: toKoreanAuthMessage(error.message, "무기를 판매하지 못했습니다.") };
+  const payload = data as { character?: Character; gained_credits?: number };
+  return { ok: true, character: payload.character ?? null, gainedCredits: payload.gained_credits ?? 0, message: "" };
+}
