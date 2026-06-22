@@ -796,6 +796,24 @@ button:disabled {
   color: color-mix(in srgb, var(--neg) 65%, var(--mut));
 }
 
+.weapon-box-result {
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--acc-dim);
+  background: var(--acc-deep);
+  padding: 10px;
+}
+
+.weapon-box-result > span,
+.weapon-box-result > small {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.weapon-box-result > strong {
+  color: var(--txt-bright);
+}
+
 .weapon-list {
   display: grid;
   gap: 8px;
