@@ -25,6 +25,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isOpeningBox, setIsOpeningBox] = useState(false);
+  const [openedWeapon, setOpenedWeapon] = useState<Weapon | null>(null);
   const [pendingWeaponId, setPendingWeaponId] = useState<string | null>(null);
   const [isUnequipping, setIsUnequipping] = useState(false);
   const [sellingWeaponId, setSellingWeaponId] = useState<string | null>(null);
@@ -56,6 +57,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
       return;
     }
     if (result.character) onCharacterChange(result.character);
+    setOpenedWeapon(result.weapon);
     showToast(toastMessages.equipment.weaponFound(weaponLabel(result.weapon)));
     await loadWeapons();
   }
@@ -119,6 +121,11 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
         </div>
         <div className="panel-action-body">
           <p className="panel-message">무기 1개를 무작위로 획득합니다.</p>
+          {openedWeapon && <div className="weapon-box-result" role="status">
+            <span>획득 무기</span>
+            <strong>{weaponLabel(openedWeapon)}</strong>
+            <small>{weaponEffect(openedWeapon)}</small>
+          </div>}
         </div>
       </article>
 
