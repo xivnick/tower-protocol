@@ -801,13 +801,31 @@ button:disabled {
   gap: 8px;
 }
 
+.weapon-filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
 .weapon-filter {
-  border: 1px solid var(--line-2);
-  background: var(--bg-2);
-  color: var(--txt);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--mut);
   font: inherit;
   font-size: 12px;
-  padding: 7px 28px 7px 9px;
+  font-weight: 800;
+  padding: 6px 8px;
+}
+
+.weapon-filter:hover:not(:disabled),
+.weapon-filter.is-active {
+  border-color: var(--acc-dim);
+  color: var(--acc);
+}
+
+.weapon-filter.is-active {
+  background: var(--acc-deep);
 }
 
 .weapon-entry {

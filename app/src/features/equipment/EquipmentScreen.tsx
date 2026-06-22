@@ -123,12 +123,12 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
       </article>
 
       <article className="panel">
-        <div className="panel-head action-head">
-          <div><span>INVENTORY</span><h2>보유 무기</h2></div>
-          <select className="weapon-filter" aria-label="무기 종류 필터" value={weaponFilter} onChange={(event) => setWeaponFilter(event.target.value as WeaponFilter)} disabled={isBusy}>
-            <option value="all">전체 {weapons.length}</option>
-            {(Object.keys(weaponNames) as WeaponType[]).map((type) => <option value={type} key={type}>{weaponNames[type]}</option>)}
-          </select>
+        <div className="panel-head">
+          <span>INVENTORY</span><h2>보유 무기</h2>
+          <div className="weapon-filter-list" role="group" aria-label="무기 종류 필터">
+            <button className={`weapon-filter ${weaponFilter === "all" ? "is-active" : ""}`} type="button" onClick={() => setWeaponFilter("all")} disabled={isBusy}>전체 {weapons.length}</button>
+            {(Object.keys(weaponNames) as WeaponType[]).map((type) => <button className={`weapon-filter ${weaponFilter === type ? "is-active" : ""}`} type="button" onClick={() => setWeaponFilter(type)} disabled={isBusy} key={type}>{weaponNames[type]}</button>)}
+          </div>
         </div>
         {isLoading ? <p className="panel-message">무기를 불러오는 중...</p> : weapons.length === 0 ? <p className="panel-message">보유한 무기가 없습니다.</p> : filteredWeapons.length === 0 ? <p className="panel-message">조건에 맞는 무기가 없습니다.</p> : <div className="weapon-list">{filteredWeapons.map((weapon) => {
           const isSelected = weapon.id === selectedWeaponId;
