@@ -55,7 +55,7 @@ export function calculateCombatStats(character: Character) {
   const magicDefense = character.wisdom;
   const finalDefense = physicalDefense + magicDefense;
   const cooldown = character.wisdom;
-  const cooldownReduction = cooldown / (cooldown + 300);
+  const cooldownReduction = cooldown / (cooldown + 100);
   const regeneration = character.endurance;
   const hpRegenPerSecond = maxHp * (regeneration / 10000);
 
@@ -67,7 +67,7 @@ export function calculateCombatStats(character: Character) {
     finalDefense,
     maxHp,
     attackSpeed,
-    attacksPerSecond: Math.sqrt(attackSpeed / 100),
+    attacksPerSecond: 1 + character.agility / 100,
     accuracy,
     evasion,
     evasionRateAgainstAccuracy100: calculateEvasionRate(evasion, 100),

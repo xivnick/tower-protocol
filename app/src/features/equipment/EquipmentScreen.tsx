@@ -120,8 +120,8 @@ function weaponEffect(weapon: Weapon) {
   const power = 3 + Math.floor(level * 1.5);
   if (weapon.weaponType === "longsword") return `물리 공격력 +${power}`;
   if (weapon.weaponType === "greatsword") return `물리 공격력 +${2 + Math.floor(level * 0.1)}%`;
-  if (weapon.weaponType === "dagger") return `명중 -${2 + Math.floor(level * 0.05)}, 적중 시 물공 ${(6 + level * 0.12).toFixed(1)}% 추가 피해`;
-  if (weapon.weaponType === "bow") return `명중 -${1 + Math.floor(level * 0.03)}, 적중 시 +${2 + Math.floor(level * 1.1)} 고정 피해`;
+  if (weapon.weaponType === "dagger") return `명중 -${Math.min(23, 15 + Math.floor((level - 1) / 12))}%, 전체 공속 +${20 + Math.floor(level * 0.2)}%`;
+  if (weapon.weaponType === "bow") return `명중 -${Math.min(18, 10 + Math.floor((level - 1) / 12))}%, 적중 시 +${2 + Math.floor(level * 1.1)} 고정 피해`;
   if (weapon.weaponType === "wand") return `마법 공격력 +${power}`;
   return `마법 공격력 +${2 + Math.floor(level * 0.1)}%`;
 }
