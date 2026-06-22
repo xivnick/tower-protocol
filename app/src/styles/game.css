@@ -629,6 +629,21 @@ button:disabled {
   color: var(--txt-bright);
 }
 
+.topbar-actions,
+.mobile-session-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.credit-chip {
+  color: var(--txt);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .content-grid {
   min-height: 0;
   display: grid;
@@ -1787,6 +1802,11 @@ button:disabled {
     margin-bottom: 0;
   }
 
+  .mobile-session-actions {
+    min-width: 0;
+    justify-content: flex-end;
+  }
+
   .account-chip,
   .mobile-nav-trigger {
     border: 1px solid var(--line-2);
@@ -1799,7 +1819,7 @@ button:disabled {
 
   .account-chip {
     min-height: 34px;
-    max-width: 48%;
+    max-width: min(38vw, 160px);
     padding: 0 10px;
     color: var(--txt-bright);
     overflow: hidden;
