@@ -799,8 +799,8 @@ button:disabled {
 .weapon-box-result {
   display: grid;
   gap: 3px;
-  border: 1px solid var(--acc-dim);
-  background: var(--acc-deep);
+  border: 1px solid var(--line);
+  background: var(--bg-2);
   padding: 10px;
 }
 
