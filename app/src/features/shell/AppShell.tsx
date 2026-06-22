@@ -258,10 +258,10 @@ export function AppShell({
               <i aria-hidden="true" />
             </NavLink>
             <div className="mobile-session-actions">
+              <span className="credit-chip">{(character?.credits ?? 0).toLocaleString()} CR</span>
               <button className="account-chip" type="button" onClick={toggleAccountMenu} aria-expanded={isAccountOpen}>
                 {nickname}
               </button>
-              <span className="credit-chip">{(character?.credits ?? 0).toLocaleString()} CR</span>
             </div>
           </div>
           {isAccountOpen && (
