@@ -1,4 +1,4 @@
-import type { FormEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { FormEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { allocateCharacterStats, checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, getMyTrainingState, resetCharacterStats, trainMyCharacter } from "../../api/characterApi";
 import type { CharacterStatAllocation, TrainingState } from "../../api/characterApi";
@@ -219,7 +219,7 @@ function CharacterStatsPanel({
   const [isCombatBreakdownOpen, setIsCombatBreakdownOpen] = useState(false);
   const statRepeatDelayRef = useRef<number | null>(null);
   const statRepeatIntervalRef = useRef<number | null>(null);
-  const skipStatClickRef = useRef(false);
+  const statPressRef = useRef<{ pointerId: number; button: HTMLButtonElement; isRepeating: boolean } | null>(null);
   const pendingTotal = getPendingTotal(pendingStats);
   const remainingPoints = character.stat_points - pendingTotal;
   const isPendingComplete = remainingPoints === 0 && pendingTotal > 0;
@@ -282,41 +282,62 @@ function CharacterStatsPanel({
   }
 
   function handleStatPointerDown(event: ReactPointerEvent<HTMLButtonElement>, statKey: keyof CharacterStatAllocation, amount: number) {
-    if (event.pointerType !== "touch") {
+    if (event.button !== 0) {
       return;
     }
 
-    event.preventDefault();
-    skipStatClickRef.current = true;
-    changePendingStat(statKey, amount);
     stopStatRepeat();
+    statPressRef.current = { pointerId: event.pointerId, button: event.currentTarget, isRepeating: false };
+    event.currentTarget.setPointerCapture(event.pointerId);
 
     statRepeatDelayRef.current = window.setTimeout(() => {
+      if (statPressRef.current?.pointerId !== event.pointerId) {
+        return;
+      }
+
+      statPressRef.current.isRepeating = true;
+      changePendingStat(statKey, amount);
       statRepeatIntervalRef.current = window.setInterval(() => {
         changePendingStat(statKey, amount);
       }, 90);
     }, 360);
   }
 
-  function handleStatClick(statKey: keyof CharacterStatAllocation, amount: number) {
-    if (skipStatClickRef.current) {
-      skipStatClickRef.current = false;
+  function handleStatClick(event: ReactMouseEvent<HTMLButtonElement>, statKey: keyof CharacterStatAllocation, amount: number) {
+    const statPress = statPressRef.current;
+    if (statPress?.button === event.currentTarget) {
+      statPressRef.current = null;
+      if (statPress.isRepeating) {
+        return;
+      }
+
+      changePendingStat(statKey, amount);
       return;
     }
 
     changePendingStat(statKey, amount);
   }
 
-  function handleStatPointerUp() {
+  function handleStatPointerUp(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (statPressRef.current?.pointerId !== event.pointerId) {
+      return;
+    }
+
     stopStatRepeat();
     window.setTimeout(() => {
-      skipStatClickRef.current = false;
+      if (statPressRef.current?.pointerId === event.pointerId) {
+        statPressRef.current = null;
+      }
     }, 0);
   }
 
-  function handleStatPointerCancel() {
+  function handleStatPointerCancel(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (statPressRef.current?.pointerId !== event.pointerId) {
+      return;
+    }
+
     stopStatRepeat();
-    skipStatClickRef.current = false;
+    statPressRef.current = null;
   }
 
   async function handleApply() {
@@ -393,7 +414,7 @@ function CharacterStatsPanel({
                 <button
                   className="icon-button step-wide"
                   type="button"
-                  onClick={() => handleStatClick(stat.key, -5)}
+                  onClick={(event) => handleStatClick(event, stat.key, -5)}
                   disabled={isSubmitting || isResetting || pendingValue < 5}
                   aria-label={`${stat.label} 5 감소`}
                 >
@@ -405,7 +426,7 @@ function CharacterStatsPanel({
                   onPointerDown={(event) => handleStatPointerDown(event, stat.key, -1)}
                   onPointerUp={handleStatPointerUp}
                   onPointerCancel={handleStatPointerCancel}
-                  onClick={() => handleStatClick(stat.key, -1)}
+                  onClick={(event) => handleStatClick(event, stat.key, -1)}
                   disabled={isSubmitting || isResetting || pendingValue <= 0}
                   aria-label={`${stat.label} 1 감소`}
                 >
@@ -425,7 +446,7 @@ function CharacterStatsPanel({
                   onPointerDown={(event) => handleStatPointerDown(event, stat.key, 1)}
                   onPointerUp={handleStatPointerUp}
                   onPointerCancel={handleStatPointerCancel}
-                  onClick={() => handleStatClick(stat.key, 1)}
+                  onClick={(event) => handleStatClick(event, stat.key, 1)}
                   disabled={isSubmitting || isResetting || remainingPoints < 1}
                   aria-label={`${stat.label} 1 증가`}
                 >
@@ -435,7 +456,7 @@ function CharacterStatsPanel({
                 <button
                   className="icon-button step-wide"
                   type="button"
-                  onClick={() => handleStatClick(stat.key, 5)}
+                  onClick={(event) => handleStatClick(event, stat.key, 5)}
                   disabled={isSubmitting || isResetting || remainingPoints < 5}
                   aria-label={`${stat.label} 5 증가`}
                 >
