@@ -17,8 +17,8 @@ import { useToast } from "../toast/ToastProvider";
 
 const navItems = [
   { label: "대시보드", to: "/", end: true, enabled: true },
-  { label: "사냥", to: "/hunt", enabled: true },
   { label: "마을", to: "/village", enabled: true },
+  { label: "사냥", to: "/hunt", enabled: true },
   { label: "탑", to: "/tower", enabled: false },
   { label: "캐릭터", to: "/character", enabled: true },
   { label: "장비", to: "/equipment", enabled: true },
