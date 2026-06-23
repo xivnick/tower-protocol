@@ -382,7 +382,11 @@ function getCurrentNavLabel(pathname: string) {
 function SystemTicker({ className, huntState }: { className: string; huntState: HuntState | null }) {
   const battle = huntState?.lastBattle;
   const isActive = Boolean(huntState?.autoHuntEnabled);
-  const isRecovering = Boolean(huntState?.recoveryEndsAt && Date.parse(huntState.recoveryEndsAt) > Date.now());
+  const isRecovering = Boolean(
+    battle?.status !== "in_progress"
+    && huntState?.recoveryEndsAt
+    && Date.parse(huntState.recoveryEndsAt) > Date.now(),
+  );
   const status = !isActive
     ? "STANDBY"
     : isRecovering
