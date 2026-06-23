@@ -1,4 +1,5 @@
 import type { Character } from "../types/character";
+import type { WeaponCombatBonus } from "./weaponStats";
 
 export const STAT_POINTS_PER_LEVEL = 5;
 export const BASE_PRIMARY_STAT = 10;
@@ -45,10 +46,10 @@ export function calculateEvasionRate(evasion: number, opponentAccuracy: number) 
   return evasion / (evasion + opponentAccuracy);
 }
 
-export function calculateCombatStats(character: Character) {
+export function calculateCombatStats(character: Character, weaponBonus: WeaponCombatBonus = {}) {
   const maxHp = 100 + character.level * 20 + character.vitality * 10;
   const attackSpeed = 100 + character.agility;
-  const accuracy = 100 + character.dexterity;
+  const accuracy = (100 + character.dexterity) * (1 - (weaponBonus.accuracyPenaltyPct ?? 0) / 100);
   const evasion = character.agility;
   const criticalChance = Math.min(character.dexterity, 100);
   const physicalDefense = character.endurance;
@@ -60,14 +61,14 @@ export function calculateCombatStats(character: Character) {
   const hpRegenPerSecond = maxHp * (regeneration / 10000);
 
   return {
-    physicalAttack: character.strength,
-    magicAttack: character.intelligence,
+    physicalAttack: (character.strength + (weaponBonus.physicalAttackFlat ?? 0)) * (1 + (weaponBonus.physicalAttackPct ?? 0) / 100),
+    magicAttack: (character.intelligence + (weaponBonus.magicAttackFlat ?? 0)) * (1 + (weaponBonus.magicAttackPct ?? 0) / 100),
     physicalDefense,
     magicDefense,
     finalDefense,
     maxHp,
     attackSpeed,
-    attacksPerSecond: 1 + character.agility / 100,
+    attacksPerSecond: (1 + character.agility / 100) * (1 + (weaponBonus.attackSpeedPct ?? 0) / 100),
     accuracy,
     evasion,
     evasionRateAgainstAccuracy100: calculateEvasionRate(evasion, 100),
