@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
@@ -382,11 +382,23 @@ function getCurrentNavLabel(pathname: string) {
 function SystemTicker({ className, huntState }: { className: string; huntState: HuntState | null }) {
   const battle = huntState?.lastBattle;
   const isActive = Boolean(huntState?.autoHuntEnabled);
+  const [now, setNow] = useState(() => Date.now());
+  const isBattleInProgress = battle?.status === "in_progress";
   const isRecovering = Boolean(
-    battle?.status !== "in_progress"
+    !isBattleInProgress
     && huntState?.recoveryEndsAt
     && Date.parse(huntState.recoveryEndsAt) > Date.now(),
   );
+  const shouldRefreshHealth = Boolean(isActive && (isBattleInProgress || isRecovering));
+
+  useEffect(() => {
+    if (!shouldRefreshHealth) return;
+
+    setNow(Date.now());
+    const intervalId = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(intervalId);
+  }, [shouldRefreshHealth]);
+
   const status = !isActive
     ? "STANDBY"
     : isRecovering
@@ -397,15 +409,19 @@ function SystemTicker({ className, huntState }: { className: string; huntState: 
           ? "ENCOUNTER"
           : "SEARCHING";
   const target = isActive && battle ? `LV.${battle.enemy.level} ${battle.enemy.name}` : null;
+  const playerMaxHp = battle?.player.maxHp ?? huntState?.playerMaxHp ?? 0;
+  const playerHp = getTickerPlayerHp(huntState, battle, now);
+  const healthPercent = playerMaxHp > 0 ? Math.max(0, Math.min(100, (playerHp / playerMaxHp) * 100)) : 0;
   const detail = !isActive
     ? "대기 중 · 사냥 화면에서 시작"
-    : `${target ?? "대상 탐색 중"} · ${(huntState?.autoHuntRemaining ?? 0).toString().padStart(2, "0")} REMAINING`;
+    : `HP ${Math.round(healthPercent)}% · ${target ?? "대상 탐색 중"} · ${(huntState?.autoHuntRemaining ?? 0).toString().padStart(2, "0")} REMAINING`;
 
   return (
     <NavLink
       className={`system-ticker ${className} ${isActive ? "is-active" : ""}`}
       to="/hunt"
       aria-label={`자동 전투 ${status}, ${detail}. 사냥 화면으로 이동`}
+      style={{ "--health-ratio": `${healthPercent}%` } as CSSProperties}
     >
       <span className="system-ticker-label">SYSTEM &gt;</span>
       <strong>AUTO BATTLE // {status}</strong>
@@ -413,4 +429,28 @@ function SystemTicker({ className, huntState }: { className: string; huntState: 
       <span className="system-ticker-link" aria-hidden="true">사냥 보기 ↗</span>
     </NavLink>
   );
+}
+
+function getTickerPlayerHp(huntState: HuntState | null, battle: HuntState["lastBattle"] | undefined, now: number) {
+  if (battle?.status === "in_progress") {
+    const startedAt = Date.parse(battle.startedAt);
+    const elapsedTenths = Number.isNaN(startedAt) ? battle.durationTicks : Math.max(0, Math.min(battle.durationTicks, Math.floor((now - startedAt) / 100)));
+    const playerLog = [...battle.logs].reverse().find((entry) => entry.target === "player" && entry.timeTenths <= elapsedTenths);
+    return playerLog?.targetHp ?? battle.player.startHp ?? battle.player.currentHp ?? battle.player.maxHp;
+  }
+
+  const startHp = huntState?.playerRecoveryStartHp;
+  const maxHp = huntState?.playerMaxHp;
+  const startedAt = huntState?.playerRecoveryStartedAt ? Date.parse(huntState.playerRecoveryStartedAt) : Number.NaN;
+  const endsAt = huntState?.recoveryEndsAt ? Date.parse(huntState.recoveryEndsAt) : Number.NaN;
+  if (startHp !== null && startHp !== undefined && maxHp && !Number.isNaN(startedAt) && !Number.isNaN(endsAt)) {
+    if (now >= endsAt) return maxHp;
+    const recoveredSteps = Math.max(0, Math.floor((now - startedAt) / 1000));
+    const recoveryDurationSeconds = Math.round((endsAt - startedAt) / 1000);
+    return recoveryDurationSeconds >= 10
+      ? Math.min(maxHp, Math.floor(startHp + ((maxHp - startHp) * recoveredSteps / recoveryDurationSeconds)))
+      : Math.min(maxHp, Math.floor(startHp + (maxHp * 0.2 * recoveredSteps)));
+  }
+
+  return huntState?.playerCurrentHp ?? battle?.player.currentHp ?? battle?.player.startHp ?? battle?.player.maxHp ?? 0;
 }
