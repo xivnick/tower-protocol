@@ -216,7 +216,7 @@ function CharacterStatsPanel({
   const [isResetting, setIsResetting] = useState(false);
   const [message, setMessage] = useState("");
   const [equippedWeapon, setEquippedWeapon] = useState<Weapon | null>(null);
-  const [expandedCombatStat, setExpandedCombatStat] = useState<CombatBreakdownKey | null>(null);
+  const [isCombatBreakdownOpen, setIsCombatBreakdownOpen] = useState(false);
   const statRepeatDelayRef = useRef<number | null>(null);
   const statRepeatIntervalRef = useRef<number | null>(null);
   const skipStatClickRef = useRef(false);
@@ -239,7 +239,7 @@ function CharacterStatsPanel({
   useEffect(() => {
     let isActive = true;
     setEquippedWeapon(null);
-    setExpandedCombatStat(null);
+    setIsCombatBreakdownOpen(false);
 
     void getMyWeapons().then((result) => {
       if (!isActive || !result.ok) return;
@@ -455,15 +455,15 @@ function CharacterStatsPanel({
       </div>
 
       <div className="combat-stat-grid">
-        <CombatStat {...COMBAT_STAT_LABELS.physicalAttack} current={currentCombatStats.physicalAttack} preview={previewCombatStats.physicalAttack} breakdown={createCombatBreakdown(previewBaseCombatStats.physicalAttack, previewCombatStats.physicalAttack)} isExpanded={expandedCombatStat === "physicalAttack"} onToggle={() => toggleCombatBreakdown("physicalAttack", expandedCombatStat, setExpandedCombatStat)} />
-        <CombatStat {...COMBAT_STAT_LABELS.magicAttack} current={currentCombatStats.magicAttack} preview={previewCombatStats.magicAttack} breakdown={createCombatBreakdown(previewBaseCombatStats.magicAttack, previewCombatStats.magicAttack)} isExpanded={expandedCombatStat === "magicAttack"} onToggle={() => toggleCombatBreakdown("magicAttack", expandedCombatStat, setExpandedCombatStat)} />
+        <CombatStat {...COMBAT_STAT_LABELS.physicalAttack} current={currentCombatStats.physicalAttack} preview={previewCombatStats.physicalAttack} breakdown={createCombatBreakdown(previewBaseCombatStats.physicalAttack, previewCombatStats.physicalAttack)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
+        <CombatStat {...COMBAT_STAT_LABELS.magicAttack} current={currentCombatStats.magicAttack} preview={previewCombatStats.magicAttack} breakdown={createCombatBreakdown(previewBaseCombatStats.magicAttack, previewCombatStats.magicAttack)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.physicalDefense} current={currentCombatStats.physicalDefense} preview={previewCombatStats.physicalDefense} />
         <CombatStat {...COMBAT_STAT_LABELS.magicDefense} current={currentCombatStats.magicDefense} preview={previewCombatStats.magicDefense} />
         <CombatStat {...COMBAT_STAT_LABELS.maxHp} current={currentCombatStats.maxHp} preview={previewCombatStats.maxHp} />
         <CombatStat {...COMBAT_STAT_LABELS.regeneration} current={currentCombatStats.hpRegenPerSecond} preview={previewCombatStats.hpRegenPerSecond} digits={2} />
-        <CombatStat {...COMBAT_STAT_LABELS.attackSpeed} current={currentCombatStats.attacksPerSecond} preview={previewCombatStats.attacksPerSecond} digits={2} breakdown={createCombatBreakdown(previewBaseCombatStats.attacksPerSecond, previewCombatStats.attacksPerSecond)} isExpanded={expandedCombatStat === "attackSpeed"} onToggle={() => toggleCombatBreakdown("attackSpeed", expandedCombatStat, setExpandedCombatStat)} />
+        <CombatStat {...COMBAT_STAT_LABELS.attackSpeed} current={currentCombatStats.attacksPerSecond} preview={previewCombatStats.attacksPerSecond} digits={2} breakdown={createCombatBreakdown(previewBaseCombatStats.attacksPerSecond, previewCombatStats.attacksPerSecond)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.cooldownReduction} current={currentCombatStats.cooldownReduction * 100} preview={previewCombatStats.cooldownReduction * 100} suffix="%" digits={1} />
-        <CombatStat {...COMBAT_STAT_LABELS.accuracy} current={currentCombatStats.accuracy} preview={previewCombatStats.accuracy} breakdown={createCombatBreakdown(previewBaseCombatStats.accuracy, previewCombatStats.accuracy)} isExpanded={expandedCombatStat === "accuracy"} onToggle={() => toggleCombatBreakdown("accuracy", expandedCombatStat, setExpandedCombatStat)} />
+        <CombatStat {...COMBAT_STAT_LABELS.accuracy} current={currentCombatStats.accuracy} preview={previewCombatStats.accuracy} breakdown={createCombatBreakdown(previewBaseCombatStats.accuracy, previewCombatStats.accuracy)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.evasionRate} current={currentCombatStats.evasionRateAgainstAccuracy100 * 100} preview={previewCombatStats.evasionRateAgainstAccuracy100 * 100} suffix="%" digits={1} />
         <CombatStat {...COMBAT_STAT_LABELS.criticalChance} current={currentCombatStats.criticalChance} preview={previewCombatStats.criticalChance} suffix="%" digits={1} />
         <CombatStat {...COMBAT_STAT_LABELS.criticalDamage} current={currentCombatStats.criticalDamage} preview={previewCombatStats.criticalDamage} suffix="%" />
@@ -725,8 +725,6 @@ function hasAllocatedStats(character: Character) {
   return PRIMARY_STATS.some((stat) => character[stat.key] > BASE_PRIMARY_STAT);
 }
 
-type CombatBreakdownKey = "physicalAttack" | "magicAttack" | "attackSpeed" | "accuracy";
-
 type CombatBreakdown = {
   base: number;
   equipment: number;
@@ -737,14 +735,6 @@ function createCombatBreakdown(base: number, final: number): CombatBreakdown | u
   return Math.abs(equipment) > 0.00001 ? { base, equipment } : undefined;
 }
 
-function toggleCombatBreakdown(
-  key: CombatBreakdownKey,
-  current: CombatBreakdownKey | null,
-  setExpanded: (key: CombatBreakdownKey | null) => void,
-) {
-  setExpanded(current === key ? null : key);
-}
-
 function CombatStat({
   label,
   shortLabel,
@@ -753,7 +743,7 @@ function CombatStat({
   suffix = "",
   digits = 0,
   breakdown,
-  isExpanded = false,
+  isBreakdownOpen = false,
   onToggle,
 }: {
   label: string;
@@ -763,7 +753,7 @@ function CombatStat({
   suffix?: string;
   digits?: number;
   breakdown?: CombatBreakdown;
-  isExpanded?: boolean;
+  isBreakdownOpen?: boolean;
   onToggle?: () => void;
 }) {
   const isChanged = current !== preview;
@@ -775,15 +765,20 @@ function CombatStat({
       <span className="combat-label-short">{shortLabel ?? label}</span>
     </span>
     <strong>
-      {isChanged ? (
+      {isBreakdownOpen && breakdown ? (
+        <>
+          <small>{formatStatNumber(breakdown.base, digits)}{suffix}</small>
+          <i aria-hidden="true">{breakdown.equipment >= 0 ? "+" : "-"}</i>
+          <b>{formatStatNumber(Math.abs(breakdown.equipment), digits)}{suffix}</b>
+        </>
+      ) : isChanged ? (
         <>
           <small>{formatStatNumber(current, digits)}{suffix}</small>
           <i aria-hidden="true">-&gt;</i>
         </>
       ) : null}
-      <b>{formatStatNumber(preview, digits)}{suffix}</b>
+      {!isBreakdownOpen || !breakdown ? <b>{formatStatNumber(preview, digits)}{suffix}</b> : null}
     </strong>
-    {isExpanded && breakdown && <span className="combat-stat-breakdown">기본 {formatStatNumber(breakdown.base, digits)}{suffix} · 무기 {formatSignedStatNumber(breakdown.equipment, digits)}{suffix}</span>}
   </>;
 
   if (isInteractive) return <button className={className} type="button" onClick={onToggle}>{content}</button>;
@@ -792,10 +787,6 @@ function CombatStat({
 
 function formatStatNumber(value: number, digits: number) {
   return digits > 0 ? value.toFixed(digits) : Math.round(value).toLocaleString();
-}
-
-function formatSignedStatNumber(value: number, digits: number) {
-  return `${value > 0 ? "+" : ""}${formatStatNumber(value, digits)}`;
 }
 
 function CharacterDeletePanel({

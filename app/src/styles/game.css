@@ -1623,12 +1623,6 @@ button:disabled {
   width: 100%;
 }
 
-.combat-stat-breakdown {
-  grid-column: 1 / -1;
-  color: var(--mut);
-  font-size: 11px;
-}
-
 .combat-label {
   min-width: 0;
   color: var(--mut);
