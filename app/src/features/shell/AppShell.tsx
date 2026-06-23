@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
@@ -25,6 +25,48 @@ const navItems = [
 ];
 
 const dropdownCloseMs = 100;
+const mobileLayoutQuery = "(max-width: 860px)";
+let tickerClockNow = Date.now();
+let tickerClockIntervalId: number | null = null;
+const tickerClockListeners = new Set<() => void>();
+
+function getIsMobileLayout() {
+  return typeof window !== "undefined" && window.matchMedia(mobileLayoutQuery).matches;
+}
+
+function subscribeToMobileLayout(listener: () => void) {
+  const mediaQuery = window.matchMedia(mobileLayoutQuery);
+  mediaQuery.addEventListener("change", listener);
+  return () => mediaQuery.removeEventListener("change", listener);
+}
+
+function useIsMobileLayout() {
+  return useSyncExternalStore(subscribeToMobileLayout, getIsMobileLayout, () => false);
+}
+
+function subscribeToTickerClock(listener: () => void) {
+  tickerClockListeners.add(listener);
+  if (tickerClockIntervalId === null) {
+    tickerClockNow = Date.now();
+    tickerClockIntervalId = window.setInterval(() => {
+      tickerClockNow = Date.now();
+      tickerClockListeners.forEach((notify) => notify());
+    }, 100);
+  }
+
+  return () => {
+    tickerClockListeners.delete(listener);
+    if (tickerClockListeners.size === 0 && tickerClockIntervalId !== null) {
+      window.clearInterval(tickerClockIntervalId);
+      tickerClockIntervalId = null;
+    }
+  };
+}
+
+function useTickerClock(isActive: boolean) {
+  const subscribe = useCallback((listener: () => void) => (isActive ? subscribeToTickerClock(listener) : () => {}), [isActive]);
+  return useSyncExternalStore(subscribe, () => tickerClockNow, () => tickerClockNow);
+}
 
 export function AppShell({
   session,
@@ -57,6 +99,7 @@ export function AppShell({
   const nickname = profile?.nickname ?? "UNKNOWN";
   const currentNavLabel = getCurrentNavLabel(location.pathname);
   const hasUnspentStatPoints = Boolean(character && character.stat_points > 0);
+  const isMobileLayout = useIsMobileLayout();
 
   useEffect(() => {
     if (!character) {
@@ -278,7 +321,7 @@ export function AppShell({
             )}
           </header>
 
-          <SystemTicker className="mobile-system-ticker" huntState={activeHuntState} />
+          <SystemTicker className="mobile-system-ticker" huntState={activeHuntState} isVisible={isMobileLayout} />
 
           <section className="mobile-nav-panel" aria-label="모바일 메뉴">
             <button className="mobile-nav-trigger" type="button" onClick={toggleNavMenu} aria-expanded={isNavOpen}>
@@ -351,7 +394,7 @@ export function AppShell({
             </div>
           </header>
 
-          <SystemTicker className="desktop-system-ticker" huntState={activeHuntState} />
+          <SystemTicker className="desktop-system-ticker" huntState={activeHuntState} isVisible={!isMobileLayout} />
 
           <div className="workspace-body route-frame" key={`${location.pathname}:${routeRefreshKey}`}>
             <Routes>
@@ -379,25 +422,16 @@ function getCurrentNavLabel(pathname: string) {
   return "대시보드";
 }
 
-function SystemTicker({ className, huntState }: { className: string; huntState: HuntState | null }) {
+function SystemTicker({ className, huntState, isVisible }: { className: string; huntState: HuntState | null; isVisible: boolean }) {
   const battle = huntState?.lastBattle;
   const isActive = Boolean(huntState?.autoHuntEnabled);
-  const [now, setNow] = useState(() => Date.now());
   const isBattleInProgress = battle?.status === "in_progress";
   const isRecovering = Boolean(
     !isBattleInProgress
     && huntState?.recoveryEndsAt
     && Date.parse(huntState.recoveryEndsAt) > Date.now(),
   );
-  const shouldRefreshHealth = Boolean(isActive && (isBattleInProgress || isRecovering));
-
-  useEffect(() => {
-    if (!shouldRefreshHealth) return;
-
-    setNow(Date.now());
-    const intervalId = window.setInterval(() => setNow(Date.now()), 250);
-    return () => window.clearInterval(intervalId);
-  }, [shouldRefreshHealth]);
+  const now = useTickerClock(Boolean(isVisible && isActive && (isBattleInProgress || isRecovering)));
 
   const status = !isActive
     ? "STANDBY"
