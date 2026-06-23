@@ -434,21 +434,21 @@ function SystemTicker({ className, huntState, isVisible }: { className: string; 
   const now = useTickerClock(Boolean(isVisible && isActive && (isBattleInProgress || isRecovering)));
 
   const status = !isActive
-    ? "STANDBY"
+    ? "대기 중"
     : isRecovering
-      ? "RECOVERY"
+      ? "회복 중"
       : battle?.status === "in_progress"
-        ? "ENGAGED"
+        ? "전투 중"
         : battle?.status === "encountered"
-          ? "ENCOUNTER"
-          : "SEARCHING";
+          ? "적 조우"
+          : "대상 탐색 중";
   const target = isActive && battle ? `LV.${battle.enemy.level} ${battle.enemy.name}` : null;
   const playerMaxHp = battle?.player.maxHp ?? huntState?.playerMaxHp ?? 0;
   const playerHp = getTickerPlayerHp(huntState, battle, now);
   const healthPercent = playerMaxHp > 0 ? Math.max(0, Math.min(100, (playerHp / playerMaxHp) * 100)) : 0;
   const detail = !isActive
     ? "대기 중 · 사냥 화면에서 시작"
-    : `HP ${Math.round(healthPercent)}% · ${target ?? "대상 탐색 중"} · ${(huntState?.autoHuntRemaining ?? 0).toString().padStart(2, "0")} REMAINING`;
+    : `HP ${Math.round(healthPercent)}% · ${target ?? "대상 탐색 중"} · ${(huntState?.autoHuntRemaining ?? 0).toString().padStart(2, "0")}회 남음`;
 
   return (
     <NavLink
@@ -457,8 +457,8 @@ function SystemTicker({ className, huntState, isVisible }: { className: string; 
       aria-label={`자동 전투 ${status}, ${detail}. 사냥 화면으로 이동`}
       style={{ "--health-ratio": `${healthPercent}%` } as CSSProperties}
     >
-      <span className="system-ticker-label">SYSTEM &gt;</span>
-      <strong>AUTO BATTLE // {status}</strong>
+      <strong>AUTO BATTLE &gt;</strong>
+      <span className="system-ticker-state">{status}</span>
       <span className="system-ticker-detail">{detail}</span>
       <span className="system-ticker-link" aria-hidden="true">사냥 보기 ↗</span>
     </NavLink>
