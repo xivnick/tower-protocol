@@ -48,7 +48,7 @@ export function DashboardScreen({
 
       <article className="panel">
         <div className="panel-head">
-          <span>DASHBOARD</span>
+          <span>CONNECTION</span>
           <h2>접속 상태</h2>
         </div>
           <div className="kv-grid">
