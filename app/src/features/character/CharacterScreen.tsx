@@ -1,7 +1,7 @@
 import type { FormEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { allocateCharacterStats, checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, getMyTrainingState, resetCharacterStats, trainMyCharacter } from "../../api/characterApi";
-import type { CharacterStatAllocation, TrainingState } from "../../api/characterApi";
+import { allocateCharacterStats, checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, resetCharacterStats } from "../../api/characterApi";
+import type { CharacterStatAllocation } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
 import { BASE_PRIMARY_STAT, calculateCombatStats, COMBAT_STAT_LABELS, PRIMARY_STATS } from "../../shared/stats";
@@ -9,12 +9,11 @@ import { calculateWeaponCombatBonus } from "../../shared/weaponStats";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
 import type { Character } from "../../types/character";
 import type { ToastInput } from "../../types/toast";
-import { getMyPartTimeJobState, workPartTime } from "../../api/partTimeJobApi";
-import type { PartTimeJobState } from "../../api/partTimeJobApi";
 import { toastMessages } from "../../shared/toastMessages";
 import { useToast } from "../toast/ToastProvider";
 import { getMyWeapons } from "../../api/equipmentApi";
 import type { Weapon } from "../../api/equipmentApi";
+import { EquippedEquipmentPanel } from "../equipment/EquippedEquipmentPanel";
 
 export function CharacterScreen({
   character,
@@ -48,8 +47,7 @@ export function CharacterScreen({
         </article>
 
         <CharacterStatsPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
-        <CharacterTrainingPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
-        <CharacterPartTimeJobPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
+        <CharacterEquippedEquipmentPanel character={character} />
         <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
       </section>
     );
@@ -495,223 +493,19 @@ function CharacterStatsPanel({
   );
 }
 
-function CharacterTrainingPanel({
-  character,
-  onCharacterChange,
-  onCharacterRefresh,
-}: {
-  character: Character;
-  onCharacterChange: (character: Character | null) => void;
-  onCharacterRefresh: () => Promise<boolean>;
-}) {
-  const { showToast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
-  const [trainingState, setTrainingState] = useState<TrainingState | null>(null);
-  const [now, setNow] = useState(Date.now());
-  const isMaxLevel = character.level >= 100;
-  const displayedTrainingState = getDisplayedTrainingState(trainingState, now);
-  const isTrainingAvailable = displayedTrainingState.charges > 0;
+function CharacterEquippedEquipmentPanel({ character }: { character: Character }) {
+  const [equippedWeapon, setEquippedWeapon] = useState<Weapon | null>(null);
 
   useEffect(() => {
     let isActive = true;
-
-    void getMyTrainingState().then((result) => {
-      if (!isActive) return;
-      if (!result.ok || !result.state) {
-        setMessage(result.message);
-        return;
-      }
-      setTrainingState(result.state);
-      setNow(Date.now());
+    void getMyWeapons().then((result) => {
+      if (!isActive || !result.ok) return;
+      setEquippedWeapon(result.inventory.weapons.find((weapon) => weapon.id === result.inventory.equippedWeaponId) ?? null);
     });
-
     return () => { isActive = false; };
   }, [character.id]);
 
-  useEffect(() => {
-    if (!trainingState || displayedTrainingState.charges >= trainingState.maxCharges) return;
-
-    const intervalId = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(intervalId);
-  }, [displayedTrainingState.charges, trainingState]);
-
-  async function handleTrain() {
-    if (isSubmitting || isMaxLevel || !isTrainingAvailable) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    setMessage("");
-
-    const [result] = await Promise.all([
-      trainMyCharacter(),
-      wait(400),
-    ]);
-
-    setIsSubmitting(false);
-
-    if (!result.ok || !result.character) {
-      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, showToast });
-      return;
-    }
-
-    onCharacterChange(result.character);
-    if (result.trainingState) {
-      setTrainingState(result.trainingState);
-      setNow(Date.now());
-    }
-    showToast(toastMessages.training.completed(result.gainedExperience, result.rewardTier));
-
-    if (result.levelAfter > result.levelBefore) {
-      window.setTimeout(() => {
-        showToast(toastMessages.character.levelUp(result.levelAfter));
-      }, 300);
-    }
-  }
-
-  return (
-    <article className="panel">
-      <div className="panel-head">
-        <span>TRAINING</span>
-        <h2>기초 훈련</h2>
-      </div>
-      <div className="panel-action-body">
-        <p className="panel-message">{isMaxLevel ? "최고 레벨에 도달했습니다." : "훈련을 실행하면 경험치를 획득합니다."}</p>
-        <button className="btn primary panel-primary-action" type="button" onClick={handleTrain} disabled={isSubmitting || isMaxLevel || !trainingState || !isTrainingAvailable}>
-          {getTrainingButtonLabel({ isSubmitting, isMaxLevel, trainingState, displayedTrainingState })}
-        </button>
-        {message && <p className="auth-message is-error" role="status">{message}</p>}
-      </div>
-    </article>
-  );
-}
-
-function CharacterPartTimeJobPanel({
-  character,
-  onCharacterChange,
-  onCharacterRefresh,
-}: {
-  character: Character;
-  onCharacterChange: (character: Character | null) => void;
-  onCharacterRefresh: () => Promise<boolean>;
-}) {
-  const { showToast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
-  const [jobState, setJobState] = useState<PartTimeJobState | null>(null);
-  const [now, setNow] = useState(Date.now());
-  const displayedJobState = getDisplayedTrainingState(jobState, now);
-  const isJobAvailable = displayedJobState.charges > 0;
-
-  useEffect(() => {
-    let isActive = true;
-
-    void getMyPartTimeJobState().then((result) => {
-      if (!isActive) return;
-      if (!result.ok || !result.state) {
-        setMessage(result.message);
-        return;
-      }
-      setJobState(result.state);
-      setNow(Date.now());
-    });
-
-    return () => { isActive = false; };
-  }, [character.id]);
-
-  useEffect(() => {
-    if (!jobState || displayedJobState.charges >= jobState.maxCharges) return;
-
-    const intervalId = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(intervalId);
-  }, [displayedJobState.charges, jobState]);
-
-  async function handleWork() {
-    if (isSubmitting || !isJobAvailable) return;
-
-    setIsSubmitting(true);
-    setMessage("");
-    const [result] = await Promise.all([workPartTime(), wait(400)]);
-    setIsSubmitting(false);
-
-    if (!result.ok || !result.character || !result.state) {
-      handleCharacterActionFailure({ message: result.message, setMessage, onCharacterRefresh, showToast });
-      return;
-    }
-
-    onCharacterChange(result.character);
-    setJobState(result.state);
-    setNow(Date.now());
-    showToast(toastMessages.partTimeJob.completed(result.gainedCredits));
-  }
-
-  return (
-    <article className="panel">
-      <div className="panel-head">
-        <span>WORK</span>
-        <h2>단기 알바</h2>
-      </div>
-      <div className="panel-action-body">
-        <p className="panel-message">알바를 실행하면 크레딧을 획득합니다.</p>
-        <button className="btn primary panel-primary-action" type="button" onClick={handleWork} disabled={isSubmitting || !jobState || !isJobAvailable}>
-          {getPartTimeJobButtonLabel({ isSubmitting, jobState, displayedJobState })}
-        </button>
-        {message && <p className="auth-message is-error" role="status">{message}</p>}
-      </div>
-    </article>
-  );
-}
-
-function getDisplayedTrainingState(state: TrainingState | null, now: number) {
-  if (!state || !state.nextRechargeAt) return { charges: state?.charges ?? 0, secondsUntilNextCharge: null };
-
-  const nextRechargeAt = Date.parse(state.nextRechargeAt);
-  if (Number.isNaN(nextRechargeAt)) return { charges: state.charges, secondsUntilNextCharge: null };
-
-  const elapsedCharges = Math.max(0, Math.floor((now - nextRechargeAt) / 6000) + 1);
-  const charges = Math.min(state.maxCharges, state.charges + elapsedCharges);
-  const nextChargeAt = nextRechargeAt + (elapsedCharges * 6000);
-  return { charges, secondsUntilNextCharge: charges >= state.maxCharges ? null : Math.max(0, Math.ceil((nextChargeAt - now) / 1000)) };
-}
-
-function getTrainingButtonLabel({
-  isSubmitting,
-  isMaxLevel,
-  trainingState,
-  displayedTrainingState,
-}: {
-  isSubmitting: boolean;
-  isMaxLevel: boolean;
-  trainingState: TrainingState | null;
-  displayedTrainingState: { charges: number; secondsUntilNextCharge: number | null };
-}) {
-  if (isSubmitting) return "훈련 중...";
-  if (isMaxLevel) return "훈련 실행";
-  if (!trainingState) return "훈련 상태 확인 중...";
-  if (displayedTrainingState.charges === 0) return `훈련까지 ${displayedTrainingState.secondsUntilNextCharge ?? 0}초...`;
-  return `훈련 실행 (${displayedTrainingState.charges}/${trainingState.maxCharges})`;
-}
-
-function getPartTimeJobButtonLabel({
-  isSubmitting,
-  jobState,
-  displayedJobState,
-}: {
-  isSubmitting: boolean;
-  jobState: PartTimeJobState | null;
-  displayedJobState: { charges: number; secondsUntilNextCharge: number | null };
-}) {
-  if (isSubmitting) return "알바 중...";
-  if (!jobState) return "알바 상태 확인 중...";
-  if (displayedJobState.charges === 0) return `알바까지 ${displayedJobState.secondsUntilNextCharge ?? 0}초...`;
-  return `알바 실행 (${displayedJobState.charges}/${jobState.maxCharges})`;
-}
-
-function wait(ms: number) {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, ms);
-  });
+  return <EquippedEquipmentPanel weapon={equippedWeapon} />;
 }
 
 function createEmptyStatAllocation(): CharacterStatAllocation {

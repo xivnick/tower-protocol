@@ -7,17 +7,22 @@ import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import type { Character } from "../../types/character";
 import { PatchNotesSummary } from "../patchNotes/PatchNotes";
 import { RankingSummary } from "../ranking/Ranking";
+import { DailyActivityPanels } from "./DailyActivityPanels";
 
 export function DashboardScreen({
   session,
   profile,
   character,
   huntState,
+  onCharacterChange,
+  onCharacterRefresh,
 }: {
   session: Session | null;
   profile: Profile | null;
   character: Character | null;
   huntState: HuntState | null;
+  onCharacterChange: (character: Character | null) => void;
+  onCharacterRefresh: () => Promise<boolean>;
 }) {
   useDocumentTitle("TOWER://DASHBOARD");
 
@@ -68,20 +73,23 @@ export function DashboardScreen({
       </article>
 
       {character && (
-        <article className="panel">
-          <div className="panel-head compact action-head">
-            <div>
-              <span>AUTO BATTLE</span>
-              <h2>자동 전투 현황</h2>
+        <>
+          <article className="panel">
+            <div className="panel-head compact action-head">
+              <div>
+                <span>AUTO BATTLE</span>
+                <h2>자동 전투 현황</h2>
+              </div>
+              <Link className="text-button" to="/hunt">바로가기</Link>
             </div>
-            <Link className="text-button" to="/hunt">바로가기</Link>
-          </div>
-          <div className="kv-grid">
-            <Kv label="상태" value={getAutoHuntStatus(huntState)} />
-            <Kv label="남은 횟수" value={`${huntState?.autoHuntRemaining ?? 0}회`} />
-            <Kv label="상대" value={huntState?.autoHuntEnabled && huntState.lastBattle ? `LV.${huntState.lastBattle.enemy.level} ${huntState.lastBattle.enemy.name}` : "-"} />
-          </div>
-        </article>
+            <div className="kv-grid">
+              <Kv label="상태" value={getAutoHuntStatus(huntState)} />
+              <Kv label="남은 횟수" value={`${huntState?.autoHuntRemaining ?? 0}회`} />
+              <Kv label="상대" value={huntState?.autoHuntEnabled && huntState.lastBattle ? `LV.${huntState.lastBattle.enemy.level} ${huntState.lastBattle.enemy.name}` : "-"} />
+            </div>
+          </article>
+          <DailyActivityPanels character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
+        </>
       )}
 
       <RankingSummary />
