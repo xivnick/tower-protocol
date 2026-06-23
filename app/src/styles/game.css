@@ -1610,8 +1610,17 @@ button:disabled {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
+  border: 0;
   border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  font: inherit;
   padding: 8px 0;
+  text-align: left;
+}
+
+.combat-stat.is-interactive {
+  width: 100%;
 }
 
 .combat-label {
