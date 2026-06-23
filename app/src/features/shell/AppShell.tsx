@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
 import type { Character } from "../../types/character";
 import { toastMessages } from "../../shared/toastMessages";
+import { useCombatClock } from "../../shared/useCombatClock";
 import { configureAutoHunt, encounterHuntMonster, getMyHuntState, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntState } from "../../api/characterApi";
 import { CharacterScreen } from "../character/CharacterScreen";
@@ -26,9 +27,6 @@ const navItems = [
 
 const dropdownCloseMs = 100;
 const mobileLayoutQuery = "(max-width: 860px)";
-let tickerClockNow = Date.now();
-let tickerClockIntervalId: number | null = null;
-const tickerClockListeners = new Set<() => void>();
 
 function getIsMobileLayout() {
   return typeof window !== "undefined" && window.matchMedia(mobileLayoutQuery).matches;
@@ -42,30 +40,6 @@ function subscribeToMobileLayout(listener: () => void) {
 
 function useIsMobileLayout() {
   return useSyncExternalStore(subscribeToMobileLayout, getIsMobileLayout, () => false);
-}
-
-function subscribeToTickerClock(listener: () => void) {
-  tickerClockListeners.add(listener);
-  if (tickerClockIntervalId === null) {
-    tickerClockNow = Date.now();
-    tickerClockIntervalId = window.setInterval(() => {
-      tickerClockNow = Date.now();
-      tickerClockListeners.forEach((notify) => notify());
-    }, 100);
-  }
-
-  return () => {
-    tickerClockListeners.delete(listener);
-    if (tickerClockListeners.size === 0 && tickerClockIntervalId !== null) {
-      window.clearInterval(tickerClockIntervalId);
-      tickerClockIntervalId = null;
-    }
-  };
-}
-
-function useTickerClock(isActive: boolean) {
-  const subscribe = useCallback((listener: () => void) => (isActive ? subscribeToTickerClock(listener) : () => {}), [isActive]);
-  return useSyncExternalStore(subscribe, () => tickerClockNow, () => tickerClockNow);
 }
 
 export function AppShell({
@@ -431,7 +405,7 @@ function SystemTicker({ className, huntState, isVisible }: { className: string; 
     && huntState?.recoveryEndsAt
     && Date.parse(huntState.recoveryEndsAt) > Date.now(),
   );
-  const now = useTickerClock(Boolean(isVisible && isActive && (isBattleInProgress || isRecovering)));
+  const now = useCombatClock(Boolean(isVisible && isActive && (isBattleInProgress || isRecovering)));
 
   const status = !isActive
     ? "대기 중"
@@ -451,7 +425,7 @@ function SystemTicker({ className, huntState, isVisible }: { className: string; 
 
   return (
     <NavLink
-      className={`system-ticker ${className} ${isActive ? "is-active" : ""}`}
+      className={`system-ticker ${className} ${isActive ? "is-active" : ""} ${isBattleInProgress ? "is-battle-active" : ""}`}
       to="/hunt"
       aria-label={`자동 전투 ${remaining}/10, ${status}, ${detail}. 사냥 화면으로 이동`}
       style={{ "--health-ratio": `${healthPercent}%` } as CSSProperties}

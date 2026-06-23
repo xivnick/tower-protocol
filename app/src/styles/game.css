@@ -643,6 +643,7 @@ button:disabled {
 }
 
 .system-ticker {
+  position: relative;
   display: flex;
   align-items: center;
   min-width: 0;
@@ -656,6 +657,11 @@ button:disabled {
   line-height: 1;
   text-decoration: none;
   white-space: nowrap;
+}
+
+.system-ticker > * {
+  position: relative;
+  z-index: 1;
 }
 
 .system-ticker:hover,
@@ -688,6 +694,26 @@ button:disabled {
 
 .system-ticker.is-active {
   background: linear-gradient(90deg, var(--acc-dim) 0%, var(--acc-dim) var(--health-ratio), var(--bg-2) var(--health-ratio), var(--bg-2) 100%);
+}
+
+.system-ticker.is-battle-active {
+  overflow: hidden;
+}
+
+.system-ticker.is-battle-active::after {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 32%;
+  background: linear-gradient(90deg, transparent, rgba(234, 255, 243, 0.12), transparent);
+  content: "";
+  opacity: 0.8;
+  pointer-events: none;
+  transform: translateX(-120%);
+  animation: system-ticker-scan 1.8s ease-in-out infinite;
+}
+
+@keyframes system-ticker-scan {
+  to { transform: translateX(420%); }
 }
 
 .system-ticker.is-active strong {
@@ -2262,6 +2288,7 @@ button:disabled {
   .mobile-account-menu.is-closing,
   .mobile-nav-menu.is-closing,
   .toast,
+  .system-ticker.is-battle-active::after,
   .rail-brand i,
   .auth-logo i,
   .checking-message i {

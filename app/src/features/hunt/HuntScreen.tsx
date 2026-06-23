@@ -7,6 +7,7 @@ import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
 import type { Character } from "../../types/character";
 import type { ToastInput } from "../../types/toast";
 import { toastMessages } from "../../shared/toastMessages";
+import { useCombatClock } from "../../shared/useCombatClock";
 import { useToast } from "../toast/ToastProvider";
 
 const trainingDummy = {
@@ -78,7 +79,7 @@ function TrainingDummyGround({
   const [isResolving, setIsResolving] = useState(false);
   const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
   const [now, setNow] = useState(Date.now());
-  const [playbackTenths, setPlaybackTenths] = useState(0);
+  const [frozenPlaybackTenths, setFrozenPlaybackTenths] = useState(0);
   const logRef = useRef<HTMLOListElement>(null);
   const completedResultRef = useRef<HuntResult | null>(null);
   const settlementAttemptRef = useRef<string | null>(null);
@@ -88,15 +89,19 @@ function TrainingDummyGround({
   const availableAt = huntAvailableAt ? Date.parse(huntAvailableAt) : 0;
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
   const combatStats = calculateCombatStats(character);
-  const visibleLogs = useMemo(() => result?.logs.filter((entry) => entry.timeTenths <= playbackTenths) ?? [], [playbackTenths, result]);
-  const displayedLogs = useMemo(() => groupCombatLogs(visibleLogs), [visibleLogs]);
   const selectedGroundId = huntState?.selectedHuntGroundId ?? "training-dummy";
   const selectedGround = HUNT_GROUNDS.find((ground) => ground.id === selectedGroundId) ?? HUNT_GROUNDS[0];
   const dummyMaxHp = result?.enemy.maxHp ?? trainingDummy.maxHp(character.level);
+  const isBattleInProgress = result?.status === "in_progress";
+  const combatNow = useCombatClock(isBattleInProgress);
+  const playbackTenths = isBattleInProgress && result
+    ? getElapsedTenths(result.startedAt, result.durationTicks, combatNow)
+    : frozenPlaybackTenths;
+  const visibleLogs = useMemo(() => result?.logs.filter((entry) => entry.timeTenths <= playbackTenths) ?? [], [playbackTenths, result]);
+  const displayedLogs = useMemo(() => groupCombatLogs(visibleLogs), [visibleLogs]);
   const enemyLogs = visibleLogs.filter((entry) => entry.target !== "player");
   const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
   const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
-  const isBattleInProgress = result?.status === "in_progress";
   const hasEncounteredMonster = result?.status === "encountered";
   const recoveredPlayerHp = getRecoveredPlayerHp(huntState, now);
   const playerHp = isBattleInProgress
@@ -136,7 +141,7 @@ function TrainingDummyGround({
       onHuntStateChange(nextState.state);
       setResult(restoredResult);
       if (battle.status !== "in_progress" && battle.status !== "encountered") setLastResult(restoredResult);
-      setPlaybackTenths(getElapsedTenths(battle.startedAt, battle.durationTicks));
+      setFrozenPlaybackTenths(getElapsedTenths(battle.startedAt, battle.durationTicks));
     });
 
     return () => { isActive = false; };
@@ -148,16 +153,6 @@ function TrainingDummyGround({
     const intervalId = window.setInterval(() => setNow(Date.now()), 100);
     return () => window.clearInterval(intervalId);
   }, [isRecovering, isRecoveryLocked, remainingTenths]);
-
-  useEffect(() => {
-    if (!result || !isBattleInProgress || isPlaybackComplete) return;
-
-    const intervalId = window.setInterval(() => {
-      setPlaybackTenths((current) => Math.min(current + 1, result.durationTicks));
-    }, 100);
-
-    return () => window.clearInterval(intervalId);
-  }, [isBattleInProgress, isPlaybackComplete, result]);
 
   useEffect(() => {
     if (visibleLogs.length > 0 && logRef.current) {
@@ -213,6 +208,7 @@ function TrainingDummyGround({
         }
         setHuntState(nextResult.huntState);
         onHuntStateChange(nextResult.huntState);
+        setFrozenPlaybackTenths(nextResult.durationTicks);
         setResult(nextResult);
         setLastResult(nextResult);
       });
@@ -268,7 +264,7 @@ function TrainingDummyGround({
 
     completedResultRef.current = null;
     settlementAttemptRef.current = null;
-    setPlaybackTenths(0);
+    setFrozenPlaybackTenths(0);
     setHuntState(nextResult.huntState);
     onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
@@ -297,7 +293,7 @@ function TrainingDummyGround({
 
     setHuntState(nextResult.huntState);
     onHuntStateChange(nextResult.huntState);
-    setPlaybackTenths(0);
+    setFrozenPlaybackTenths(0);
     setResult(nextResult);
   }
 
@@ -343,7 +339,7 @@ function TrainingDummyGround({
     setHuntState(nextState.state);
     onHuntStateChange(nextState.state);
     setResult(null);
-    setPlaybackTenths(0);
+    setFrozenPlaybackTenths(0);
     showToast({ message: nextState.message, tone: "system" });
   }
 
@@ -365,7 +361,7 @@ function TrainingDummyGround({
     setHuntState(nextResult.huntState);
     onHuntStateChange(nextResult.huntState);
     setResult(nextResult);
-    setPlaybackTenths(getFleeTenths(nextResult));
+    setFrozenPlaybackTenths(getFleeTenths(nextResult));
     showToast({ message: nextResult.message, tone: "system" });
   }
 
@@ -678,10 +674,10 @@ function getRecoveredPlayerHp(huntState: HuntState | null, now: number) {
   return Math.min(maxHp, Math.floor(startHp + (maxHp * 0.2 * recoveredSteps)));
 }
 
-function getElapsedTenths(startedAt: string, durationTicks: number) {
+function getElapsedTenths(startedAt: string, durationTicks: number, now = Date.now()) {
   const startedAtMs = Date.parse(startedAt);
   if (Number.isNaN(startedAtMs)) return durationTicks;
-  return Math.max(0, Math.min(durationTicks, Math.floor((Date.now() - startedAtMs) / 100)));
+  return Math.max(0, Math.min(durationTicks, Math.floor((now - startedAtMs) / 100)));
 }
 
 function getFleeTenths(result: HuntResult) {
