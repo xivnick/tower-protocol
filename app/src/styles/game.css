@@ -686,12 +686,6 @@ button:disabled {
   text-overflow: ellipsis;
 }
 
-.system-ticker-link {
-  margin-left: auto;
-  color: var(--mut-2);
-  font-size: 10px;
-}
-
 .system-ticker.is-active {
   background: linear-gradient(90deg, var(--acc-dim) 0%, var(--acc-dim) var(--health-ratio), var(--bg-2) var(--health-ratio), var(--bg-2) 100%);
 }
@@ -701,8 +695,7 @@ button:disabled {
 }
 
 .system-ticker.is-active .system-ticker-state,
-.system-ticker.is-active .system-ticker-detail,
-.system-ticker.is-active .system-ticker-link {
+.system-ticker.is-active .system-ticker-detail {
   color: var(--txt);
 }
 
@@ -1936,10 +1929,6 @@ button:disabled {
   .mobile-system-ticker {
     display: flex;
     padding: 8px 12px;
-  }
-
-  .mobile-system-ticker .system-ticker-link {
-    display: none;
   }
 
   .account-chip,
