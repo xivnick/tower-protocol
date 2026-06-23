@@ -46,8 +46,8 @@ export function CharacterScreen({
           </div>
         </article>
 
-        <CharacterEquippedEquipmentPanel character={character} />
         <CharacterStatsPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
+        <CharacterEquippedEquipmentPanel character={character} />
         <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
       </section>
     );
