@@ -5,6 +5,7 @@ import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { toastMessages } from "../../shared/toastMessages";
 import type { Character } from "../../types/character";
 import { useToast } from "../toast/ToastProvider";
+import { EquippedEquipmentPanel, weaponEffect, weaponLabel, weaponSummary } from "./EquippedEquipmentPanel";
 
 const weaponNames: Record<WeaponType, string> = {
   longsword: "장검",
@@ -99,17 +100,14 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
   if (!character) return <section className="screen-panel"><article className="panel"><p className="panel-message">캐릭터를 먼저 생성해주세요.</p></article></section>;
 
   const equippedWeapon = weapons.find((weapon) => weapon.id === equippedWeaponId) ?? null;
-  const filteredWeapons = weaponFilter === "all" ? weapons : weapons.filter((weapon) => weapon.weaponType === weaponFilter);
+  const filteredWeapons = weapons
+    .filter((weapon) => weaponFilter === "all" || weapon.weaponType === weaponFilter)
+    .sort((left, right) => right.weaponLevel - left.weaponLevel || right.createdAt.localeCompare(left.createdAt));
   return (
     <section className="screen-panel">
-      <article className="panel">
-        <div className="panel-head"><span>EQUIPMENT</span><h2>무기</h2></div>
-        <div className="kv-grid">
-          <div className="kv"><span>장착 무기</span><strong>{equippedWeapon ? weaponLabel(equippedWeapon) : "장착한 무기 없음"}</strong></div>
-          {equippedWeapon && <div className="kv"><span>효과</span><strong>{weaponEffect(equippedWeapon)}</strong></div>}
-        </div>
+      <EquippedEquipmentPanel weapon={equippedWeapon}>
         {equippedWeapon && <div className="button-row equipment-actions"><button className="btn ghost" type="button" onClick={handleUnequip} disabled={isBusy}>{isUnequipping ? "해제 중..." : "무기 해제"}</button></div>}
-      </article>
+      </EquippedEquipmentPanel>
 
       <article className="panel">
         <div className="panel-head action-head">
@@ -158,34 +156,4 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
       </article>
     </section>
   );
-}
-
-function weaponLabel(weapon: Weapon) { return `LV.${weapon.weaponLevel} ${weaponNames[weapon.weaponType]}`; }
-
-function weaponSummary(weapon: Weapon) {
-  if (weapon.weaponType === "longsword") return "물리 공격력 증가";
-  if (weapon.weaponType === "greatsword") return "물리 공격력 증폭";
-  if (weapon.weaponType === "dagger") return "전체 공속 증가";
-  if (weapon.weaponType === "bow") return "추가 고정 피해";
-  if (weapon.weaponType === "wand") return "마법 공격력 증가";
-  return "마법 공격력 증폭";
-}
-
-function weaponEffect(weapon: Weapon) {
-  const level = weapon.weaponLevel;
-  const power = 3 + Math.floor(level * 1.5);
-  if (weapon.weaponType === "longsword") return `물리 공격력 +${power}`;
-  if (weapon.weaponType === "greatsword") return `물리 공격력 +${formatWeaponPercent(percentWeaponBonus(level))}%`;
-  if (weapon.weaponType === "dagger") return `명중 -${Math.min(23, 15 + Math.floor((level - 1) / 12))}%, 전체 공속 +${20 + Math.floor(level * 0.2)}%`;
-  if (weapon.weaponType === "bow") return `명중 -${Math.min(18, 10 + Math.floor((level - 1) / 12))}%, +${2 + Math.floor(level * 1.1)} 고정 피해`;
-  if (weapon.weaponType === "wand") return `마법 공격력 +${power}`;
-  return `마법 공격력 +${formatWeaponPercent(percentWeaponBonus(level))}%`;
-}
-
-function percentWeaponBonus(level: number) {
-  return Math.floor((20 + level * 0.5) * 10) / 10;
-}
-
-function formatWeaponPercent(value: number) {
-  return value.toFixed(1);
 }
