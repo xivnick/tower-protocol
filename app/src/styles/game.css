@@ -697,7 +697,13 @@ button:disabled {
 }
 
 .system-ticker.is-active strong {
-  color: var(--acc);
+  color: var(--txt-bright);
+}
+
+.system-ticker.is-active .system-ticker-state,
+.system-ticker.is-active .system-ticker-detail,
+.system-ticker.is-active .system-ticker-link {
+  color: var(--txt);
 }
 
 .mobile-system-ticker {
