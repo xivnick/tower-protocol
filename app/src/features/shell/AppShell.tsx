@@ -259,6 +259,7 @@ export function AppShell({
                 <i aria-hidden="true" />
               </NavLink>
               <div className="mobile-session-actions">
+                <AutoBattleHud huntState={activeHuntState} />
                 <span className="credit-chip">{(character?.credits ?? 0).toLocaleString()} CR</span>
                 <button className="account-chip" type="button" onClick={toggleAccountMenu} aria-expanded={isAccountOpen}>
                   {nickname}
@@ -342,6 +343,7 @@ export function AppShell({
               <strong>{nickname}</strong>
             </div>
             <div className="topbar-actions">
+              <AutoBattleHud huntState={activeHuntState} />
               <span className="credit-chip">{(character?.credits ?? 0).toLocaleString()} CR</span>
               <button className="btn ghost" type="button" onClick={onSignOut}>
                 로그아웃
@@ -373,4 +375,35 @@ function getCurrentNavLabel(pathname: string) {
   if (pathname.startsWith("/ranking")) return "랭킹";
   if (pathname.startsWith("/patch-notes")) return "패치노트";
   return "대시보드";
+}
+
+function AutoBattleHud({ huntState }: { huntState: HuntState | null }) {
+  const battle = huntState?.lastBattle;
+  const isActive = Boolean(huntState?.autoHuntEnabled);
+  const isRecovering = Boolean(huntState?.recoveryEndsAt && Date.parse(huntState.recoveryEndsAt) > Date.now());
+  const status = !isActive
+    ? "대기"
+    : isRecovering
+      ? "회복 중"
+      : battle?.status === "in_progress"
+        ? "전투 중"
+        : battle?.status === "encountered"
+          ? "조우 중"
+          : "탐색 중";
+  const target = isActive && battle ? `LV.${battle.enemy.level} ${battle.enemy.name}` : null;
+
+  return (
+    <NavLink
+      className={`auto-battle-hud ${isActive ? "is-active" : ""}`}
+      to="/hunt"
+      aria-label={`자동 전투 ${status}${target ? `, ${target}` : ""}. 사냥 화면으로 이동`}
+    >
+      <span className="auto-battle-hud-label">AUTO</span>
+      <strong>{status}</strong>
+      <span className="auto-battle-hud-detail">
+        {isActive ? `${huntState?.autoHuntRemaining ?? 0}회` : "중지"}
+        {target && <><i aria-hidden="true" />{target}</>}
+      </span>
+    </NavLink>
+  );
 }
