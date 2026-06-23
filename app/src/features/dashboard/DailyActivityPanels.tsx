@@ -4,26 +4,17 @@ import type { TrainingState } from "../../api/characterApi";
 import { getMyPartTimeJobState, workPartTime } from "../../api/partTimeJobApi";
 import type { PartTimeJobState } from "../../api/partTimeJobApi";
 import { toastMessages } from "../../shared/toastMessages";
-import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import type { Character } from "../../types/character";
 import type { ToastInput } from "../../types/toast";
 import { useToast } from "../toast/ToastProvider";
 
 type ChargeState = TrainingState | PartTimeJobState;
 
-export function VillageScreen({ character, onCharacterChange, onCharacterRefresh }: { character: Character | null; onCharacterChange: (character: Character | null) => void; onCharacterRefresh: () => Promise<boolean> }) {
-  useDocumentTitle("TOWER://VILLAGE");
-
-  if (!character) return <section className="screen-panel"><article className="panel"><p className="panel-message">캐릭터를 먼저 생성해주세요.</p></article></section>;
-
-  return <section className="screen-panel">
-    <article className="panel">
-      <div className="panel-head"><span>VILLAGE</span><h2>마을</h2></div>
-      <p className="panel-message">훈련과 단기 알바를 진행할 수 있습니다.</p>
-    </article>
+export function DailyActivityPanels({ character, onCharacterChange, onCharacterRefresh }: { character: Character; onCharacterChange: (character: Character | null) => void; onCharacterRefresh: () => Promise<boolean> }) {
+  return <>
     <TrainingPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
     <PartTimeJobPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
-  </section>;
+  </>;
 }
 
 function TrainingPanel({ character, onCharacterChange, onCharacterRefresh }: { character: Character; onCharacterChange: (character: Character | null) => void; onCharacterRefresh: () => Promise<boolean> }) {
@@ -61,15 +52,14 @@ function TrainingPanel({ character, onCharacterChange, onCharacterRefresh }: { c
     if (result.levelAfter > result.levelBefore) window.setTimeout(() => showToast(toastMessages.character.levelUp(result.levelAfter)), 300);
   }
 
+  const buttonLabel = isSubmitting ? "훈련 중..." : isMaxLevel ? "훈련 실행" : !trainingState ? "훈련 상태 확인 중..." : displayedState.charges === 0 ? `훈련까지 ${displayedState.secondsUntilNextCharge ?? 0}초...` : `훈련 실행 (${displayedState.charges}/${trainingState.maxCharges})`;
   return <article className="panel">
-    <div className="panel-head"><span>TRAINING</span><h2>기초 훈련</h2></div>
-    <div className="panel-action-body">
-      <p className="panel-message">{isMaxLevel ? "최고 레벨에 도달했습니다." : "훈련을 실행하면 경험치를 획득합니다."}</p>
-      <button className="btn primary panel-primary-action" type="button" onClick={handleTrain} disabled={isSubmitting || isMaxLevel || !trainingState || displayedState.charges === 0}>
-        {isSubmitting ? "훈련 중..." : isMaxLevel ? "훈련 실행" : !trainingState ? "훈련 상태 확인 중..." : displayedState.charges === 0 ? `훈련까지 ${displayedState.secondsUntilNextCharge ?? 0}초...` : `훈련 실행 (${displayedState.charges}/${trainingState.maxCharges})`}
-      </button>
-      {message && <p className="auth-message is-error" role="status">{message}</p>}
+    <div className="panel-head action-head">
+      <div><span>TRAINING</span><h2>기초 훈련</h2></div>
+      <button className="btn primary" type="button" onClick={handleTrain} disabled={isSubmitting || isMaxLevel || !trainingState || displayedState.charges === 0}>{buttonLabel}</button>
     </div>
+    <p className="panel-message">{isMaxLevel ? "최고 레벨에 도달했습니다." : "훈련을 실행하면 경험치를 획득합니다."}</p>
+    {message && <p className="auth-message is-error" role="status">{message}</p>}
   </article>;
 }
 
@@ -107,15 +97,14 @@ function PartTimeJobPanel({ character, onCharacterChange, onCharacterRefresh }: 
     showToast(toastMessages.partTimeJob.completed(result.gainedCredits));
   }
 
+  const buttonLabel = isSubmitting ? "알바 중..." : !jobState ? "알바 상태 확인 중..." : displayedState.charges === 0 ? `알바까지 ${displayedState.secondsUntilNextCharge ?? 0}초...` : `알바 실행 (${displayedState.charges}/${jobState.maxCharges})`;
   return <article className="panel">
-    <div className="panel-head"><span>WORK</span><h2>단기 알바</h2></div>
-    <div className="panel-action-body">
-      <p className="panel-message">알바를 실행하면 크레딧을 획득합니다.</p>
-      <button className="btn primary panel-primary-action" type="button" onClick={handleWork} disabled={isSubmitting || !jobState || displayedState.charges === 0}>
-        {isSubmitting ? "알바 중..." : !jobState ? "알바 상태 확인 중..." : displayedState.charges === 0 ? `알바까지 ${displayedState.secondsUntilNextCharge ?? 0}초...` : `알바 실행 (${displayedState.charges}/${jobState.maxCharges})`}
-      </button>
-      {message && <p className="auth-message is-error" role="status">{message}</p>}
+    <div className="panel-head action-head">
+      <div><span>WORK</span><h2>단기 알바</h2></div>
+      <button className="btn primary" type="button" onClick={handleWork} disabled={isSubmitting || !jobState || displayedState.charges === 0}>{buttonLabel}</button>
     </div>
+    <p className="panel-message">알바를 실행하면 크레딧을 획득합니다.</p>
+    {message && <p className="auth-message is-error" role="status">{message}</p>}
   </article>;
 }
 
