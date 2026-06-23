@@ -175,9 +175,17 @@ function weaponEffect(weapon: Weapon) {
   const level = weapon.weaponLevel;
   const power = 3 + Math.floor(level * 1.5);
   if (weapon.weaponType === "longsword") return `물리 공격력 +${power}`;
-  if (weapon.weaponType === "greatsword") return `물리 공격력 +${2 + Math.floor(level * 0.1)}%`;
+  if (weapon.weaponType === "greatsword") return `물리 공격력 +${formatWeaponPercent(percentWeaponBonus(level))}%`;
   if (weapon.weaponType === "dagger") return `명중 -${Math.min(23, 15 + Math.floor((level - 1) / 12))}%, 전체 공속 +${20 + Math.floor(level * 0.2)}%`;
   if (weapon.weaponType === "bow") return `명중 -${Math.min(18, 10 + Math.floor((level - 1) / 12))}%, +${2 + Math.floor(level * 1.1)} 고정 피해`;
   if (weapon.weaponType === "wand") return `마법 공격력 +${power}`;
-  return `마법 공격력 +${2 + Math.floor(level * 0.1)}%`;
+  return `마법 공격력 +${formatWeaponPercent(percentWeaponBonus(level))}%`;
+}
+
+function percentWeaponBonus(level: number) {
+  return Math.floor((20 + level * 0.5) * 10) / 10;
+}
+
+function formatWeaponPercent(value: number) {
+  return value.toFixed(1);
 }
