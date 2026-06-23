@@ -767,9 +767,9 @@ function CombatStat({
     <strong>
       {isBreakdownOpen && breakdown ? (
         <>
-          <small>{formatStatNumber(breakdown.base, digits)}{suffix}</small>
+          <b>{formatStatNumber(breakdown.base, digits)}{suffix}</b>
           <i aria-hidden="true">{breakdown.equipment >= 0 ? "+" : "-"}</i>
-          <b>{formatStatNumber(Math.abs(breakdown.equipment), digits)}{suffix}</b>
+          <small>{formatStatNumber(Math.abs(breakdown.equipment), digits)}{suffix}</small>
         </>
       ) : isChanged ? (
         <>
