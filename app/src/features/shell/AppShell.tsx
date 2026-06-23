@@ -259,7 +259,6 @@ export function AppShell({
                 <i aria-hidden="true" />
               </NavLink>
               <div className="mobile-session-actions">
-                <AutoBattleHud huntState={activeHuntState} />
                 <span className="credit-chip">{(character?.credits ?? 0).toLocaleString()} CR</span>
                 <button className="account-chip" type="button" onClick={toggleAccountMenu} aria-expanded={isAccountOpen}>
                   {nickname}
@@ -278,6 +277,8 @@ export function AppShell({
               </div>
             )}
           </header>
+
+          <SystemTicker className="mobile-system-ticker" huntState={activeHuntState} />
 
           <section className="mobile-nav-panel" aria-label="모바일 메뉴">
             <button className="mobile-nav-trigger" type="button" onClick={toggleNavMenu} aria-expanded={isNavOpen}>
@@ -343,13 +344,14 @@ export function AppShell({
               <strong>{nickname}</strong>
             </div>
             <div className="topbar-actions">
-              <AutoBattleHud huntState={activeHuntState} />
               <span className="credit-chip">{(character?.credits ?? 0).toLocaleString()} CR</span>
               <button className="btn ghost" type="button" onClick={onSignOut}>
                 로그아웃
               </button>
             </div>
           </header>
+
+          <SystemTicker className="desktop-system-ticker" huntState={activeHuntState} />
 
           <div className="workspace-body route-frame" key={`${location.pathname}:${routeRefreshKey}`}>
             <Routes>
@@ -377,33 +379,34 @@ function getCurrentNavLabel(pathname: string) {
   return "대시보드";
 }
 
-function AutoBattleHud({ huntState }: { huntState: HuntState | null }) {
+function SystemTicker({ className, huntState }: { className: string; huntState: HuntState | null }) {
   const battle = huntState?.lastBattle;
   const isActive = Boolean(huntState?.autoHuntEnabled);
   const isRecovering = Boolean(huntState?.recoveryEndsAt && Date.parse(huntState.recoveryEndsAt) > Date.now());
   const status = !isActive
-    ? "대기"
+    ? "STANDBY"
     : isRecovering
-      ? "회복 중"
+      ? "RECOVERY"
       : battle?.status === "in_progress"
-        ? "전투 중"
+        ? "ENGAGED"
         : battle?.status === "encountered"
-          ? "조우 중"
-          : "탐색 중";
+          ? "ENCOUNTER"
+          : "SEARCHING";
   const target = isActive && battle ? `LV.${battle.enemy.level} ${battle.enemy.name}` : null;
+  const detail = !isActive
+    ? "대기 중 · 사냥 화면에서 시작"
+    : `${target ?? "대상 탐색 중"} · ${(huntState?.autoHuntRemaining ?? 0).toString().padStart(2, "0")} REMAINING`;
 
   return (
     <NavLink
-      className={`auto-battle-hud ${isActive ? "is-active" : ""}`}
+      className={`system-ticker ${className} ${isActive ? "is-active" : ""}`}
       to="/hunt"
-      aria-label={`자동 전투 ${status}${target ? `, ${target}` : ""}. 사냥 화면으로 이동`}
+      aria-label={`자동 전투 ${status}, ${detail}. 사냥 화면으로 이동`}
     >
-      <span className="auto-battle-hud-label">AUTO</span>
-      <strong>{status}</strong>
-      <span className="auto-battle-hud-detail">
-        {isActive ? `${huntState?.autoHuntRemaining ?? 0}회` : "중지"}
-        {target && <><i aria-hidden="true" />{target}</>}
-      </span>
+      <span className="system-ticker-label">SYSTEM &gt;</span>
+      <strong>AUTO BATTLE // {status}</strong>
+      <span className="system-ticker-detail">{detail}</span>
+      <span className="system-ticker-link" aria-hidden="true">사냥 보기 ↗</span>
     </NavLink>
   );
 }
