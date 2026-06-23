@@ -18,7 +18,7 @@ export function PatchNotesSummary() {
       <div className="panel-head compact action-head">
         <div>
           <span>PATCH NOTES</span>
-          <h2>패치노트 터미널</h2>
+          <h2>패치노트</h2>
         </div>
         <Link className="text-button" to="/patch-notes">
           전체 보기
@@ -44,7 +44,7 @@ export function PatchNotesArchive() {
       <div className="archive-head">
         <div>
           <span className="eyebrow">PATCH NOTES</span>
-          <h1>패치노트 터미널</h1>
+          <h1>패치노트</h1>
         </div>
       </div>
 
