@@ -251,66 +251,68 @@ export function AppShell({
     <>
       <div className="crt-overlay" aria-hidden="true" />
       <main className="app-shell">
-        <header className="mobile-shell-head">
-          <div className="mobile-shell-row">
-            <NavLink className="rail-brand compact" to="/">
-              <span>TOWER://</span>
-              <i aria-hidden="true" />
-            </NavLink>
-            <div className="mobile-session-actions">
-              <span className="credit-chip">{(character?.credits ?? 0).toLocaleString()} CR</span>
-              <button className="account-chip" type="button" onClick={toggleAccountMenu} aria-expanded={isAccountOpen}>
-                {nickname}
-              </button>
-            </div>
-          </div>
-          {isAccountOpen && (
-            <div className={`mobile-account-menu ${isAccountClosing ? "is-closing" : ""}`}>
-              <div>
-                <span>SESSION</span>
-                <strong>{nickname}</strong>
+        <div className="mobile-top-chrome">
+          <header className="mobile-shell-head">
+            <div className="mobile-shell-row">
+              <NavLink className="rail-brand compact" to="/">
+                <span>TOWER://</span>
+                <i aria-hidden="true" />
+              </NavLink>
+              <div className="mobile-session-actions">
+                <span className="credit-chip">{(character?.credits ?? 0).toLocaleString()} CR</span>
+                <button className="account-chip" type="button" onClick={toggleAccountMenu} aria-expanded={isAccountOpen}>
+                  {nickname}
+                </button>
               </div>
-              <button className="btn ghost" type="button" onClick={onSignOut}>
-                로그아웃
-              </button>
             </div>
-          )}
-        </header>
+            {isAccountOpen && (
+              <div className={`mobile-account-menu ${isAccountClosing ? "is-closing" : ""}`}>
+                <div>
+                  <span>SESSION</span>
+                  <strong>{nickname}</strong>
+                </div>
+                <button className="btn ghost" type="button" onClick={onSignOut}>
+                  로그아웃
+                </button>
+              </div>
+            )}
+          </header>
 
-        <section className="mobile-nav-panel" aria-label="모바일 메뉴">
-          <button className="mobile-nav-trigger" type="button" onClick={toggleNavMenu} aria-expanded={isNavOpen}>
-            <span>{currentNavLabel}</span>
-            {currentNavLabel === "캐릭터" && hasUnspentStatPoints && <span className="nav-notice" aria-hidden="true" />}
-            <svg className="mobile-nav-icon" aria-hidden="true" viewBox="0 0 16 16">
-              <path d="m4 6 4 4 4-4" />
-            </svg>
-          </button>
-          {isNavOpen && (
-            <nav className={`mobile-nav-menu ${isNavClosing ? "is-closing" : ""}`} aria-label="게임 화면">
-              {navItems.map((item) => (
-                item.enabled ? (
-                  <button
-                    className={`nav-item mobile-nav-item ${item.to === location.pathname ? "is-active" : ""}`}
-                    type="button"
-                    key={item.label}
-                    onClick={() => {
-                      refreshCurrentRoute(item.to);
-                      closeNavMenu(item.to);
-                    }}
-                    aria-label={item.to === "/character" && hasUnspentStatPoints ? "캐릭터, 미분배 스탯 포인트 있음" : item.label}
-                  >
-                    {item.label}
-                    {item.to === "/character" && hasUnspentStatPoints && <span className="nav-notice" aria-hidden="true" />}
-                  </button>
-                ) : (
-                  <button className="nav-item mobile-nav-item" type="button" disabled key={item.label}>
-                    {item.label}
-                  </button>
-                )
-              ))}
-            </nav>
-          )}
-        </section>
+          <section className="mobile-nav-panel" aria-label="모바일 메뉴">
+            <button className="mobile-nav-trigger" type="button" onClick={toggleNavMenu} aria-expanded={isNavOpen}>
+              <span>{currentNavLabel}</span>
+              {currentNavLabel === "캐릭터" && hasUnspentStatPoints && <span className="nav-notice" aria-hidden="true" />}
+              <svg className="mobile-nav-icon" aria-hidden="true" viewBox="0 0 16 16">
+                <path d="m4 6 4 4 4-4" />
+              </svg>
+            </button>
+            {isNavOpen && (
+              <nav className={`mobile-nav-menu ${isNavClosing ? "is-closing" : ""}`} aria-label="게임 화면">
+                {navItems.map((item) => (
+                  item.enabled ? (
+                    <button
+                      className={`nav-item mobile-nav-item ${item.to === location.pathname ? "is-active" : ""}`}
+                      type="button"
+                      key={item.label}
+                      onClick={() => {
+                        refreshCurrentRoute(item.to);
+                        closeNavMenu(item.to);
+                      }}
+                      aria-label={item.to === "/character" && hasUnspentStatPoints ? "캐릭터, 미분배 스탯 포인트 있음" : item.label}
+                    >
+                      {item.label}
+                      {item.to === "/character" && hasUnspentStatPoints && <span className="nav-notice" aria-hidden="true" />}
+                    </button>
+                  ) : (
+                    <button className="nav-item mobile-nav-item" type="button" disabled key={item.label}>
+                      {item.label}
+                    </button>
+                  )
+                ))}
+              </nav>
+            )}
+          </section>
+        </div>
 
         <aside className="rail" aria-label="주요 메뉴">
           <NavLink className="rail-brand" to="/">

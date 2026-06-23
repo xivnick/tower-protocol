@@ -407,6 +407,7 @@ button:disabled {
   display: grid;
   gap: 8px;
   justify-items: end;
+  pointer-events: none;
 }
 
 .toast {
@@ -424,6 +425,7 @@ button:disabled {
   font-weight: 800;
   box-shadow: 0 0 0 1px rgba(57, 255, 122, 0.08), 0 18px 60px rgba(0, 0, 0, 0.36);
   animation: toast-in 160ms ease-out;
+  pointer-events: auto;
 }
 
 .toast-message {
@@ -492,6 +494,10 @@ button:disabled {
 
 .mobile-shell-head {
   display: none;
+}
+
+.mobile-top-chrome {
+  display: contents;
 }
 
 .mobile-nav-panel {
@@ -1815,6 +1821,13 @@ button:disabled {
     border-bottom: 1px solid var(--line);
     background: var(--bg-2);
     padding: 12px;
+  }
+
+  .mobile-top-chrome {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: block;
   }
 
   .mobile-shell-row {
