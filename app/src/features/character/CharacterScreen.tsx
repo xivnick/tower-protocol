@@ -225,6 +225,7 @@ function CharacterStatsPanel({
   const isPendingComplete = remainingPoints === 0 && pendingTotal > 0;
   const previewCharacter = applyPendingStats(character, pendingStats);
   const weaponBonus = calculateWeaponCombatBonus(equippedWeapon);
+  const currentBaseCombatStats = calculateCombatStats(character);
   const previewBaseCombatStats = calculateCombatStats(previewCharacter);
   const currentCombatStats = calculateCombatStats(character, weaponBonus);
   const previewCombatStats = calculateCombatStats(previewCharacter, weaponBonus);
@@ -455,15 +456,15 @@ function CharacterStatsPanel({
       </div>
 
       <div className="combat-stat-grid">
-        <CombatStat {...COMBAT_STAT_LABELS.physicalAttack} current={currentCombatStats.physicalAttack} preview={previewCombatStats.physicalAttack} breakdown={createCombatBreakdown(previewBaseCombatStats.physicalAttack, previewCombatStats.physicalAttack)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
-        <CombatStat {...COMBAT_STAT_LABELS.magicAttack} current={currentCombatStats.magicAttack} preview={previewCombatStats.magicAttack} breakdown={createCombatBreakdown(previewBaseCombatStats.magicAttack, previewCombatStats.magicAttack)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
+        <CombatStat {...COMBAT_STAT_LABELS.physicalAttack} current={currentCombatStats.physicalAttack} currentBase={currentBaseCombatStats.physicalAttack} preview={previewCombatStats.physicalAttack} breakdown={createCombatBreakdown(previewBaseCombatStats.physicalAttack, previewCombatStats.physicalAttack)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
+        <CombatStat {...COMBAT_STAT_LABELS.magicAttack} current={currentCombatStats.magicAttack} currentBase={currentBaseCombatStats.magicAttack} preview={previewCombatStats.magicAttack} breakdown={createCombatBreakdown(previewBaseCombatStats.magicAttack, previewCombatStats.magicAttack)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.physicalDefense} current={currentCombatStats.physicalDefense} preview={previewCombatStats.physicalDefense} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.magicDefense} current={currentCombatStats.magicDefense} preview={previewCombatStats.magicDefense} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.maxHp} current={currentCombatStats.maxHp} preview={previewCombatStats.maxHp} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.regeneration} current={currentCombatStats.hpRegenPerSecond} preview={previewCombatStats.hpRegenPerSecond} digits={2} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
-        <CombatStat {...COMBAT_STAT_LABELS.attackSpeed} current={currentCombatStats.attacksPerSecond} preview={previewCombatStats.attacksPerSecond} digits={2} breakdown={createCombatBreakdown(previewBaseCombatStats.attacksPerSecond, previewCombatStats.attacksPerSecond)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
+        <CombatStat {...COMBAT_STAT_LABELS.attackSpeed} current={currentCombatStats.attacksPerSecond} currentBase={currentBaseCombatStats.attacksPerSecond} preview={previewCombatStats.attacksPerSecond} digits={2} breakdown={createCombatBreakdown(previewBaseCombatStats.attacksPerSecond, previewCombatStats.attacksPerSecond)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.cooldownReduction} current={currentCombatStats.cooldownReduction * 100} preview={previewCombatStats.cooldownReduction * 100} suffix="%" digits={1} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
-        <CombatStat {...COMBAT_STAT_LABELS.accuracy} current={currentCombatStats.accuracy} preview={previewCombatStats.accuracy} breakdown={createCombatBreakdown(previewBaseCombatStats.accuracy, previewCombatStats.accuracy)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
+        <CombatStat {...COMBAT_STAT_LABELS.accuracy} current={currentCombatStats.accuracy} currentBase={currentBaseCombatStats.accuracy} preview={previewCombatStats.accuracy} breakdown={createCombatBreakdown(previewBaseCombatStats.accuracy, previewCombatStats.accuracy)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.evasionRate} current={currentCombatStats.evasionRateAgainstAccuracy100 * 100} preview={previewCombatStats.evasionRateAgainstAccuracy100 * 100} suffix="%" digits={1} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.criticalChance} current={currentCombatStats.criticalChance} preview={previewCombatStats.criticalChance} suffix="%" digits={1} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.criticalDamage} current={currentCombatStats.criticalDamage} preview={previewCombatStats.criticalDamage} suffix="%" isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
@@ -739,6 +740,7 @@ function CombatStat({
   label,
   shortLabel,
   current,
+  currentBase,
   preview,
   suffix = "",
   digits = 0,
@@ -749,6 +751,7 @@ function CombatStat({
   label: string;
   shortLabel?: string;
   current: number;
+  currentBase?: number;
   preview: number;
   suffix?: string;
   digits?: number;
@@ -769,7 +772,7 @@ function CombatStat({
         <>
           {isChanged ? (
             <>
-              <small>{formatStatNumber(current, digits)}{suffix}</small>
+              <small>{formatStatNumber(currentBase ?? current, digits)}{suffix}</small>
               <i aria-hidden="true">-&gt;</i>
             </>
           ) : null}
