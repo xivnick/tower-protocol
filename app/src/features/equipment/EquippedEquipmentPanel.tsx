@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Armor, Weapon } from "../../api/equipmentApi";
 import { calculateArmorCombatBonus } from "../../shared/armorStats";
 import type { Character } from "../../types/character";
@@ -11,7 +12,7 @@ const weaponNames = {
   staff: "지팡이",
 } as const;
 
-export function EquippedEquipmentPanel({ weapon, armor = null, character = null, headerAction, children }: { weapon: Weapon | null; armor?: Armor | null; character?: Character | null; headerAction?: React.ReactNode; children?: React.ReactNode }) {
+export function EquippedEquipmentPanel({ weapon, armor = null, character = null, weaponAction, armorAction, headerAction }: { weapon: Weapon | null; armor?: Armor | null; character?: Character | null; weaponAction?: ReactNode; armorAction?: ReactNode; headerAction?: ReactNode }) {
   return (
     <article className="panel">
       <div className="panel-head action-head">
@@ -19,10 +20,9 @@ export function EquippedEquipmentPanel({ weapon, armor = null, character = null,
         {headerAction}
       </div>
       <div className="equipped-summary">
-        <div className="equipped-summary-row"><span>WEAPON</span>{weapon ? <strong><b>{weaponLabel(weapon)}</b><small>{weaponEffect(weapon, character)}</small></strong> : <strong>장착한 무기 없음</strong>}</div>
-        <div className="equipped-summary-row"><span>ARMOR</span>{armor ? <strong><b>{armorLabel(armor)}</b><small>{armorEffect(armor, character)}</small></strong> : <strong>장착한 방어구 없음</strong>}</div>
+        <div className="equipped-summary-row"><span>WEAPON</span>{weapon ? <div className="equipped-summary-content"><strong><b>{weaponLabel(weapon)}</b><small>{weaponEffect(weapon, character)}</small></strong>{weaponAction}</div> : <strong>장착한 무기 없음</strong>}</div>
+        <div className="equipped-summary-row"><span>ARMOR</span>{armor ? <div className="equipped-summary-content"><strong><b>{armorLabel(armor)}</b><small>{armorEffect(armor, character)}</small></strong>{armorAction}</div> : <strong>장착한 방어구 없음</strong>}</div>
       </div>
-      {children}
     </article>
   );
 }

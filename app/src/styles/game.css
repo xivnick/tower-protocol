@@ -878,6 +878,19 @@ button:disabled {
   color: var(--txt-bright);
 }
 
+.equipped-summary-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 12px;
+  min-width: 0;
+}
+
+.equipped-summary-content .text-button {
+  align-self: start;
+  padding: 0;
+  font-size: 12px;
+}
+
 .equipped-summary-row b {
   color: var(--txt-bright);
 }

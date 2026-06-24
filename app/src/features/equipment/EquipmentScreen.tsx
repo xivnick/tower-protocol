@@ -122,12 +122,13 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
     .sort((left, right) => right.weaponLevel - left.weaponLevel || right.createdAt.localeCompare(left.createdAt));
   return (
     <section className="screen-panel">
-      <EquippedEquipmentPanel weapon={equippedWeapon} armor={equippedArmor} character={character}>
-        {(equippedWeapon || equippedArmor) && <div className="button-row equipment-actions">
-          {equippedWeapon && <button className="btn ghost" type="button" onClick={handleUnequip} disabled={isBusy || isUnequippingArmor}>{isUnequipping ? "해제 중..." : "무기 해제"}</button>}
-          {equippedArmor && <button className="btn ghost" type="button" onClick={handleUnequipArmor} disabled={isBusy || isUnequippingArmor}>{isUnequippingArmor ? "해제 중..." : "방어구 해제"}</button>}
-        </div>}
-      </EquippedEquipmentPanel>
+      <EquippedEquipmentPanel
+        weapon={equippedWeapon}
+        armor={equippedArmor}
+        character={character}
+        weaponAction={equippedWeapon ? <button className="text-button" type="button" onClick={handleUnequip} disabled={isBusy}>{isUnequipping ? "해제 중..." : "해제"}</button> : undefined}
+        armorAction={equippedArmor ? <button className="text-button" type="button" onClick={handleUnequipArmor} disabled={isBusy}>{isUnequippingArmor ? "해제 중..." : "해제"}</button> : undefined}
+      />
 
       <article className="panel">
         <div className="panel-head action-head">
