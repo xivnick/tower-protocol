@@ -702,7 +702,7 @@ button:disabled {
   bottom: 3px;
   left: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--acc-2) 0 var(--experience-ratio), var(--line-2) var(--experience-ratio) 100%);
+  background: linear-gradient(90deg, #ffd84d 0 var(--experience-ratio), var(--line-2) var(--experience-ratio) 100%);
   z-index: 1;
 }
 
