@@ -1,5 +1,6 @@
 import type { FormEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { allocateCharacterStats, checkCharacterNameAvailability, createMyCharacter, deleteMyCharacter, resetCharacterStats } from "../../api/characterApi";
 import type { CharacterStatAllocation } from "../../api/characterApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
@@ -505,7 +506,13 @@ function CharacterEquippedEquipmentPanel({ character }: { character: Character }
     return () => { isActive = false; };
   }, [character.id]);
 
-  return <EquippedEquipmentPanel weapon={equippedWeapon} />;
+  return (
+    <EquippedEquipmentPanel weapon={equippedWeapon}>
+      <div className="button-row equipment-actions">
+        <Link className="btn ghost" to="/equipment">장비 관리</Link>
+      </div>
+    </EquippedEquipmentPanel>
+  );
 }
 
 function createEmptyStatAllocation(): CharacterStatAllocation {

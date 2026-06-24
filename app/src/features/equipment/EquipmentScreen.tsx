@@ -93,6 +93,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
     if (!result.ok) { setMessage(result.message); return; }
     if (result.character) onCharacterChange(result.character);
     setWeapons((current) => current.filter((candidate) => candidate.id !== weapon.id));
+    setOpenedWeapon((current) => current?.id === weapon.id ? null : current);
     setSelectedWeaponId(null);
     showToast(toastMessages.equipment.sold(result.gainedCredits));
   }
@@ -123,6 +124,12 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
             <span>획득 무기</span>
             <strong>{weaponLabel(openedWeapon)}</strong>
             <small>{weaponEffect(openedWeapon)}</small>
+            <div className="button-row equipment-actions">
+              {openedWeapon.id === equippedWeaponId ? <span className="weapon-equipped-note">장착 중인 무기는 판매할 수 없습니다.</span> : <>
+                <button className="btn primary" type="button" disabled={isBusy} onClick={() => handleEquip(openedWeapon)}>{pendingWeaponId === openedWeapon.id ? "장착 중..." : "장착"}</button>
+                <div className="weapon-sale-action"><button className="btn ghost" type="button" disabled={isBusy} onClick={() => handleSell(openedWeapon)}>{sellingWeaponId === openedWeapon.id ? "판매 중..." : "판매"}</button><small>20 CR</small></div>
+              </>}
+            </div>
           </div>}
         </div>
       </article>
