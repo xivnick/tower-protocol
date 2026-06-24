@@ -21,6 +21,7 @@
   --rail: 236px;
   --header: 60px;
   --environment-banner: 22px;
+  --auto-battle-hud-clearance: 70px;
 }
 
 * {
@@ -765,7 +766,7 @@ button:disabled {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 14px;
-  padding: 14px;
+  padding: 14px 14px var(--auto-battle-hud-clearance);
   overflow: auto;
 }
 
@@ -774,7 +775,7 @@ button:disabled {
   display: grid;
   gap: 14px;
   align-content: start;
-  padding: 14px;
+  padding: 14px 14px var(--auto-battle-hud-clearance);
   overflow: auto;
 }
 
@@ -1891,7 +1892,7 @@ button:disabled {
 .archive-view {
   min-height: 0;
   overflow: auto;
-  padding: 14px;
+  padding: 14px 14px var(--auto-battle-hud-clearance);
 }
 
 .archive-head {
@@ -1911,6 +1912,10 @@ button:disabled {
 }
 
 @media (max-width: 860px) {
+  :root {
+    --auto-battle-hud-clearance: 64px;
+  }
+
   body {
     overflow: auto;
   }
