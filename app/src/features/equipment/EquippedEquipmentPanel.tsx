@@ -9,10 +9,13 @@ const weaponNames = {
   staff: "지팡이",
 } as const;
 
-export function EquippedEquipmentPanel({ weapon, children }: { weapon: Weapon | null; children?: React.ReactNode }) {
+export function EquippedEquipmentPanel({ weapon, headerAction, children }: { weapon: Weapon | null; headerAction?: React.ReactNode; children?: React.ReactNode }) {
   return (
     <article className="panel">
-      <div className="panel-head"><span>EQUIPPED</span><h2>착용 중인 장비</h2></div>
+      <div className="panel-head action-head">
+        <div><span>EQUIPPED</span><h2>착용 중인 장비</h2></div>
+        {headerAction}
+      </div>
       <div className="kv-grid">
         <div className="kv"><span>무기</span><strong>{weapon ? weaponLabel(weapon) : "장착한 무기 없음"}</strong></div>
         {weapon && <div className="kv"><span>효과</span><strong>{weaponEffect(weapon)}</strong></div>}
