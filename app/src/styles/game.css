@@ -848,6 +848,12 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
+.kv strong small {
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .character-link {
   display: flex;
   align-items: center;
