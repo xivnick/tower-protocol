@@ -674,7 +674,7 @@ button:disabled {
   content: "";
   pointer-events: none;
   transition: width 180ms ease-out;
-  z-index: 0;
+  z-index: 1;
 }
 
 .auto-battle-hud::after {
@@ -691,7 +691,7 @@ button:disabled {
 
 .auto-battle-hud > * {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 .auto-battle-hud:hover,
