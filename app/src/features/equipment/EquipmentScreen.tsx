@@ -109,7 +109,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
     .sort((left, right) => right.weaponLevel - left.weaponLevel || right.createdAt.localeCompare(left.createdAt));
   return (
     <section className="screen-panel">
-      <EquippedEquipmentPanel weapon={equippedWeapon} armor={equippedArmor}>
+      <EquippedEquipmentPanel weapon={equippedWeapon} armor={equippedArmor} character={character}>
         {equippedWeapon && <div className="button-row equipment-actions"><button className="btn ghost" type="button" onClick={handleUnequip} disabled={isBusy}>{isUnequipping ? "해제 중..." : "무기 해제"}</button></div>}
       </EquippedEquipmentPanel>
 

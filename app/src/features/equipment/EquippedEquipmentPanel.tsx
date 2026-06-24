@@ -1,5 +1,6 @@
 import type { Armor, Weapon } from "../../api/equipmentApi";
 import { calculateArmorCombatBonus } from "../../shared/armorStats";
+import type { Character } from "../../types/character";
 
 const weaponNames = {
   longsword: "장검",
@@ -10,7 +11,7 @@ const weaponNames = {
   staff: "지팡이",
 } as const;
 
-export function EquippedEquipmentPanel({ weapon, armor = null, headerAction, children }: { weapon: Weapon | null; armor?: Armor | null; headerAction?: React.ReactNode; children?: React.ReactNode }) {
+export function EquippedEquipmentPanel({ weapon, armor = null, character = null, headerAction, children }: { weapon: Weapon | null; armor?: Armor | null; character?: Character | null; headerAction?: React.ReactNode; children?: React.ReactNode }) {
   return (
     <article className="panel">
       <div className="panel-head action-head">
@@ -19,7 +20,7 @@ export function EquippedEquipmentPanel({ weapon, armor = null, headerAction, chi
       </div>
       <div className="equipped-summary">
         <div className="equipped-summary-row"><span>WEAPON</span>{weapon ? <strong><b>{weaponLabel(weapon)}</b><small>{weaponEffect(weapon)}</small></strong> : <strong>장착한 무기 없음</strong>}</div>
-        <div className="equipped-summary-row"><span>ARMOR</span>{armor ? <strong><b>{armorLabel(armor)}</b><small>{armorEffect(armor)}</small></strong> : <strong>장착한 방어구 없음</strong>}</div>
+        <div className="equipped-summary-row"><span>ARMOR</span>{armor ? <strong><b>{armorLabel(armor)}</b><small>{armorEffect(armor, character)}</small></strong> : <strong>장착한 방어구 없음</strong>}</div>
       </div>
       {children}
     </article>
@@ -52,19 +53,19 @@ export function armorSummary(armor: Armor) {
   return "마방 · 쿨타임 운용";
 }
 
-export function armorEffect(armor: Armor) {
+export function armorEffect(armor: Armor, character: Character | null = null) {
   const bonus = calculateArmorCombatBonus(armor);
   const parts = [
     bonus.reflectDamageFlat && `반사 피해 +${bonus.reflectDamageFlat}`,
     bonus.damageTakenReductionPct && `받는 피해 감소 +${formatPercent(bonus.damageTakenReductionPct)}%`,
     bonus.physicalDefenseFlat && `물리 방어 +${bonus.physicalDefenseFlat}`,
-    bonus.physicalDefensePct && `물리 방어 +${formatPercent(bonus.physicalDefensePct)}%`,
+    bonus.physicalDefensePct && formatPercentBonus("물리 방어", bonus.physicalDefensePct, character?.endurance),
     bonus.evasionFlat && `회피 +${bonus.evasionFlat}`,
-    bonus.evasionPct && `회피 +${formatPercent(bonus.evasionPct)}%`,
+    bonus.evasionPct && formatPercentBonus("회피", bonus.evasionPct, character?.agility),
     bonus.magicDefenseFlat && `마법 방어 +${bonus.magicDefenseFlat}`,
-    bonus.magicDefensePct && `마법 방어 +${formatPercent(bonus.magicDefensePct)}%`,
+    bonus.magicDefensePct && formatPercentBonus("마법 방어", bonus.magicDefensePct, character?.wisdom),
     bonus.cooldownFlat && `쿨타임 수치 +${bonus.cooldownFlat}`,
-    bonus.cooldownPct && `쿨타임 수치 +${formatPercent(bonus.cooldownPct)}%`,
+    bonus.cooldownPct && formatPercentBonus("쿨타임 수치", bonus.cooldownPct, character?.wisdom),
   ].filter((part): part is string => Boolean(part));
   return parts.join(", ");
 }
@@ -100,5 +101,15 @@ function formatWeaponPercent(value: number) {
 }
 
 function formatPercent(value: number) {
+  return value % 1 === 0 ? value.toFixed(0) : value.toFixed(1);
+}
+
+function formatPercentBonus(label: string, percent: number, currentValue: number | undefined) {
+  if (currentValue === undefined) return `${label} +${formatPercent(percent)}%`;
+  const increase = currentValue * percent / 100;
+  return `${label} +${formatPercent(percent)}% (+${formatBonusValue(increase)})`;
+}
+
+function formatBonusValue(value: number) {
   return value % 1 === 0 ? value.toFixed(0) : value.toFixed(1);
 }
