@@ -651,7 +651,7 @@ button:disabled {
   gap: 8px;
   border: 1px solid var(--line-2);
   background: var(--bg-2);
-  padding: 11px 12px 13px;
+  padding: 11px 12px 15px;
   box-shadow: 0 14px 38px rgba(0, 0, 0, 0.34);
   color: var(--mut);
   font-size: 11px;
@@ -668,7 +668,7 @@ button:disabled {
 
 .auto-battle-hud::before {
   position: absolute;
-  inset: auto auto 0 0;
+  inset: auto auto 2px 0;
   width: 0;
   height: 3px;
   background: var(--acc-dim);
@@ -682,7 +682,7 @@ button:disabled {
 .auto-battle-hud::after {
   position: absolute;
   right: 0;
-  bottom: 0;
+  bottom: 2px;
   left: 0;
   height: 3px;
   background: var(--line-2);
@@ -694,6 +694,16 @@ button:disabled {
 .auto-battle-hud > * {
   position: relative;
   z-index: 2;
+}
+
+.auto-battle-hud-experience {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #9b842d 0 var(--experience-ratio), var(--line-2) var(--experience-ratio) 100%);
+  z-index: 1;
 }
 
 .auto-battle-hud:hover,

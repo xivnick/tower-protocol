@@ -5,6 +5,7 @@ import type { Profile } from "../../api/profileApi";
 import type { Character } from "../../types/character";
 import { toastMessages } from "../../shared/toastMessages";
 import { useCombatClock } from "../../shared/useCombatClock";
+import { getRequiredExperienceForLevel } from "../../shared/progression";
 import { configureAutoHunt, encounterHuntMonster, getMyHuntState, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntState } from "../../api/characterApi";
 import { CharacterScreen } from "../character/CharacterScreen";
@@ -362,7 +363,7 @@ export function AppShell({
             </Routes>
           </div>
         </section>
-        <AutoBattleHud huntState={activeHuntState} />
+        <AutoBattleHud character={character} huntState={activeHuntState} />
       </main>
     </>
   );
@@ -377,7 +378,7 @@ function getCurrentNavLabel(pathname: string) {
   return "대시보드";
 }
 
-function AutoBattleHud({ huntState }: { huntState: HuntState | null }) {
+function AutoBattleHud({ character, huntState }: { character: Character | null; huntState: HuntState | null }) {
   const battle = huntState?.lastBattle;
   const isAutoHuntEnabled = Boolean(huntState?.autoHuntEnabled);
   const isBattleInProgress = battle?.status === "in_progress";
@@ -411,6 +412,10 @@ function AutoBattleHud({ huntState }: { huntState: HuntState | null }) {
     : isBattleInProgress && enemyHealthRatio !== null && playerHealthRatio + enemyHealthRatio > 0
       ? Math.max(0, Math.min(100, (playerHealthRatio / (playerHealthRatio + enemyHealthRatio)) * 100))
       : playerMaxHp > 0 ? Math.max(0, Math.min(100, (playerHp / playerMaxHp) * 100)) : 0;
+  const requiredExperience = character ? getRequiredExperienceForLevel(character.level + 1) : null;
+  const experiencePercent = !character ? 0 : requiredExperience
+    ? Math.max(0, Math.min(100, (character.experience / requiredExperience) * 100))
+    : 100;
   const remaining = (huntState?.autoHuntRemaining ?? 0).toString().padStart(2, "0");
   const label = isAutoHuntEnabled ? `AUTO BATTLE (${remaining}/10)` : "BATTLE";
   const isHudActive = isAutoHuntEnabled || isBattleInProgress || isRecovering || isStandingBy;
@@ -420,11 +425,12 @@ function AutoBattleHud({ huntState }: { huntState: HuntState | null }) {
       className={`auto-battle-hud ${isHudActive ? "is-active" : ""} ${isStandingBy ? "is-standing-by" : ""} ${isBattleInProgress ? "has-opponent" : ""}`}
       to="/hunt"
       aria-label={`${isAutoHuntEnabled ? `자동 전투 ${remaining}/10, ` : ""}${status}${target ? `, ${target}` : ""}. 사냥 화면으로 이동`}
-      style={{ "--health-ratio": `${healthPercent}%` } as CSSProperties}
+      style={{ "--health-ratio": `${healthPercent}%`, "--experience-ratio": `${experiencePercent}%` } as CSSProperties}
     >
       <strong className="auto-battle-hud-label">{label} &gt;</strong>
       <span className="system-ticker-state">{status}</span>
       {target && <><span className="auto-battle-hud-divider" aria-hidden="true">·</span><span className="system-ticker-detail">{target}</span></>}
+      <span className="auto-battle-hud-experience" aria-hidden="true" />
     </NavLink>
   );
 }
