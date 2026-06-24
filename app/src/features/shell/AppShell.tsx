@@ -379,25 +379,27 @@ function getCurrentNavLabel(pathname: string) {
 
 function AutoBattleHud({ huntState }: { huntState: HuntState | null }) {
   const battle = huntState?.lastBattle;
-  const isActive = Boolean(huntState?.autoHuntEnabled);
+  const isAutoHuntEnabled = Boolean(huntState?.autoHuntEnabled);
   const isBattleInProgress = battle?.status === "in_progress";
   const isRecovering = Boolean(
     !isBattleInProgress
     && huntState?.recoveryEndsAt
     && Date.parse(huntState.recoveryEndsAt) > Date.now(),
   );
-  const now = useCombatClock(Boolean(isActive && (isBattleInProgress || isRecovering)));
+  const now = useCombatClock(Boolean(isBattleInProgress || isRecovering));
 
-  const status = !isActive
-    ? "대기 중"
+  const status = isBattleInProgress
+    ? "전투 중"
     : isRecovering
       ? "회복 중"
-      : battle?.status === "in_progress"
-        ? "전투 중"
-        : battle?.status === "encountered"
-          ? "적 조우"
-          : "대상 탐색 중";
-  const target = isActive && battle ? `LV.${battle.enemy.level} ${battle.enemy.name}` : null;
+      : battle?.status === "encountered"
+        ? "적 조우"
+        : isAutoHuntEnabled
+          ? "대상 탐색 중"
+          : "대기 중";
+  const target = (isBattleInProgress || battle?.status === "encountered") && battle
+    ? `LV.${battle.enemy.level} ${battle.enemy.name}`
+    : null;
   const playerMaxHp = battle?.player.maxHp ?? huntState?.playerMaxHp ?? 0;
   const playerHp = getTickerPlayerHp(huntState, battle, now);
   const enemyHp = getTickerEnemyHp(battle, now);
@@ -407,18 +409,19 @@ function AutoBattleHud({ huntState }: { huntState: HuntState | null }) {
     ? Math.max(0, Math.min(100, (playerHealthRatio / (playerHealthRatio + enemyHealthRatio)) * 100))
     : playerMaxHp > 0 ? Math.max(0, Math.min(100, (playerHp / playerMaxHp) * 100)) : 0;
   const remaining = (huntState?.autoHuntRemaining ?? 0).toString().padStart(2, "0");
-  const detail = target ?? (isActive ? "대상 탐색 중" : "대상 없음");
+  const label = isAutoHuntEnabled ? `AUTO BATTLE (${remaining}/10)` : "BATTLE";
+  const isHudActive = isAutoHuntEnabled || isBattleInProgress || isRecovering;
 
   return (
     <NavLink
-      className={`auto-battle-hud ${isActive ? "is-active" : ""} ${isBattleInProgress ? "has-opponent" : ""}`}
+      className={`auto-battle-hud ${isHudActive ? "is-active" : ""} ${isBattleInProgress ? "has-opponent" : ""}`}
       to="/hunt"
-      aria-label={`자동 전투 ${remaining}/10, ${status}, ${detail}. 사냥 화면으로 이동`}
+      aria-label={`${isAutoHuntEnabled ? `자동 전투 ${remaining}/10, ` : ""}${status}${target ? `, ${target}` : ""}. 사냥 화면으로 이동`}
       style={{ "--health-ratio": `${healthPercent}%` } as CSSProperties}
     >
-      <strong>AUTO BATTLE ({remaining}/10) &gt;</strong>
+      <strong className="auto-battle-hud-label">{label} &gt;</strong>
       <span className="system-ticker-state">{status}</span>
-      <span className="system-ticker-detail">{detail}</span>
+      {target && <><span className="auto-battle-hud-divider" aria-hidden="true">·</span><span className="system-ticker-detail">{target}</span></>}
     </NavLink>
   );
 }

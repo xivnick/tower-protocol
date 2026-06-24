@@ -706,18 +706,18 @@ button:disabled {
 }
 
 .auto-battle-hud .system-ticker-state {
-  color: var(--mut-2);
+  color: var(--txt-bright);
 }
 
-.auto-battle-hud strong {
-  color: var(--txt);
+.auto-battle-hud .auto-battle-hud-label {
+  color: var(--mut);
 }
 
 .auto-battle-hud .system-ticker-detail {
   min-width: 0;
   flex: 1 1 auto;
   overflow: hidden;
-  color: var(--mut-2);
+  color: var(--txt);
   font-variant-numeric: tabular-nums;
   text-overflow: ellipsis;
 }
@@ -731,12 +731,20 @@ button:disabled {
 }
 
 .auto-battle-hud.is-active strong {
-  color: var(--txt-bright);
+  color: var(--mut);
 }
 
 .auto-battle-hud.is-active .system-ticker-state,
 .auto-battle-hud.is-active .system-ticker-detail {
   color: var(--txt);
+}
+
+.auto-battle-hud.is-active .system-ticker-state {
+  color: var(--txt-bright);
+}
+
+.auto-battle-hud-divider {
+  color: var(--mut);
 }
 
 .credit-chip {
