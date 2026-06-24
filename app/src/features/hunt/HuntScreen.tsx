@@ -612,13 +612,14 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "regeneration") return <><b className="combat-log-enemy">{enemyName}</b> 재생 {recovery}</>;
   if (entry.kind === "player_regeneration") return <><b className="combat-log-player">{playerName}</b> 재생 {recovery}</>;
   if (entry.kind === "enemy_attack") return <><b className="combat-log-enemy">{enemyName}</b> 공격 <i className="combat-log-arrow is-enemy">≫</i> {damage}</>;
+  if (entry.kind === "reflect") return <><b className="combat-log-player">{playerName}</b> 반사 피해 <i className="combat-log-arrow is-player">≫</i> {damage}</>;
   if (entry.kind === "critical") return <><b className="combat-log-player">{playerName}</b> <b className="combat-log-critical">치명타</b> <i className="combat-log-arrow is-player">≫</i> {damage}</>;
   return <><b className="combat-log-player">{playerName}</b> 공격 <i className="combat-log-arrow is-player">≫</i> {damage}</>;
 }
 
 function getLogTimeTone(entry: HuntLogEntry) {
   if (entry.kind === "enemy_attack" || entry.kind === "enemy_miss") return "is-enemy-action";
-  if (entry.kind === "attack" || entry.kind === "critical" || entry.kind === "miss") return "is-player-action";
+  if (entry.kind === "attack" || entry.kind === "critical" || entry.kind === "miss" || entry.kind === "reflect") return "is-player-action";
   return "";
 }
 

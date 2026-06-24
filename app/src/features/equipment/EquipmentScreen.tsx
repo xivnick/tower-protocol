@@ -6,6 +6,8 @@ import { toastMessages } from "../../shared/toastMessages";
 import type { Character } from "../../types/character";
 import { useToast } from "../toast/ToastProvider";
 import { EquippedEquipmentPanel, weaponEffect, weaponLabel, weaponSummary } from "./EquippedEquipmentPanel";
+import { ArmorEquipmentPanel } from "./ArmorEquipmentPanel";
+import type { Armor } from "../../api/equipmentApi";
 
 const weaponNames: Record<WeaponType, string> = {
   longsword: "장검",
@@ -23,6 +25,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
   const { showToast } = useToast();
   const [weapons, setWeapons] = useState<Weapon[]>([]);
   const [equippedWeaponId, setEquippedWeaponId] = useState<string | null>(null);
+  const [equippedArmor, setEquippedArmor] = useState<Armor | null>(null);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isOpeningBox, setIsOpeningBox] = useState(false);
@@ -106,7 +109,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
     .sort((left, right) => right.weaponLevel - left.weaponLevel || right.createdAt.localeCompare(left.createdAt));
   return (
     <section className="screen-panel">
-      <EquippedEquipmentPanel weapon={equippedWeapon}>
+      <EquippedEquipmentPanel weapon={equippedWeapon} armor={equippedArmor}>
         {equippedWeapon && <div className="button-row equipment-actions"><button className="btn ghost" type="button" onClick={handleUnequip} disabled={isBusy}>{isUnequipping ? "해제 중..." : "무기 해제"}</button></div>}
       </EquippedEquipmentPanel>
 
@@ -161,6 +164,8 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
         })}</div>}
         {message && <p className="auth-message is-error" role="status">{message}</p>}
       </article>
+
+      <ArmorEquipmentPanel character={character} onCharacterChange={onCharacterChange} onEquippedArmorChange={setEquippedArmor} />
     </section>
   );
 }

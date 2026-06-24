@@ -7,13 +7,14 @@ import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
 import { BASE_PRIMARY_STAT, calculateCombatStats, COMBAT_STAT_LABELS, PRIMARY_STATS } from "../../shared/stats";
 import { calculateWeaponCombatBonus } from "../../shared/weaponStats";
+import { calculateArmorCombatBonus } from "../../shared/armorStats";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
 import type { Character } from "../../types/character";
 import type { ToastInput } from "../../types/toast";
 import { toastMessages } from "../../shared/toastMessages";
 import { useToast } from "../toast/ToastProvider";
-import { getMyWeapons } from "../../api/equipmentApi";
-import type { Weapon } from "../../api/equipmentApi";
+import { getMyArmors, getMyWeapons } from "../../api/equipmentApi";
+import type { Armor, Weapon } from "../../api/equipmentApi";
 import { EquippedEquipmentPanel } from "../equipment/EquippedEquipmentPanel";
 
 export function CharacterScreen({
@@ -215,6 +216,7 @@ function CharacterStatsPanel({
   const [isResetting, setIsResetting] = useState(false);
   const [message, setMessage] = useState("");
   const [equippedWeapon, setEquippedWeapon] = useState<Weapon | null>(null);
+  const [equippedArmor, setEquippedArmor] = useState<Armor | null>(null);
   const [isCombatBreakdownOpen, setIsCombatBreakdownOpen] = useState(false);
   const statRepeatDelayRef = useRef<number | null>(null);
   const statRepeatIntervalRef = useRef<number | null>(null);
@@ -224,10 +226,11 @@ function CharacterStatsPanel({
   const isPendingComplete = remainingPoints === 0 && pendingTotal > 0;
   const previewCharacter = applyPendingStats(character, pendingStats);
   const weaponBonus = calculateWeaponCombatBonus(equippedWeapon);
+  const armorBonus = calculateArmorCombatBonus(equippedArmor);
   const currentBaseCombatStats = calculateCombatStats(character);
   const previewBaseCombatStats = calculateCombatStats(previewCharacter);
-  const currentCombatStats = calculateCombatStats(character, weaponBonus);
-  const previewCombatStats = calculateCombatStats(previewCharacter, weaponBonus);
+  const currentCombatStats = calculateCombatStats(character, weaponBonus, armorBonus);
+  const previewCombatStats = calculateCombatStats(previewCharacter, weaponBonus, armorBonus);
   const canApply = pendingTotal > 0 && !isSubmitting && !isResetting;
   const canReset = hasAllocatedStats(character) && !isSubmitting && !isResetting;
 
@@ -239,11 +242,16 @@ function CharacterStatsPanel({
   useEffect(() => {
     let isActive = true;
     setEquippedWeapon(null);
+    setEquippedArmor(null);
     setIsCombatBreakdownOpen(false);
 
     void getMyWeapons().then((result) => {
       if (!isActive || !result.ok) return;
       setEquippedWeapon(result.inventory.weapons.find((weapon) => weapon.id === result.inventory.equippedWeaponId) ?? null);
+    });
+    void getMyArmors().then((result) => {
+      if (!isActive || !result.ok) return;
+      setEquippedArmor(result.inventory.armors.find((armor) => armor.id === result.inventory.equippedArmorId) ?? null);
     });
 
     return () => { isActive = false; };
@@ -496,6 +504,7 @@ function CharacterStatsPanel({
 
 function CharacterEquippedEquipmentPanel({ character }: { character: Character }) {
   const [equippedWeapon, setEquippedWeapon] = useState<Weapon | null>(null);
+  const [equippedArmor, setEquippedArmor] = useState<Armor | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -503,10 +512,14 @@ function CharacterEquippedEquipmentPanel({ character }: { character: Character }
       if (!isActive || !result.ok) return;
       setEquippedWeapon(result.inventory.weapons.find((weapon) => weapon.id === result.inventory.equippedWeaponId) ?? null);
     });
+    void getMyArmors().then((result) => {
+      if (!isActive || !result.ok) return;
+      setEquippedArmor(result.inventory.armors.find((armor) => armor.id === result.inventory.equippedArmorId) ?? null);
+    });
     return () => { isActive = false; };
   }, [character.id]);
 
-  return <EquippedEquipmentPanel weapon={equippedWeapon} headerAction={<Link className="text-button" to="/equipment">장비 관리</Link>} />;
+  return <EquippedEquipmentPanel weapon={equippedWeapon} armor={equippedArmor} headerAction={<Link className="text-button" to="/equipment">장비 관리</Link>} />;
 }
 
 function createEmptyStatAllocation(): CharacterStatAllocation {

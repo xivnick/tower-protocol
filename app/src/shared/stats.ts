@@ -1,5 +1,6 @@
 import type { Character } from "../types/character";
 import type { WeaponCombatBonus } from "./weaponStats";
+import type { ArmorCombatBonus } from "./armorStats";
 
 export const STAT_POINTS_PER_LEVEL = 5;
 export const BASE_PRIMARY_STAT = 10;
@@ -46,16 +47,16 @@ export function calculateEvasionRate(evasion: number, opponentAccuracy: number) 
   return evasion / (evasion + opponentAccuracy);
 }
 
-export function calculateCombatStats(character: Character, weaponBonus: WeaponCombatBonus = {}) {
+export function calculateCombatStats(character: Character, weaponBonus: WeaponCombatBonus = {}, armorBonus: ArmorCombatBonus = {}) {
   const maxHp = 100 + character.level * 20 + character.vitality * 10;
   const attackSpeed = 100 + character.agility;
   const accuracy = (100 + character.dexterity) * (1 - (weaponBonus.accuracyPenaltyPct ?? 0) / 100);
-  const evasion = character.agility;
+  const evasion = (character.agility + (armorBonus.evasionFlat ?? 0)) * (1 + (armorBonus.evasionPct ?? 0) / 100);
   const criticalChance = Math.min(character.dexterity, 100);
-  const physicalDefense = character.endurance;
-  const magicDefense = character.wisdom;
+  const physicalDefense = (character.endurance + (armorBonus.physicalDefenseFlat ?? 0)) * (1 + (armorBonus.physicalDefensePct ?? 0) / 100);
+  const magicDefense = (character.wisdom + (armorBonus.magicDefenseFlat ?? 0)) * (1 + (armorBonus.magicDefensePct ?? 0) / 100);
   const finalDefense = physicalDefense + magicDefense;
-  const cooldown = character.wisdom;
+  const cooldown = (character.wisdom + (armorBonus.cooldownFlat ?? 0)) * (1 + (armorBonus.cooldownPct ?? 0) / 100);
   const cooldownReduction = cooldown / (cooldown + 100);
   const regeneration = character.endurance;
   const hpRegenPerSecond = maxHp * (regeneration / 3000);
@@ -80,5 +81,7 @@ export function calculateCombatStats(character: Character, weaponBonus: WeaponCo
     regeneration,
     hpRegenPerSecond,
     regenerationRatePerSecond,
+    damageTakenReduction: armorBonus.damageTakenReductionPct ?? 0,
+    reflectDamage: armorBonus.reflectDamageFlat ?? 0,
   };
 }

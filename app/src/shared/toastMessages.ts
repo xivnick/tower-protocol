@@ -23,6 +23,10 @@ export const toastMessages = {
     equipped: (weapon: string): ToastInput => ({ message: `무기 장착 · ${weapon}`, tone: "system" }),
     unequipped: (): ToastInput => ({ message: "무기를 해제했습니다.", tone: "system" }),
     sold: (gainedCredits: number): ToastInput => ({ message: `무기 판매 · +${gainedCredits.toLocaleString()} CR`, tone: "common" }),
+    armorFound: (armor: string): ToastInput => ({ message: `방어구 획득 · ${armor}`, tone: "rare" }),
+    armorEquipped: (armor: string): ToastInput => ({ message: `방어구 장착 · ${armor}`, tone: "system" }),
+    armorUnequipped: (): ToastInput => ({ message: "방어구를 해제했습니다.", tone: "system" }),
+    armorSold: (gainedCredits: number): ToastInput => ({ message: `방어구 판매 · +${gainedCredits.toLocaleString()} CR`, tone: "common" }),
   },
   hunt: {
     defeated: (): ToastInput => ({ message: "전투 패배 · 10초간 회복", tone: "error" }),
