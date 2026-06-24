@@ -650,7 +650,7 @@ button:disabled {
   gap: 8px;
   border: 1px solid var(--line-2);
   background: var(--bg-2);
-  padding: 11px 12px;
+  padding: 11px 12px 13px;
   box-shadow: 0 14px 38px rgba(0, 0, 0, 0.34);
   color: var(--mut);
   font-size: 11px;
@@ -667,12 +667,26 @@ button:disabled {
 
 .auto-battle-hud::before {
   position: absolute;
-  inset: 0 auto 0 0;
+  inset: auto auto 0 0;
   width: 0;
+  height: 3px;
   background: var(--acc-dim);
   content: "";
   pointer-events: none;
   transition: width 180ms ease-out;
+  z-index: 0;
+}
+
+.auto-battle-hud::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--line-2);
+  content: "";
+  pointer-events: none;
+  z-index: 0;
 }
 
 .auto-battle-hud > * {
@@ -708,12 +722,8 @@ button:disabled {
   text-overflow: ellipsis;
 }
 
-.auto-battle-hud.is-active {
-  background: var(--bg-2);
-}
-
-.auto-battle-hud.is-active.has-opponent {
-  background: color-mix(in srgb, var(--neg) 42%, var(--bg-2));
+.auto-battle-hud.is-active.has-opponent::after {
+  background: color-mix(in srgb, var(--neg) 48%, var(--bg-2));
 }
 
 .auto-battle-hud.is-active::before {
