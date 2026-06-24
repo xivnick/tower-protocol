@@ -707,6 +707,10 @@ button:disabled {
   background: var(--bg-2);
 }
 
+.system-ticker.is-active.has-opponent {
+  background: color-mix(in srgb, var(--neg) 42%, var(--bg-2));
+}
+
 .system-ticker.is-active::before {
   width: var(--health-ratio);
 }

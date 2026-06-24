@@ -430,7 +430,7 @@ function SystemTicker({ className, huntState, isVisible }: { className: string; 
 
   return (
     <NavLink
-      className={`system-ticker ${className} ${isActive ? "is-active" : ""}`}
+      className={`system-ticker ${className} ${isActive ? "is-active" : ""} ${isBattleInProgress ? "has-opponent" : ""}`}
       to="/hunt"
       aria-label={`자동 전투 ${remaining}/10, ${status}, ${detail}. 사냥 화면으로 이동`}
       style={{ "--health-ratio": `${healthPercent}%` } as CSSProperties}
