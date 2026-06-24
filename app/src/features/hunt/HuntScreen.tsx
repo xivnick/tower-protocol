@@ -530,7 +530,7 @@ function MonsterInfoStats({ info }: { info: MonsterInfo }) {
       <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalDefense} value={info.physicalDefense} />
       <MonsterCombatStat {...COMBAT_STAT_LABELS.magicDefense} value={info.magicDefense} />
       <MonsterCombatStat {...COMBAT_STAT_LABELS.maxHp} value={info.maxHp} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.regeneration} value={info.regeneration} digits={2} />
+      <MonsterCombatStat {...COMBAT_STAT_LABELS.regeneration} value={(info.regeneration / info.maxHp) * 100} suffix="%/초" digits={1} />
       <MonsterCombatStat {...COMBAT_STAT_LABELS.attackSpeed} value={info.attacksPerSecond} digits={2} />
       <MonsterCombatStat {...COMBAT_STAT_LABELS.cooldownReduction} value={info.cooldownReduction * 100} suffix="%" digits={1} />
       <MonsterCombatStat {...COMBAT_STAT_LABELS.accuracy} value={info.accuracy} />

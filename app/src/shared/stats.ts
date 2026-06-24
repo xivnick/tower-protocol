@@ -58,7 +58,8 @@ export function calculateCombatStats(character: Character, weaponBonus: WeaponCo
   const cooldown = character.wisdom;
   const cooldownReduction = cooldown / (cooldown + 100);
   const regeneration = character.endurance;
-  const hpRegenPerSecond = maxHp * (regeneration / 10000);
+  const hpRegenPerSecond = maxHp * (regeneration / 3000);
+  const regenerationRatePerSecond = (regeneration / 3000) * 100;
 
   return {
     physicalAttack: (character.strength + (weaponBonus.physicalAttackFlat ?? 0)) * (1 + (weaponBonus.physicalAttackPct ?? 0) / 100),
@@ -78,5 +79,6 @@ export function calculateCombatStats(character: Character, weaponBonus: WeaponCo
     cooldownReduction,
     regeneration,
     hpRegenPerSecond,
+    regenerationRatePerSecond,
   };
 }
