@@ -405,12 +405,15 @@ function AutoBattleHud({ huntState }: { huntState: HuntState | null }) {
   const enemyHp = getTickerEnemyHp(battle, now);
   const playerHealthRatio = playerMaxHp > 0 ? playerHp / playerMaxHp : 0;
   const enemyHealthRatio = battle && enemyHp !== null && battle.enemy.maxHp > 0 ? enemyHp / battle.enemy.maxHp : null;
-  const healthPercent = isBattleInProgress && enemyHealthRatio !== null && playerHealthRatio + enemyHealthRatio > 0
-    ? Math.max(0, Math.min(100, (playerHealthRatio / (playerHealthRatio + enemyHealthRatio)) * 100))
-    : playerMaxHp > 0 ? Math.max(0, Math.min(100, (playerHp / playerMaxHp) * 100)) : 0;
+  const isStandingBy = status === "대기 중";
+  const healthPercent = isStandingBy
+    ? 100
+    : isBattleInProgress && enemyHealthRatio !== null && playerHealthRatio + enemyHealthRatio > 0
+      ? Math.max(0, Math.min(100, (playerHealthRatio / (playerHealthRatio + enemyHealthRatio)) * 100))
+      : playerMaxHp > 0 ? Math.max(0, Math.min(100, (playerHp / playerMaxHp) * 100)) : 0;
   const remaining = (huntState?.autoHuntRemaining ?? 0).toString().padStart(2, "0");
   const label = isAutoHuntEnabled ? `AUTO BATTLE (${remaining}/10)` : "BATTLE";
-  const isHudActive = isAutoHuntEnabled || isBattleInProgress || isRecovering;
+  const isHudActive = isAutoHuntEnabled || isBattleInProgress || isRecovering || isStandingBy;
 
   return (
     <NavLink
