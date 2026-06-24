@@ -37,6 +37,8 @@ export const COMBAT_STAT_LABELS = {
   regeneration: { label: "재생" },
   attackSpeed: { label: "공격 속도", shortLabel: "공속" },
   cooldownReduction: { label: "쿨타임 감소", shortLabel: "쿨감" },
+  damageTakenReduction: { label: "받는 피해 감소", shortLabel: "피감" },
+  reflectDamage: { label: "반사 피해", shortLabel: "반사" },
   accuracy: { label: "명중" },
   evasionRate: { label: "회피율", shortLabel: "회피" },
   criticalChance: { label: "치명타 확률", shortLabel: "치확" },
