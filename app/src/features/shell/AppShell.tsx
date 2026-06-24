@@ -419,7 +419,12 @@ function SystemTicker({ className, huntState, isVisible }: { className: string; 
   const target = isActive && battle ? `LV.${battle.enemy.level} ${battle.enemy.name}` : null;
   const playerMaxHp = battle?.player.maxHp ?? huntState?.playerMaxHp ?? 0;
   const playerHp = getTickerPlayerHp(huntState, battle, now);
-  const healthPercent = playerMaxHp > 0 ? Math.max(0, Math.min(100, (playerHp / playerMaxHp) * 100)) : 0;
+  const enemyHp = getTickerEnemyHp(battle, now);
+  const playerHealthRatio = playerMaxHp > 0 ? playerHp / playerMaxHp : 0;
+  const enemyHealthRatio = battle && enemyHp !== null && battle.enemy.maxHp > 0 ? enemyHp / battle.enemy.maxHp : null;
+  const healthPercent = isBattleInProgress && enemyHealthRatio !== null && playerHealthRatio + enemyHealthRatio > 0
+    ? Math.max(0, Math.min(100, (playerHealthRatio / (playerHealthRatio + enemyHealthRatio)) * 100))
+    : playerMaxHp > 0 ? Math.max(0, Math.min(100, (playerHp / playerMaxHp) * 100)) : 0;
   const remaining = (huntState?.autoHuntRemaining ?? 0).toString().padStart(2, "0");
   const detail = target ?? (isActive ? "대상 탐색 중" : "대상 없음");
 
@@ -459,4 +464,13 @@ function getTickerPlayerHp(huntState: HuntState | null, battle: HuntState["lastB
   }
 
   return huntState?.playerCurrentHp ?? battle?.player.currentHp ?? battle?.player.startHp ?? battle?.player.maxHp ?? 0;
+}
+
+function getTickerEnemyHp(battle: HuntState["lastBattle"] | undefined, now: number) {
+  if (!battle || battle.status !== "in_progress") return null;
+
+  const startedAt = Date.parse(battle.startedAt);
+  const elapsedTenths = Number.isNaN(startedAt) ? battle.durationTicks : Math.max(0, Math.min(battle.durationTicks, Math.floor((now - startedAt) / 100)));
+  const enemyLog = [...battle.logs].reverse().find((entry) => entry.target !== "player" && entry.timeTenths <= elapsedTenths);
+  return enemyLog?.targetHp ?? battle.enemy.maxHp;
 }
