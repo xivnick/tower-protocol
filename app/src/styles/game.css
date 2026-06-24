@@ -699,7 +699,7 @@ button:disabled {
 .auto-battle-hud-experience {
   position: absolute;
   right: 0;
-  bottom: 3px;
+  bottom: 0;
   left: 0;
   height: 2px;
   background: linear-gradient(90deg, #ffd84d 0 var(--experience-ratio), var(--line-2) var(--experience-ratio) 100%);
