@@ -37,8 +37,8 @@ export function calculateArmorCombatBonus(armor: ArmorStatSource | null): ArmorC
   const cooldownFlat = 1 + Math.floor(armor.armorLevel * 0.35);
 
   switch (armor.armorVariant) {
-    case "plate_reflect": return { reflectDamageFlat: 2 + Math.floor(armor.armorLevel * 0.7) };
-    case "plate_damage_reduction": return { damageTakenReductionPct: Math.floor((3 + armor.armorLevel * 0.08) * 10) / 10 };
+    case "plate_reflect": return { physicalDefensePct: percent, reflectDamageFlat: 2 + Math.floor(armor.armorLevel * 0.7) };
+    case "plate_damage_reduction": return { physicalDefensePct: percent, damageTakenReductionPct: Math.floor((3 + armor.armorLevel * 0.08) * 10) / 10 };
     case "leather_evasion_flat": return { physicalDefenseFlat: flat, evasionFlat: flat };
     case "leather_evasion_pct": return { physicalDefenseFlat: flat, evasionPct: percent };
     case "robe_magic_defense_flat_cooldown_flat": return { magicDefenseFlat: flat, cooldownFlat };
