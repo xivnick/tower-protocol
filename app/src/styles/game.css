@@ -402,7 +402,7 @@ button:disabled {
 .toast-stack {
   position: fixed;
   right: 16px;
-  bottom: 16px;
+  bottom: 64px;
   z-index: 35;
   display: grid;
   gap: 8px;
@@ -578,7 +578,7 @@ button:disabled {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-rows: var(--header) auto minmax(0, 1fr);
+  grid-template-rows: var(--header) minmax(0, 1fr);
 }
 
 .workspace-body {
@@ -642,15 +642,16 @@ button:disabled {
   gap: 12px;
 }
 
-.system-ticker {
+.auto-battle-hud {
   position: relative;
   display: flex;
   align-items: center;
-  min-width: 0;
+  width: min(340px, calc(100vw - 32px));
   gap: 8px;
-  border-bottom: 1px solid var(--line);
+  border: 1px solid var(--line-2);
   background: var(--bg-2);
-  padding: 8px 16px;
+  padding: 11px 12px;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.34);
   color: var(--mut);
   font-size: 11px;
   font-weight: 800;
@@ -658,9 +659,13 @@ button:disabled {
   overflow: hidden;
   text-decoration: none;
   white-space: nowrap;
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 30;
 }
 
-.system-ticker::before {
+.auto-battle-hud::before {
   position: absolute;
   inset: 0 auto 0 0;
   width: 0;
@@ -670,31 +675,31 @@ button:disabled {
   transition: width 180ms ease-out;
 }
 
-.system-ticker > * {
+.auto-battle-hud > * {
   position: relative;
   z-index: 1;
 }
 
-.system-ticker:hover,
-.system-ticker:focus-visible {
+.auto-battle-hud:hover,
+.auto-battle-hud:focus-visible {
   background: var(--surf);
   color: var(--txt-bright);
 }
 
-.system-ticker:focus-visible {
+.auto-battle-hud:focus-visible {
   outline: 1px solid var(--acc);
   outline-offset: -2px;
 }
 
-.system-ticker-state {
+.auto-battle-hud .system-ticker-state {
   color: var(--mut-2);
 }
 
-.system-ticker strong {
+.auto-battle-hud strong {
   color: var(--txt);
 }
 
-.system-ticker-detail {
+.auto-battle-hud .system-ticker-detail {
   min-width: 0;
   flex: 1 1 auto;
   overflow: hidden;
@@ -703,29 +708,25 @@ button:disabled {
   text-overflow: ellipsis;
 }
 
-.system-ticker.is-active {
+.auto-battle-hud.is-active {
   background: var(--bg-2);
 }
 
-.system-ticker.is-active.has-opponent {
+.auto-battle-hud.is-active.has-opponent {
   background: color-mix(in srgb, var(--neg) 42%, var(--bg-2));
 }
 
-.system-ticker.is-active::before {
+.auto-battle-hud.is-active::before {
   width: var(--health-ratio);
 }
 
-.system-ticker.is-active strong {
+.auto-battle-hud.is-active strong {
   color: var(--txt-bright);
 }
 
-.system-ticker.is-active .system-ticker-state,
-.system-ticker.is-active .system-ticker-detail {
+.auto-battle-hud.is-active .system-ticker-state,
+.auto-battle-hud.is-active .system-ticker-detail {
   color: var(--txt);
-}
-
-.mobile-system-ticker {
-  display: none;
 }
 
 .credit-chip {
@@ -1947,15 +1948,6 @@ button:disabled {
     justify-content: flex-end;
   }
 
-  .desktop-system-ticker {
-    display: none;
-  }
-
-  .mobile-system-ticker {
-    display: flex;
-    padding: 8px 12px;
-  }
-
   .account-chip,
   .mobile-nav-trigger {
     border: 1px solid var(--line-2);
@@ -2193,9 +2185,15 @@ button:disabled {
 
   .toast-stack {
     right: 12px;
-    bottom: 12px;
+    bottom: 60px;
     left: 12px;
     justify-items: end;
+  }
+
+  .auto-battle-hud {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100vw - 24px);
   }
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
@@ -26,21 +26,6 @@ const navItems = [
 ];
 
 const dropdownCloseMs = 100;
-const mobileLayoutQuery = "(max-width: 860px)";
-
-function getIsMobileLayout() {
-  return typeof window !== "undefined" && window.matchMedia(mobileLayoutQuery).matches;
-}
-
-function subscribeToMobileLayout(listener: () => void) {
-  const mediaQuery = window.matchMedia(mobileLayoutQuery);
-  mediaQuery.addEventListener("change", listener);
-  return () => mediaQuery.removeEventListener("change", listener);
-}
-
-function useIsMobileLayout() {
-  return useSyncExternalStore(subscribeToMobileLayout, getIsMobileLayout, () => false);
-}
 
 export function AppShell({
   session,
@@ -73,7 +58,6 @@ export function AppShell({
   const nickname = profile?.nickname ?? "UNKNOWN";
   const currentNavLabel = getCurrentNavLabel(location.pathname);
   const hasUnspentStatPoints = Boolean(character && character.stat_points > 0);
-  const isMobileLayout = useIsMobileLayout();
 
   useEffect(() => {
     if (!character) {
@@ -295,8 +279,6 @@ export function AppShell({
             )}
           </header>
 
-          <SystemTicker className="mobile-system-ticker" huntState={activeHuntState} isVisible={isMobileLayout} />
-
           <section className="mobile-nav-panel" aria-label="모바일 메뉴">
             <button className="mobile-nav-trigger" type="button" onClick={toggleNavMenu} aria-expanded={isNavOpen}>
               <span>{currentNavLabel}</span>
@@ -368,8 +350,6 @@ export function AppShell({
             </div>
           </header>
 
-          <SystemTicker className="desktop-system-ticker" huntState={activeHuntState} isVisible={!isMobileLayout} />
-
           <div className="workspace-body route-frame" key={`${location.pathname}:${routeRefreshKey}`}>
             <Routes>
               <Route path="/" element={<DashboardScreen session={session} profile={profile} character={character} huntState={activeHuntState} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />} />
@@ -382,6 +362,7 @@ export function AppShell({
             </Routes>
           </div>
         </section>
+        <AutoBattleHud huntState={activeHuntState} />
       </main>
     </>
   );
@@ -396,7 +377,7 @@ function getCurrentNavLabel(pathname: string) {
   return "대시보드";
 }
 
-function SystemTicker({ className, huntState, isVisible }: { className: string; huntState: HuntState | null; isVisible: boolean }) {
+function AutoBattleHud({ huntState }: { huntState: HuntState | null }) {
   const battle = huntState?.lastBattle;
   const isActive = Boolean(huntState?.autoHuntEnabled);
   const isBattleInProgress = battle?.status === "in_progress";
@@ -405,7 +386,7 @@ function SystemTicker({ className, huntState, isVisible }: { className: string; 
     && huntState?.recoveryEndsAt
     && Date.parse(huntState.recoveryEndsAt) > Date.now(),
   );
-  const now = useCombatClock(Boolean(isVisible && isActive && (isBattleInProgress || isRecovering)));
+  const now = useCombatClock(Boolean(isActive && (isBattleInProgress || isRecovering)));
 
   const status = !isActive
     ? "대기 중"
@@ -430,7 +411,7 @@ function SystemTicker({ className, huntState, isVisible }: { className: string; 
 
   return (
     <NavLink
-      className={`system-ticker ${className} ${isActive ? "is-active" : ""} ${isBattleInProgress ? "has-opponent" : ""}`}
+      className={`auto-battle-hud ${isActive ? "is-active" : ""} ${isBattleInProgress ? "has-opponent" : ""}`}
       to="/hunt"
       aria-label={`자동 전투 ${remaining}/10, ${status}, ${detail}. 사냥 화면으로 이동`}
       style={{ "--health-ratio": `${healthPercent}%` } as CSSProperties}
