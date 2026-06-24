@@ -18,8 +18,8 @@ export function EquippedEquipmentPanel({ weapon, armor = null, headerAction, chi
         {headerAction}
       </div>
       <div className="kv-grid">
-        <div className="kv"><span>무기</span><strong>{weapon ? <>{weaponLabel(weapon)} <small>· {weaponEffect(weapon)}</small></> : "장착한 무기 없음"}</strong></div>
-        <div className="kv"><span>방어구</span><strong>{armor ? <>{armorLabel(armor)} <small>· {armorEffect(armor)}</small></> : "장착한 방어구 없음"}</strong></div>
+        <div className="kv"><span>무기</span>{weapon ? <strong className="equipped-item"><b>{weaponLabel(weapon)}</b><small>{weaponEffect(weapon)}</small></strong> : <strong>장착한 무기 없음</strong>}</div>
+        <div className="kv"><span>방어구</span>{armor ? <strong className="equipped-item"><b>{armorLabel(armor)}</b><small>{armorEffect(armor)}</small></strong> : <strong>장착한 방어구 없음</strong>}</div>
       </div>
       {children}
     </article>

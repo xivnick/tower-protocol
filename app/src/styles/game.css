@@ -848,7 +848,16 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
-.kv strong small {
+.equipped-item {
+  display: grid;
+  gap: 3px;
+}
+
+.equipped-item b {
+  color: var(--txt-bright);
+}
+
+.equipped-item small {
   color: var(--mut);
   font-size: 12px;
   font-weight: 700;
