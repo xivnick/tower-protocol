@@ -848,6 +848,63 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
+.equipped-summary {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+}
+
+.equipped-summary-row {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 12px;
+  padding: 11px 10px;
+}
+
+.equipped-summary-row + .equipped-summary-row {
+  border-top: 1px solid var(--line);
+}
+
+.equipped-summary-row > span {
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.equipped-summary-row strong {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  color: var(--txt-bright);
+}
+
+.equipped-summary-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 12px;
+  min-width: 0;
+}
+
+.equipped-summary-content .text-button {
+  align-self: start;
+  padding: 0;
+  font-size: 12px;
+}
+
+.equipped-summary-row b {
+  color: var(--txt-bright);
+}
+
+.equipped-summary-row small {
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.equipment-current-bonus {
+  color: color-mix(in srgb, var(--mut) 68%, transparent);
+}
+
 .character-link {
   display: flex;
   align-items: center;

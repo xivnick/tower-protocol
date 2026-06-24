@@ -7,13 +7,14 @@ import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { formatCharacterExperience, formatCharacterLevel } from "../../shared/progression";
 import { BASE_PRIMARY_STAT, calculateCombatStats, COMBAT_STAT_LABELS, PRIMARY_STATS } from "../../shared/stats";
 import { calculateWeaponCombatBonus } from "../../shared/weaponStats";
+import { calculateArmorCombatBonus } from "../../shared/armorStats";
 import { getCharacterNameValidationMessage, validateCharacterName } from "../../shared/validation";
 import type { Character } from "../../types/character";
 import type { ToastInput } from "../../types/toast";
 import { toastMessages } from "../../shared/toastMessages";
 import { useToast } from "../toast/ToastProvider";
-import { getMyWeapons } from "../../api/equipmentApi";
-import type { Weapon } from "../../api/equipmentApi";
+import { getMyArmors, getMyWeapons } from "../../api/equipmentApi";
+import type { Armor, Weapon } from "../../api/equipmentApi";
 import { EquippedEquipmentPanel } from "../equipment/EquippedEquipmentPanel";
 
 export function CharacterScreen({
@@ -215,6 +216,7 @@ function CharacterStatsPanel({
   const [isResetting, setIsResetting] = useState(false);
   const [message, setMessage] = useState("");
   const [equippedWeapon, setEquippedWeapon] = useState<Weapon | null>(null);
+  const [equippedArmor, setEquippedArmor] = useState<Armor | null>(null);
   const [isCombatBreakdownOpen, setIsCombatBreakdownOpen] = useState(false);
   const statRepeatDelayRef = useRef<number | null>(null);
   const statRepeatIntervalRef = useRef<number | null>(null);
@@ -224,10 +226,11 @@ function CharacterStatsPanel({
   const isPendingComplete = remainingPoints === 0 && pendingTotal > 0;
   const previewCharacter = applyPendingStats(character, pendingStats);
   const weaponBonus = calculateWeaponCombatBonus(equippedWeapon);
+  const armorBonus = calculateArmorCombatBonus(equippedArmor);
   const currentBaseCombatStats = calculateCombatStats(character);
   const previewBaseCombatStats = calculateCombatStats(previewCharacter);
-  const currentCombatStats = calculateCombatStats(character, weaponBonus);
-  const previewCombatStats = calculateCombatStats(previewCharacter, weaponBonus);
+  const currentCombatStats = calculateCombatStats(character, weaponBonus, armorBonus);
+  const previewCombatStats = calculateCombatStats(previewCharacter, weaponBonus, armorBonus);
   const canApply = pendingTotal > 0 && !isSubmitting && !isResetting;
   const canReset = hasAllocatedStats(character) && !isSubmitting && !isResetting;
 
@@ -239,11 +242,16 @@ function CharacterStatsPanel({
   useEffect(() => {
     let isActive = true;
     setEquippedWeapon(null);
+    setEquippedArmor(null);
     setIsCombatBreakdownOpen(false);
 
     void getMyWeapons().then((result) => {
       if (!isActive || !result.ok) return;
       setEquippedWeapon(result.inventory.weapons.find((weapon) => weapon.id === result.inventory.equippedWeaponId) ?? null);
+    });
+    void getMyArmors().then((result) => {
+      if (!isActive || !result.ok) return;
+      setEquippedArmor(result.inventory.armors.find((armor) => armor.id === result.inventory.equippedArmorId) ?? null);
     });
 
     return () => { isActive = false; };
@@ -478,14 +486,16 @@ function CharacterStatsPanel({
       <div className="combat-stat-grid">
         <CombatStat {...COMBAT_STAT_LABELS.physicalAttack} current={currentCombatStats.physicalAttack} currentBase={currentBaseCombatStats.physicalAttack} preview={previewCombatStats.physicalAttack} breakdown={createCombatBreakdown(previewBaseCombatStats.physicalAttack, previewCombatStats.physicalAttack)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.magicAttack} current={currentCombatStats.magicAttack} currentBase={currentBaseCombatStats.magicAttack} preview={previewCombatStats.magicAttack} breakdown={createCombatBreakdown(previewBaseCombatStats.magicAttack, previewCombatStats.magicAttack)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
-        <CombatStat {...COMBAT_STAT_LABELS.physicalDefense} current={currentCombatStats.physicalDefense} preview={previewCombatStats.physicalDefense} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
-        <CombatStat {...COMBAT_STAT_LABELS.magicDefense} current={currentCombatStats.magicDefense} preview={previewCombatStats.magicDefense} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
+        <CombatStat {...COMBAT_STAT_LABELS.physicalDefense} current={currentCombatStats.physicalDefense} currentBase={currentBaseCombatStats.physicalDefense} preview={previewCombatStats.physicalDefense} breakdown={createCombatBreakdown(previewBaseCombatStats.physicalDefense, previewCombatStats.physicalDefense)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
+        <CombatStat {...COMBAT_STAT_LABELS.magicDefense} current={currentCombatStats.magicDefense} currentBase={currentBaseCombatStats.magicDefense} preview={previewCombatStats.magicDefense} breakdown={createCombatBreakdown(previewBaseCombatStats.magicDefense, previewCombatStats.magicDefense)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.maxHp} current={currentCombatStats.maxHp} preview={previewCombatStats.maxHp} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.regeneration} current={currentCombatStats.regenerationRatePerSecond} preview={previewCombatStats.regenerationRatePerSecond} suffix="%/초" digits={1} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.attackSpeed} current={currentCombatStats.attacksPerSecond} currentBase={currentBaseCombatStats.attacksPerSecond} preview={previewCombatStats.attacksPerSecond} digits={2} breakdown={createCombatBreakdown(previewBaseCombatStats.attacksPerSecond, previewCombatStats.attacksPerSecond)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
-        <CombatStat {...COMBAT_STAT_LABELS.cooldownReduction} current={currentCombatStats.cooldownReduction * 100} preview={previewCombatStats.cooldownReduction * 100} suffix="%" digits={1} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
+        <CombatStat {...COMBAT_STAT_LABELS.cooldownReduction} current={currentCombatStats.cooldownReduction * 100} currentBase={currentBaseCombatStats.cooldownReduction * 100} preview={previewCombatStats.cooldownReduction * 100} suffix="%" digits={1} breakdown={createCombatBreakdown(previewBaseCombatStats.cooldownReduction * 100, previewCombatStats.cooldownReduction * 100)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.accuracy} current={currentCombatStats.accuracy} currentBase={currentBaseCombatStats.accuracy} preview={previewCombatStats.accuracy} breakdown={createCombatBreakdown(previewBaseCombatStats.accuracy, previewCombatStats.accuracy)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
-        <CombatStat {...COMBAT_STAT_LABELS.evasionRate} current={currentCombatStats.evasionRateAgainstAccuracy100 * 100} preview={previewCombatStats.evasionRateAgainstAccuracy100 * 100} suffix="%" digits={1} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
+        <CombatStat {...COMBAT_STAT_LABELS.evasionRate} current={currentCombatStats.evasionRateAgainstAccuracy100 * 100} currentBase={currentBaseCombatStats.evasionRateAgainstAccuracy100 * 100} preview={previewCombatStats.evasionRateAgainstAccuracy100 * 100} suffix="%" digits={1} breakdown={createCombatBreakdown(previewBaseCombatStats.evasionRateAgainstAccuracy100 * 100, previewCombatStats.evasionRateAgainstAccuracy100 * 100)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
+        {currentCombatStats.damageTakenReduction > 0 && <CombatStat {...COMBAT_STAT_LABELS.damageTakenReduction} current={currentCombatStats.damageTakenReduction} currentBase={0} preview={currentCombatStats.damageTakenReduction} suffix="%" digits={1} breakdown={createCombatBreakdown(0, currentCombatStats.damageTakenReduction)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />}
+        {currentCombatStats.reflectDamage > 0 && <CombatStat {...COMBAT_STAT_LABELS.reflectDamage} current={currentCombatStats.reflectDamage} currentBase={0} preview={currentCombatStats.reflectDamage} breakdown={createCombatBreakdown(0, currentCombatStats.reflectDamage)} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />}
         <CombatStat {...COMBAT_STAT_LABELS.criticalChance} current={currentCombatStats.criticalChance} preview={previewCombatStats.criticalChance} suffix="%" digits={1} isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
         <CombatStat {...COMBAT_STAT_LABELS.criticalDamage} current={currentCombatStats.criticalDamage} preview={previewCombatStats.criticalDamage} suffix="%" isBreakdownOpen={isCombatBreakdownOpen} onToggle={() => setIsCombatBreakdownOpen((current) => !current)} />
       </div>
@@ -496,6 +506,7 @@ function CharacterStatsPanel({
 
 function CharacterEquippedEquipmentPanel({ character }: { character: Character }) {
   const [equippedWeapon, setEquippedWeapon] = useState<Weapon | null>(null);
+  const [equippedArmor, setEquippedArmor] = useState<Armor | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -503,10 +514,14 @@ function CharacterEquippedEquipmentPanel({ character }: { character: Character }
       if (!isActive || !result.ok) return;
       setEquippedWeapon(result.inventory.weapons.find((weapon) => weapon.id === result.inventory.equippedWeaponId) ?? null);
     });
+    void getMyArmors().then((result) => {
+      if (!isActive || !result.ok) return;
+      setEquippedArmor(result.inventory.armors.find((armor) => armor.id === result.inventory.equippedArmorId) ?? null);
+    });
     return () => { isActive = false; };
   }, [character.id]);
 
-  return <EquippedEquipmentPanel weapon={equippedWeapon} headerAction={<Link className="text-button" to="/equipment">장비 관리</Link>} />;
+  return <EquippedEquipmentPanel weapon={equippedWeapon} armor={equippedArmor} character={character} headerAction={<Link className="text-button" to="/equipment">장비 관리</Link>} />;
 }
 
 function createEmptyStatAllocation(): CharacterStatAllocation {

@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { equipWeapon, getMyWeapons, openWeaponBox, sellWeapon, unequipWeapon } from "../../api/equipmentApi";
+import { equipWeapon, getMyWeapons, openWeaponBox, sellWeapon, unequipArmor, unequipWeapon } from "../../api/equipmentApi";
 import type { Weapon, WeaponType } from "../../api/equipmentApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { toastMessages } from "../../shared/toastMessages";
 import type { Character } from "../../types/character";
 import { useToast } from "../toast/ToastProvider";
 import { EquippedEquipmentPanel, weaponEffect, weaponLabel, weaponSummary } from "./EquippedEquipmentPanel";
+import { ArmorEquipmentPanel } from "./ArmorEquipmentPanel";
+import type { Armor } from "../../api/equipmentApi";
 
 const weaponNames: Record<WeaponType, string> = {
   longsword: "장검",
@@ -23,16 +25,19 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
   const { showToast } = useToast();
   const [weapons, setWeapons] = useState<Weapon[]>([]);
   const [equippedWeaponId, setEquippedWeaponId] = useState<string | null>(null);
+  const [equippedArmor, setEquippedArmor] = useState<Armor | null>(null);
+  const [armorRefreshKey, setArmorRefreshKey] = useState(0);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isOpeningBox, setIsOpeningBox] = useState(false);
   const [openedWeapon, setOpenedWeapon] = useState<Weapon | null>(null);
   const [pendingWeaponId, setPendingWeaponId] = useState<string | null>(null);
   const [isUnequipping, setIsUnequipping] = useState(false);
+  const [isUnequippingArmor, setIsUnequippingArmor] = useState(false);
   const [sellingWeaponId, setSellingWeaponId] = useState<string | null>(null);
   const [selectedWeaponId, setSelectedWeaponId] = useState<string | null>(null);
   const [weaponFilter, setWeaponFilter] = useState<WeaponFilter>("all");
-  const isBusy = isOpeningBox || pendingWeaponId !== null || isUnequipping || sellingWeaponId !== null;
+  const isBusy = isOpeningBox || pendingWeaponId !== null || isUnequipping || isUnequippingArmor || sellingWeaponId !== null;
 
   async function loadWeapons() {
     setIsLoading(true);
@@ -85,6 +90,17 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
     showToast(toastMessages.equipment.unequipped());
   }
 
+  async function handleUnequipArmor() {
+    setIsUnequippingArmor(true);
+    setMessage("");
+    const result = await unequipArmor();
+    setIsUnequippingArmor(false);
+    if (!result.ok) { setMessage(result.message); return; }
+    setEquippedArmor(null);
+    setArmorRefreshKey((current) => current + 1);
+    showToast(toastMessages.equipment.armorUnequipped());
+  }
+
   async function handleSell(weapon: Weapon) {
     setSellingWeaponId(weapon.id);
     setMessage("");
@@ -106,9 +122,13 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
     .sort((left, right) => right.weaponLevel - left.weaponLevel || right.createdAt.localeCompare(left.createdAt));
   return (
     <section className="screen-panel">
-      <EquippedEquipmentPanel weapon={equippedWeapon}>
-        {equippedWeapon && <div className="button-row equipment-actions"><button className="btn ghost" type="button" onClick={handleUnequip} disabled={isBusy}>{isUnequipping ? "해제 중..." : "무기 해제"}</button></div>}
-      </EquippedEquipmentPanel>
+      <EquippedEquipmentPanel
+        weapon={equippedWeapon}
+        armor={equippedArmor}
+        character={character}
+        weaponAction={equippedWeapon ? <button className="text-button" type="button" onClick={handleUnequip} disabled={isBusy}>{isUnequipping ? "해제 중..." : "해제"}</button> : undefined}
+        armorAction={equippedArmor ? <button className="text-button" type="button" onClick={handleUnequipArmor} disabled={isBusy}>{isUnequippingArmor ? "해제 중..." : "해제"}</button> : undefined}
+      />
 
       <article className="panel">
         <div className="panel-head action-head">
@@ -123,7 +143,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
           {openedWeapon && <div className="weapon-box-result" role="status">
             <span>획득 무기</span>
             <strong>{weaponLabel(openedWeapon)}</strong>
-            <small>{weaponEffect(openedWeapon)}</small>
+            <small>{weaponEffect(openedWeapon, character)}</small>
             <div className="button-row equipment-actions">
               {openedWeapon.id === equippedWeaponId ? <span className="weapon-equipped-note">장착 중인 무기는 판매할 수 없습니다.</span> : <>
                 <button className="btn primary" type="button" disabled={isBusy} onClick={() => handleEquip(openedWeapon)}>{pendingWeaponId === openedWeapon.id ? "장착 중..." : "장착"}</button>
@@ -151,7 +171,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
               <span>{isEquipped ? "장착 중" : "상세"}</span>
             </button>
             {isSelected && <div className="weapon-detail">
-              <div className="weapon-detail-info"><span>효과</span><strong>{weaponEffect(weapon)}</strong></div>
+              <div className="weapon-detail-info"><span>효과</span><strong>{weaponEffect(weapon, character)}</strong></div>
               <div className="button-row">
                 {!isEquipped && <button className="btn primary" type="button" disabled={isBusy} onClick={() => handleEquip(weapon)}>{pendingWeaponId === weapon.id ? "장착 중..." : "장착"}</button>}
                 {isEquipped ? <span className="weapon-equipped-note">장착 중인 무기는 판매할 수 없습니다.</span> : <div className="weapon-sale-action"><button className="btn ghost" type="button" disabled={isBusy} onClick={() => handleSell(weapon)}>{sellingWeaponId === weapon.id ? "판매 중..." : "판매"}</button><small>20 CR</small></div>}
@@ -161,6 +181,8 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
         })}</div>}
         {message && <p className="auth-message is-error" role="status">{message}</p>}
       </article>
+
+      <ArmorEquipmentPanel character={character} onCharacterChange={onCharacterChange} onEquippedArmorChange={setEquippedArmor} refreshKey={armorRefreshKey} />
     </section>
   );
 }
