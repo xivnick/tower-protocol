@@ -126,7 +126,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
           {openedWeapon && <div className="weapon-box-result" role="status">
             <span>획득 무기</span>
             <strong>{weaponLabel(openedWeapon)}</strong>
-            <small>{weaponEffect(openedWeapon)}</small>
+            <small>{weaponEffect(openedWeapon, character)}</small>
             <div className="button-row equipment-actions">
               {openedWeapon.id === equippedWeaponId ? <span className="weapon-equipped-note">장착 중인 무기는 판매할 수 없습니다.</span> : <>
                 <button className="btn primary" type="button" disabled={isBusy} onClick={() => handleEquip(openedWeapon)}>{pendingWeaponId === openedWeapon.id ? "장착 중..." : "장착"}</button>
@@ -154,7 +154,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
               <span>{isEquipped ? "장착 중" : "상세"}</span>
             </button>
             {isSelected && <div className="weapon-detail">
-              <div className="weapon-detail-info"><span>효과</span><strong>{weaponEffect(weapon)}</strong></div>
+              <div className="weapon-detail-info"><span>효과</span><strong>{weaponEffect(weapon, character)}</strong></div>
               <div className="button-row">
                 {!isEquipped && <button className="btn primary" type="button" disabled={isBusy} onClick={() => handleEquip(weapon)}>{pendingWeaponId === weapon.id ? "장착 중..." : "장착"}</button>}
                 {isEquipped ? <span className="weapon-equipped-note">장착 중인 무기는 판매할 수 없습니다.</span> : <div className="weapon-sale-action"><button className="btn ghost" type="button" disabled={isBusy} onClick={() => handleSell(weapon)}>{sellingWeaponId === weapon.id ? "판매 중..." : "판매"}</button><small>20 CR</small></div>}

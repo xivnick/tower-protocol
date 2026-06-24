@@ -19,7 +19,7 @@ export function EquippedEquipmentPanel({ weapon, armor = null, character = null,
         {headerAction}
       </div>
       <div className="equipped-summary">
-        <div className="equipped-summary-row"><span>WEAPON</span>{weapon ? <strong><b>{weaponLabel(weapon)}</b><small>{weaponEffect(weapon)}</small></strong> : <strong>장착한 무기 없음</strong>}</div>
+        <div className="equipped-summary-row"><span>WEAPON</span>{weapon ? <strong><b>{weaponLabel(weapon)}</b><small>{weaponEffect(weapon, character)}</small></strong> : <strong>장착한 무기 없음</strong>}</div>
         <div className="equipped-summary-row"><span>ARMOR</span>{armor ? <strong><b>{armorLabel(armor)}</b><small>{armorEffect(armor, character)}</small></strong> : <strong>장착한 방어구 없음</strong>}</div>
       </div>
       {children}
@@ -81,23 +81,19 @@ export function weaponSummary(weapon: Weapon) {
   return "마법 공격력 증폭";
 }
 
-export function weaponEffect(weapon: Weapon) {
+export function weaponEffect(weapon: Weapon, character: Character | null = null) {
   const level = weapon.weaponLevel;
   const power = 3 + Math.floor(level * 1.5);
   if (weapon.weaponType === "longsword") return `물리 공격력 +${power}`;
-  if (weapon.weaponType === "greatsword") return `물리 공격력 +${formatWeaponPercent(percentWeaponBonus(level))}%`;
-  if (weapon.weaponType === "dagger") return `명중 -${Math.min(23, 15 + Math.floor((level - 1) / 12))}%, 전체 공속 +${20 + Math.floor(level * 0.2)}%`;
-  if (weapon.weaponType === "bow") return `명중 -${Math.min(18, 10 + Math.floor((level - 1) / 12))}%, +${2 + Math.floor(level * 1.1)} 고정 피해`;
+  if (weapon.weaponType === "greatsword") return formatPercentBonus("물리 공격력", percentWeaponBonus(level), character?.strength);
+  if (weapon.weaponType === "dagger") return <>{formatPercentBonus("명중", -Math.min(23, 15 + Math.floor((level - 1) / 12)), character ? 100 + character.dexterity : undefined)}{", "}{formatPercentBonus("전체 공속", 20 + Math.floor(level * 0.2), character ? 1 + character.agility / 100 : undefined)}</>;
+  if (weapon.weaponType === "bow") return <>{formatPercentBonus("명중", -Math.min(18, 10 + Math.floor((level - 1) / 12)), character ? 100 + character.dexterity : undefined)}{", "}+{2 + Math.floor(level * 1.1)} 고정 피해</>;
   if (weapon.weaponType === "wand") return `마법 공격력 +${power}`;
-  return `마법 공격력 +${formatWeaponPercent(percentWeaponBonus(level))}%`;
+  return formatPercentBonus("마법 공격력", percentWeaponBonus(level), character?.intelligence);
 }
 
 function percentWeaponBonus(level: number) {
   return Math.floor((20 + level * 0.5) * 10) / 10;
-}
-
-function formatWeaponPercent(value: number) {
-  return value.toFixed(1);
 }
 
 function formatPercent(value: number) {
@@ -105,9 +101,11 @@ function formatPercent(value: number) {
 }
 
 function formatPercentBonus(label: string, percent: number, currentValue: number | undefined) {
-  if (currentValue === undefined) return `${label} +${formatPercent(percent)}%`;
+  const sign = percent >= 0 ? "+" : "-";
+  const magnitude = Math.abs(percent);
+  if (currentValue === undefined) return `${label} ${sign}${formatPercent(magnitude)}%`;
   const increase = currentValue * percent / 100;
-  return <>{label} +{formatPercent(percent)}% <span className="equipment-current-bonus">(+{formatBonusValue(increase)})</span></>;
+  return <>{label} {sign}{formatPercent(magnitude)}% <span className="equipment-current-bonus">({increase >= 0 ? "+" : "-"}{formatBonusValue(Math.abs(increase))})</span></>;
 }
 
 function formatBonusValue(value: number) {
