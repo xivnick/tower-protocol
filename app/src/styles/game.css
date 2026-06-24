@@ -696,6 +696,16 @@ button:disabled {
   z-index: 2;
 }
 
+.auto-battle-hud-experience {
+  position: absolute;
+  right: 0;
+  bottom: 3px;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--acc-2) 0 var(--experience-ratio), var(--line-2) var(--experience-ratio) 100%);
+  z-index: 1;
+}
+
 .auto-battle-hud:hover,
 .auto-battle-hud:focus-visible {
   background: var(--surf);
