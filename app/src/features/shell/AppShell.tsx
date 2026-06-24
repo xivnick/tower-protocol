@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import type { Profile } from "../../api/profileApi";
 import type { Character } from "../../types/character";
 import { toastMessages } from "../../shared/toastMessages";
+import { useCombatClock } from "../../shared/useCombatClock";
 import { configureAutoHunt, encounterHuntMonster, getMyHuntState, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntState } from "../../api/characterApi";
 import { CharacterScreen } from "../character/CharacterScreen";
@@ -361,6 +362,7 @@ export function AppShell({
             </Routes>
           </div>
         </section>
+        <AutoBattleHud huntState={activeHuntState} />
       </main>
     </>
   );
@@ -373,4 +375,89 @@ function getCurrentNavLabel(pathname: string) {
   if (pathname.startsWith("/ranking")) return "랭킹";
   if (pathname.startsWith("/patch-notes")) return "패치노트";
   return "대시보드";
+}
+
+function AutoBattleHud({ huntState }: { huntState: HuntState | null }) {
+  const battle = huntState?.lastBattle;
+  const isAutoHuntEnabled = Boolean(huntState?.autoHuntEnabled);
+  const isBattleInProgress = battle?.status === "in_progress";
+  const isRecovering = Boolean(
+    !isBattleInProgress
+    && huntState?.recoveryEndsAt
+    && Date.parse(huntState.recoveryEndsAt) > Date.now(),
+  );
+  const now = useCombatClock(Boolean(isBattleInProgress || isRecovering));
+
+  const status = isBattleInProgress
+    ? "전투 중"
+    : isRecovering
+      ? "회복 중"
+      : battle?.status === "encountered"
+        ? "적 조우"
+        : isAutoHuntEnabled
+          ? "대상 탐색 중"
+          : "대기 중";
+  const target = (isBattleInProgress || battle?.status === "encountered") && battle
+    ? `LV.${battle.enemy.level} ${battle.enemy.name}`
+    : null;
+  const playerMaxHp = battle?.player.maxHp ?? huntState?.playerMaxHp ?? 0;
+  const playerHp = getTickerPlayerHp(huntState, battle, now);
+  const enemyHp = getTickerEnemyHp(battle, now);
+  const playerHealthRatio = playerMaxHp > 0 ? playerHp / playerMaxHp : 0;
+  const enemyHealthRatio = battle && enemyHp !== null && battle.enemy.maxHp > 0 ? enemyHp / battle.enemy.maxHp : null;
+  const isStandingBy = status === "대기 중";
+  const healthPercent = isStandingBy
+    ? 100
+    : isBattleInProgress && enemyHealthRatio !== null && playerHealthRatio + enemyHealthRatio > 0
+      ? Math.max(0, Math.min(100, (playerHealthRatio / (playerHealthRatio + enemyHealthRatio)) * 100))
+      : playerMaxHp > 0 ? Math.max(0, Math.min(100, (playerHp / playerMaxHp) * 100)) : 0;
+  const remaining = (huntState?.autoHuntRemaining ?? 0).toString().padStart(2, "0");
+  const label = isAutoHuntEnabled ? `AUTO BATTLE (${remaining}/10)` : "BATTLE";
+  const isHudActive = isAutoHuntEnabled || isBattleInProgress || isRecovering || isStandingBy;
+
+  return (
+    <NavLink
+      className={`auto-battle-hud ${isHudActive ? "is-active" : ""} ${isStandingBy ? "is-standing-by" : ""} ${isBattleInProgress ? "has-opponent" : ""}`}
+      to="/hunt"
+      aria-label={`${isAutoHuntEnabled ? `자동 전투 ${remaining}/10, ` : ""}${status}${target ? `, ${target}` : ""}. 사냥 화면으로 이동`}
+      style={{ "--health-ratio": `${healthPercent}%` } as CSSProperties}
+    >
+      <strong className="auto-battle-hud-label">{label} &gt;</strong>
+      <span className="system-ticker-state">{status}</span>
+      {target && <><span className="auto-battle-hud-divider" aria-hidden="true">·</span><span className="system-ticker-detail">{target}</span></>}
+    </NavLink>
+  );
+}
+
+function getTickerPlayerHp(huntState: HuntState | null, battle: HuntState["lastBattle"] | undefined, now: number) {
+  if (battle?.status === "in_progress") {
+    const startedAt = Date.parse(battle.startedAt);
+    const elapsedTenths = Number.isNaN(startedAt) ? battle.durationTicks : Math.max(0, Math.min(battle.durationTicks, Math.floor((now - startedAt) / 100)));
+    const playerLog = [...battle.logs].reverse().find((entry) => entry.target === "player" && entry.timeTenths <= elapsedTenths);
+    return playerLog?.targetHp ?? battle.player.startHp ?? battle.player.currentHp ?? battle.player.maxHp;
+  }
+
+  const startHp = huntState?.playerRecoveryStartHp;
+  const maxHp = huntState?.playerMaxHp;
+  const startedAt = huntState?.playerRecoveryStartedAt ? Date.parse(huntState.playerRecoveryStartedAt) : Number.NaN;
+  const endsAt = huntState?.recoveryEndsAt ? Date.parse(huntState.recoveryEndsAt) : Number.NaN;
+  if (startHp !== null && startHp !== undefined && maxHp && !Number.isNaN(startedAt) && !Number.isNaN(endsAt)) {
+    if (now >= endsAt) return maxHp;
+    const recoveredSteps = Math.max(0, Math.floor((now - startedAt) / 1000));
+    const recoveryDurationSeconds = Math.round((endsAt - startedAt) / 1000);
+    return recoveryDurationSeconds >= 10
+      ? Math.min(maxHp, Math.floor(startHp + ((maxHp - startHp) * recoveredSteps / recoveryDurationSeconds)))
+      : Math.min(maxHp, Math.floor(startHp + (maxHp * 0.2 * recoveredSteps)));
+  }
+
+  return huntState?.playerCurrentHp ?? battle?.player.currentHp ?? battle?.player.startHp ?? battle?.player.maxHp ?? 0;
+}
+
+function getTickerEnemyHp(battle: HuntState["lastBattle"] | undefined, now: number) {
+  if (!battle || battle.status !== "in_progress") return null;
+
+  const startedAt = Date.parse(battle.startedAt);
+  const elapsedTenths = Number.isNaN(startedAt) ? battle.durationTicks : Math.max(0, Math.min(battle.durationTicks, Math.floor((now - startedAt) / 100)));
+  const enemyLog = [...battle.logs].reverse().find((entry) => entry.target !== "player" && entry.timeTenths <= elapsedTenths);
+  return enemyLog?.targetHp ?? battle.enemy.maxHp;
 }
