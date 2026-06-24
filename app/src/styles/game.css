@@ -731,6 +731,10 @@ button:disabled {
   width: var(--health-ratio);
 }
 
+.auto-battle-hud.is-standing-by::before {
+  width: 100%;
+}
+
 .auto-battle-hud.is-active strong {
   color: var(--mut);
 }

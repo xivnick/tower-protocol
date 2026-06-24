@@ -417,7 +417,7 @@ function AutoBattleHud({ huntState }: { huntState: HuntState | null }) {
 
   return (
     <NavLink
-      className={`auto-battle-hud ${isHudActive ? "is-active" : ""} ${isBattleInProgress ? "has-opponent" : ""}`}
+      className={`auto-battle-hud ${isHudActive ? "is-active" : ""} ${isStandingBy ? "is-standing-by" : ""} ${isBattleInProgress ? "has-opponent" : ""}`}
       to="/hunt"
       aria-label={`${isAutoHuntEnabled ? `자동 전투 ${remaining}/10, ` : ""}${status}${target ? `, ${target}` : ""}. 사냥 화면으로 이동`}
       style={{ "--health-ratio": `${healthPercent}%` } as CSSProperties}
