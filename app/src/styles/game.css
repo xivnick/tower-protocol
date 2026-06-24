@@ -888,6 +888,10 @@ button:disabled {
   font-weight: 700;
 }
 
+.equipment-current-bonus {
+  color: color-mix(in srgb, var(--mut) 68%, transparent);
+}
+
 .character-link {
   display: flex;
   align-items: center;

@@ -66,8 +66,8 @@ export function armorEffect(armor: Armor, character: Character | null = null) {
     bonus.magicDefensePct && formatPercentBonus("마법 방어", bonus.magicDefensePct, character?.wisdom),
     bonus.cooldownFlat && `쿨타임 수치 +${bonus.cooldownFlat}`,
     bonus.cooldownPct && formatPercentBonus("쿨타임 수치", bonus.cooldownPct, character?.wisdom),
-  ].filter((part): part is string => Boolean(part));
-  return parts.join(", ");
+  ].filter(Boolean);
+  return parts.map((part, index) => <span key={index}>{index > 0 && ", "}{part}</span>);
 }
 
 export function weaponLabel(weapon: Weapon) { return `LV.${weapon.weaponLevel} ${weaponNames[weapon.weaponType]}`; }
@@ -107,7 +107,7 @@ function formatPercent(value: number) {
 function formatPercentBonus(label: string, percent: number, currentValue: number | undefined) {
   if (currentValue === undefined) return `${label} +${formatPercent(percent)}%`;
   const increase = currentValue * percent / 100;
-  return `${label} +${formatPercent(percent)}% (+${formatBonusValue(increase)})`;
+  return <>{label} +{formatPercent(percent)}% <span className="equipment-current-bonus">(+{formatBonusValue(increase)})</span></>;
 }
 
 function formatBonusValue(value: number) {
