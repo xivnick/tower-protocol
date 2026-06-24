@@ -10,10 +10,11 @@ import { armorEffect, armorLabel, armorSummary } from "./EquippedEquipmentPanel"
 const armorNames: Record<ArmorType, string> = { plate: "중갑", leather: "경갑", robe: "로브" };
 type ArmorFilter = "all" | ArmorType;
 
-export function ArmorEquipmentPanel({ character, onCharacterChange, onEquippedArmorChange }: {
+export function ArmorEquipmentPanel({ character, onCharacterChange, onEquippedArmorChange, refreshKey = 0 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
   onEquippedArmorChange: (armor: Armor | null) => void;
+  refreshKey?: number;
 }) {
   const { showToast } = useToast();
   const [armors, setArmors] = useState<Armor[]>([]);
@@ -39,7 +40,7 @@ export function ArmorEquipmentPanel({ character, onCharacterChange, onEquippedAr
     onEquippedArmorChange(result.inventory.armors.find((armor) => armor.id === result.inventory.equippedArmorId) ?? null);
   }
 
-  useEffect(() => { void loadArmors(); }, [character.id]);
+  useEffect(() => { void loadArmors(); }, [character.id, refreshKey]);
 
   async function handleOpenBox() {
     setIsOpeningBox(true); setMessage("");

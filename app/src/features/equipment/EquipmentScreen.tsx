@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { equipWeapon, getMyWeapons, openWeaponBox, sellWeapon, unequipWeapon } from "../../api/equipmentApi";
+import { equipWeapon, getMyWeapons, openWeaponBox, sellWeapon, unequipArmor, unequipWeapon } from "../../api/equipmentApi";
 import type { Weapon, WeaponType } from "../../api/equipmentApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { toastMessages } from "../../shared/toastMessages";
@@ -26,16 +26,18 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
   const [weapons, setWeapons] = useState<Weapon[]>([]);
   const [equippedWeaponId, setEquippedWeaponId] = useState<string | null>(null);
   const [equippedArmor, setEquippedArmor] = useState<Armor | null>(null);
+  const [armorRefreshKey, setArmorRefreshKey] = useState(0);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isOpeningBox, setIsOpeningBox] = useState(false);
   const [openedWeapon, setOpenedWeapon] = useState<Weapon | null>(null);
   const [pendingWeaponId, setPendingWeaponId] = useState<string | null>(null);
   const [isUnequipping, setIsUnequipping] = useState(false);
+  const [isUnequippingArmor, setIsUnequippingArmor] = useState(false);
   const [sellingWeaponId, setSellingWeaponId] = useState<string | null>(null);
   const [selectedWeaponId, setSelectedWeaponId] = useState<string | null>(null);
   const [weaponFilter, setWeaponFilter] = useState<WeaponFilter>("all");
-  const isBusy = isOpeningBox || pendingWeaponId !== null || isUnequipping || sellingWeaponId !== null;
+  const isBusy = isOpeningBox || pendingWeaponId !== null || isUnequipping || isUnequippingArmor || sellingWeaponId !== null;
 
   async function loadWeapons() {
     setIsLoading(true);
@@ -88,6 +90,17 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
     showToast(toastMessages.equipment.unequipped());
   }
 
+  async function handleUnequipArmor() {
+    setIsUnequippingArmor(true);
+    setMessage("");
+    const result = await unequipArmor();
+    setIsUnequippingArmor(false);
+    if (!result.ok) { setMessage(result.message); return; }
+    setEquippedArmor(null);
+    setArmorRefreshKey((current) => current + 1);
+    showToast(toastMessages.equipment.armorUnequipped());
+  }
+
   async function handleSell(weapon: Weapon) {
     setSellingWeaponId(weapon.id);
     setMessage("");
@@ -110,7 +123,10 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
   return (
     <section className="screen-panel">
       <EquippedEquipmentPanel weapon={equippedWeapon} armor={equippedArmor} character={character}>
-        {equippedWeapon && <div className="button-row equipment-actions"><button className="btn ghost" type="button" onClick={handleUnequip} disabled={isBusy}>{isUnequipping ? "해제 중..." : "무기 해제"}</button></div>}
+        {(equippedWeapon || equippedArmor) && <div className="button-row equipment-actions">
+          {equippedWeapon && <button className="btn ghost" type="button" onClick={handleUnequip} disabled={isBusy || isUnequippingArmor}>{isUnequipping ? "해제 중..." : "무기 해제"}</button>}
+          {equippedArmor && <button className="btn ghost" type="button" onClick={handleUnequipArmor} disabled={isBusy || isUnequippingArmor}>{isUnequippingArmor ? "해제 중..." : "방어구 해제"}</button>}
+        </div>}
       </EquippedEquipmentPanel>
 
       <article className="panel">
@@ -165,7 +181,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
         {message && <p className="auth-message is-error" role="status">{message}</p>}
       </article>
 
-      <ArmorEquipmentPanel character={character} onCharacterChange={onCharacterChange} onEquippedArmorChange={setEquippedArmor} />
+      <ArmorEquipmentPanel character={character} onCharacterChange={onCharacterChange} onEquippedArmorChange={setEquippedArmor} refreshKey={armorRefreshKey} />
     </section>
   );
 }
