@@ -506,13 +506,7 @@ function CharacterEquippedEquipmentPanel({ character }: { character: Character }
     return () => { isActive = false; };
   }, [character.id]);
 
-  return (
-    <EquippedEquipmentPanel weapon={equippedWeapon}>
-      <div className="button-row equipment-actions">
-        <Link className="btn ghost" to="/equipment">장비 관리</Link>
-      </div>
-    </EquippedEquipmentPanel>
-  );
+  return <EquippedEquipmentPanel weapon={equippedWeapon} headerAction={<Link className="text-button" to="/equipment">장비</Link>} />;
 }
 
 function createEmptyStatAllocation(): CharacterStatAllocation {
