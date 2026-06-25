@@ -1013,6 +1013,68 @@ button:disabled {
   color: var(--txt-bright);
 }
 
+.equipment-comparison {
+  display: grid;
+  gap: 7px;
+  border: 1px solid color-mix(in srgb, var(--acc-dim) 28%, var(--line));
+  background: color-mix(in srgb, var(--bg-1) 72%, transparent);
+  padding: 8px;
+}
+
+.equipment-comparison > span {
+  color: var(--mut);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.equipment-comparison > strong {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.equipment-comparison-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.equipment-comparison-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: var(--mut);
+  padding: 5px 7px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.equipment-comparison-chip b {
+  color: var(--txt);
+}
+
+.equipment-comparison-chip strong {
+  color: var(--txt-bright);
+}
+
+.equipment-comparison-chip.is-up {
+  border-color: color-mix(in srgb, var(--acc) 42%, var(--line));
+}
+
+.equipment-comparison-chip.is-up strong {
+  color: var(--acc);
+}
+
+.equipment-comparison-chip.is-down {
+  border-color: color-mix(in srgb, var(--neg) 38%, var(--line));
+}
+
+.equipment-comparison-chip.is-down strong {
+  color: var(--neg);
+}
+
 .weapon-list {
   display: grid;
   gap: 8px;
