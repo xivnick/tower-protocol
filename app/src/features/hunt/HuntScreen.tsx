@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { configureAutoHunt, encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
-import type { HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
+import { configureAutoHunt, encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getHuntGrounds, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
+import type { HuntGround, HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
 import type { Character } from "../../types/character";
@@ -17,9 +17,9 @@ const trainingDummy = {
   },
 };
 
-const HUNT_GROUNDS = [
-  { id: "training-dummy", name: "허수아비 훈련장", recommendedLevel: "추천 LV.1–100" },
-  { id: "wooden-doll", name: "목각인형 훈련장", recommendedLevel: "추천 LV.1–100" },
+const DEFAULT_HUNT_GROUNDS: HuntGround[] = [
+  { id: "training-dummy", name: "허수아비 훈련장", recommendedMinLevel: 1, recommendedMaxLevel: 100 },
+  { id: "wooden-doll", name: "목각인형 훈련장", recommendedMinLevel: 1, recommendedMaxLevel: 100 },
 ];
 
 export function HuntScreen({
@@ -78,6 +78,7 @@ function TrainingDummyGround({
   const [isStartingBattle, setIsStartingBattle] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
+  const [huntGrounds, setHuntGrounds] = useState<HuntGround[]>(DEFAULT_HUNT_GROUNDS);
   const [now, setNow] = useState(Date.now());
   const [frozenPlaybackTenths, setFrozenPlaybackTenths] = useState(0);
   const logRef = useRef<HTMLOListElement>(null);
@@ -90,7 +91,7 @@ function TrainingDummyGround({
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
   const combatStats = calculateCombatStats(character);
   const selectedGroundId = huntState?.selectedHuntGroundId ?? "training-dummy";
-  const selectedGround = HUNT_GROUNDS.find((ground) => ground.id === selectedGroundId) ?? HUNT_GROUNDS[0];
+  const selectedGround = huntGrounds.find((ground) => ground.id === selectedGroundId) ?? huntGrounds[0] ?? DEFAULT_HUNT_GROUNDS[0];
   const dummyMaxHp = result?.enemy.maxHp ?? trainingDummy.maxHp(character.level);
   const isBattleInProgress = result?.status === "in_progress";
   const combatNow = useCombatClock(isBattleInProgress);
@@ -129,6 +130,11 @@ function TrainingDummyGround({
 
   useEffect(() => {
     let isActive = true;
+
+    void getHuntGrounds().then((result) => {
+      if (!isActive || !result.ok || result.grounds.length === 0) return;
+      setHuntGrounds(result.grounds);
+    });
 
     void getMyHuntState().then((nextState) => {
       if (!isActive || !nextState.ok || !nextState.state) return;
@@ -185,7 +191,7 @@ function TrainingDummyGround({
 
     completedResultRef.current = result;
     onCharacterChange(result.character);
-    showToast(toastMessages.hunt.completed(result.gainedExperience));
+    showToast(toastMessages.hunt.completed(result.gainedExperience, result.gainedCredits ?? result.rewards?.credits ?? 0));
 
     if (result.levelAfter > result.levelBefore) {
       showToast(toastMessages.character.levelUp(result.levelAfter));
@@ -377,14 +383,14 @@ function TrainingDummyGround({
         >
           <span>{isGoingToDifferentGround ? "GOING TO.." : "LOCATION"}</span>
           <strong>{selectedGround.name}</strong>
-          <small>{selectedGround.recommendedLevel}</small>
+          <small>{formatRecommendedLevel(selectedGround)}</small>
           <svg className="hunt-location-icon" aria-hidden="true" viewBox="0 0 16 16">
             <path d="m4 6 4 4 4-4" />
           </svg>
         </button>
         {isLocationMenuOpen && (
           <div className="hunt-location-menu" id="hunt-location-menu" role="menu" aria-label="사냥터 선택">
-            {HUNT_GROUNDS.map((ground) => (
+            {huntGrounds.map((ground) => (
               <button
                 className={ground.id === selectedGroundId ? "is-selected" : ""}
                 type="button"
@@ -394,7 +400,7 @@ function TrainingDummyGround({
                 onClick={() => void handleGroundChange(ground.id)}
               >
                 <strong>{ground.name}</strong>
-                <small>{ground.recommendedLevel}</small>
+                <small>{formatRecommendedLevel(ground)}</small>
               </button>
             ))}
           </div>
@@ -557,6 +563,33 @@ function formatCombatStat(value: number, digits: number) {
   return digits > 0 ? value.toFixed(digits) : Math.round(value).toLocaleString();
 }
 
+function formatRecommendedLevel(ground: HuntGround) {
+  return `추천 LV.${ground.recommendedMinLevel}–${ground.recommendedMaxLevel}`;
+}
+
+function formatEquipmentReward(equipment: NonNullable<HuntResult["rewards"]>["equipment"]) {
+  if (!equipment) return "";
+  if (equipment.kind === "weapon") return `LV.${equipment.level} ${getWeaponLabel(equipment.type)}`;
+  return `LV.${equipment.level} ${getArmorLabel(equipment.type)}`;
+}
+
+function getWeaponLabel(weaponType: string) {
+  if (weaponType === "longsword") return "장검";
+  if (weaponType === "greatsword") return "대검";
+  if (weaponType === "dagger") return "단검";
+  if (weaponType === "bow") return "활";
+  if (weaponType === "wand") return "완드";
+  if (weaponType === "staff") return "스태프";
+  return weaponType;
+}
+
+function getArmorLabel(armorType: string) {
+  if (armorType === "plate") return "판금갑옷";
+  if (armorType === "leather") return "가죽갑옷";
+  if (armorType === "robe") return "로브";
+  return armorType;
+}
+
 function CombatDetail({ value, percent, isUnknown = false, isExperience = false }: { value: string; percent: number; isUnknown?: boolean; isExperience?: boolean }) {
   if (isUnknown && !value) {
     return <div className="combat-card-detail is-empty" aria-hidden="true" />;
@@ -579,6 +612,9 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
   const resultStatus = result.status === "fled" ? "도망침" : result.status === "timed_out" ? "시간 초과" : result.status === "defeated" ? "전투에서 패배했습니다." : null;
   const seconds = durationTicks / 10;
   const dps = seconds > 0 ? (totalDamage / seconds).toFixed(1) : "0.0";
+  const credits = result.gainedCredits ?? result.rewards?.credits ?? 0;
+  const equipmentReward = result.rewards?.equipment;
+  const essenceReward = result.rewards?.essence;
 
   return (
     <article className="panel last-battle-result-panel">
@@ -590,6 +626,9 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
         <Kv label="전투 시간" value={formatTime(durationTicks)} />
         <Kv label="DPS" value={dps} />
         <Kv label={resultStatus ? "전투 결과" : "경험치"} value={resultStatus ?? `+${result.gainedExperience} EXP`} />
+        {!resultStatus && <Kv label="크레딧" value={`+${credits.toLocaleString()} CR`} />}
+        {!resultStatus && equipmentReward && <Kv label="장비" value={formatEquipmentReward(equipmentReward)} />}
+        {!resultStatus && essenceReward && <Kv label="정수" value={`${essenceReward.name} I`} />}
       </div>
     </article>
   );

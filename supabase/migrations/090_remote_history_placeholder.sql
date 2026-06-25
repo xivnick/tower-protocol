@@ -1,0 +1,3 @@
+-- Remote migration history placeholder.
+-- The original 090 migration exists in the linked Supabase project but is not present locally.
+-- Current effective schema is maintained by later migrations in this directory.

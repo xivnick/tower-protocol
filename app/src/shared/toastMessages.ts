@@ -31,7 +31,10 @@ export const toastMessages = {
   hunt: {
     defeated: (): ToastInput => ({ message: "전투 패배 · 10초간 회복", tone: "error" }),
     timedOut: (): ToastInput => ({ message: "전투 종료 · 시간 제한 도달", tone: "system" }),
-    completed: (gainedExperience: number): ToastInput => ({ message: `전투 완료 · +${gainedExperience} EXP`, tone: "system" }),
+    completed: (gainedExperience: number, gainedCredits = 0): ToastInput => ({
+      message: `전투 완료 · +${gainedExperience.toLocaleString()} EXP · +${gainedCredits.toLocaleString()} CR`,
+      tone: "system",
+    }),
     autoBattleStarted: (level: number, name: string): ToastInput => ({ message: `자동 전투 시작 · LV.${level} ${name}`, tone: "system" }),
     autoHuntStarted: (): ToastInput => ({ message: "자동사냥을 시작했습니다.", tone: "system" }),
     autoHuntUpdated: (): ToastInput => ({ message: "자동전투 횟수를 갱신했습니다.", tone: "system" }),

@@ -47,6 +47,28 @@ export type HuntCombatant = {
   info?: MonsterInfo;
 };
 
+export type HuntRewardEquipment = {
+  kind: "weapon" | "armor";
+  id: string;
+  type: string;
+  variant?: string;
+  level: number;
+};
+
+export type HuntRewardEssence = {
+  id: string;
+  code: string;
+  name: string;
+  grade: number;
+  quantity: number;
+};
+
+export type HuntRewards = {
+  credits: number;
+  equipment: HuntRewardEquipment | null;
+  essence: HuntRewardEssence | null;
+};
+
 export type HuntBattle = {
   huntGroundId: string;
   status: "encountered" | "in_progress" | "victory" | "fled" | "timed_out" | "defeated";
@@ -63,7 +85,16 @@ export type HuntBattle = {
   attackCount: number;
   criticalCount: number;
   totalRegeneration: number;
+  gainedCredits?: number;
+  rewards?: HuntRewards;
   logs: HuntLogEntry[];
+};
+
+export type HuntGround = {
+  id: string;
+  name: string;
+  recommendedMinLevel: number;
+  recommendedMaxLevel: number;
 };
 
 export type HuntState = {
@@ -143,6 +174,8 @@ type HuntBattlePayload = {
   player?: { name?: string; level?: number; max_hp?: number; experience?: number; start_hp?: number; current_hp?: number };
   enemy?: { name?: string; level?: number; max_hp?: number; combat_stats?: MonsterInfoPayload };
   gained_experience?: number;
+  gained_credits?: number;
+  rewards?: HuntRewardsPayload;
   level_before?: number;
   level_after?: number;
   experience_after?: number;
@@ -178,6 +211,24 @@ type MonsterInfoPayload = {
   physical_attack?: number; magic_attack?: number; physical_defense?: number; magic_defense?: number; max_hp?: number;
   regeneration?: number; attacks_per_second?: number; cooldown_reduction?: number; accuracy?: number; evasion_rate?: number;
   critical_chance?: number; critical_damage?: number;
+};
+
+type HuntRewardsPayload = {
+  credits?: number;
+  equipment?: {
+    kind?: "weapon" | "armor";
+    id?: string;
+    type?: string;
+    variant?: string;
+    level?: number;
+  } | null;
+  essence?: {
+    id?: string;
+    code?: string;
+    name?: string;
+    grade?: number;
+    quantity?: number;
+  } | null;
 };
 
 const characterSelectFields = "id,user_id,name,level,experience,credits,strength,agility,dexterity,vitality,endurance,intelligence,wisdom,stat_points,bonus_stat_points,hunt_available_at,created_at,updated_at";
@@ -474,6 +525,25 @@ export async function selectHuntGround(huntGroundId: string): Promise<{ ok: bool
   return { ok: true, state: mapHuntState(data as HuntStatePayload), message: "" };
 }
 
+export async function getHuntGrounds(): Promise<{ ok: boolean; grounds: HuntGround[]; message: string }> {
+  if (!supabase) return { ok: false, grounds: [], message: "Supabase 설정을 확인해주세요." };
+
+  const { data, error } = await supabase.rpc("get_hunt_grounds");
+  if (error) return { ok: false, grounds: [], message: toKoreanAuthMessage(error.message, "사냥터를 불러오지 못했습니다.") };
+
+  const grounds = Array.isArray(data) ? data : [];
+  return {
+    ok: true,
+    grounds: grounds.map((ground) => ({
+      id: String(ground.id ?? "training-dummy"),
+      name: String(ground.name ?? "사냥터"),
+      recommendedMinLevel: Number(ground.recommended_min_level ?? 1),
+      recommendedMaxLevel: Number(ground.recommended_max_level ?? 100),
+    })),
+    message: "",
+  };
+}
+
 export async function getTrainingDummyInfo(): Promise<{ ok: boolean; info: MonsterInfo | null; message: string }> {
   if (!supabase) return { ok: false, info: null, message: "Supabase 설정을 확인해주세요." };
 
@@ -550,7 +620,30 @@ function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
     attackCount: payload.attack_count ?? 0,
     criticalCount: payload.critical_count ?? 0,
     totalRegeneration: payload.total_regeneration ?? 0,
+    gainedCredits: payload.gained_credits,
+    rewards: mapHuntRewards(payload.rewards),
     logs: (payload.logs ?? []).map((log) => ({ timeTenths: log.time_tenths, kind: log.kind, amount: log.amount, targetHp: log.target_hp, target: log.target })),
+  };
+}
+
+function mapHuntRewards(payload: HuntRewardsPayload | undefined): HuntRewards | undefined {
+  if (!payload) return undefined;
+  return {
+    credits: payload.credits ?? 0,
+    equipment: payload.equipment?.kind && payload.equipment.id && payload.equipment.type ? {
+      kind: payload.equipment.kind,
+      id: payload.equipment.id,
+      type: payload.equipment.type,
+      variant: payload.equipment.variant,
+      level: payload.equipment.level ?? 1,
+    } : null,
+    essence: payload.essence?.id && payload.essence.code && payload.essence.name ? {
+      id: payload.essence.id,
+      code: payload.essence.code,
+      name: payload.essence.name,
+      grade: payload.essence.grade ?? 1,
+      quantity: payload.essence.quantity ?? 1,
+    } : null,
   };
 }
 
