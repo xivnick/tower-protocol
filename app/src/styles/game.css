@@ -1757,7 +1757,7 @@ button:disabled {
 .combat-log-damage { color: var(--neg); }
 .combat-log-recovery { color: var(--txt-bright); }
 .combat-log-shield { color: #84dcff; }
-.combat-log-essence-cast { color: var(--txt-bright); }
+.combat-log-essence-cast { color: #ffd479; }
 
 .combat-log-player { color: var(--acc); }
 .combat-log-critical { color: var(--acc-2); }
