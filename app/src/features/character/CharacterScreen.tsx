@@ -507,21 +507,28 @@ function CharacterStatsPanel({
 function CharacterEquippedEquipmentPanel({ character }: { character: Character }) {
   const [equippedWeapon, setEquippedWeapon] = useState<Weapon | null>(null);
   const [equippedArmor, setEquippedArmor] = useState<Armor | null>(null);
+  const [isEquipmentLoading, setIsEquipmentLoading] = useState(true);
 
   useEffect(() => {
     let isActive = true;
-    void getMyWeapons().then((result) => {
-      if (!isActive || !result.ok) return;
-      setEquippedWeapon(result.inventory.weapons.find((weapon) => weapon.id === result.inventory.equippedWeaponId) ?? null);
-    });
-    void getMyArmors().then((result) => {
-      if (!isActive || !result.ok) return;
-      setEquippedArmor(result.inventory.armors.find((armor) => armor.id === result.inventory.equippedArmorId) ?? null);
+    setEquippedWeapon(null);
+    setEquippedArmor(null);
+    setIsEquipmentLoading(true);
+
+    void Promise.all([getMyWeapons(), getMyArmors()]).then(([weaponResult, armorResult]) => {
+      if (!isActive) return;
+      if (weaponResult.ok) {
+        setEquippedWeapon(weaponResult.inventory.weapons.find((weapon) => weapon.id === weaponResult.inventory.equippedWeaponId) ?? null);
+      }
+      if (armorResult.ok) {
+        setEquippedArmor(armorResult.inventory.armors.find((armor) => armor.id === armorResult.inventory.equippedArmorId) ?? null);
+      }
+      setIsEquipmentLoading(false);
     });
     return () => { isActive = false; };
   }, [character.id]);
 
-  return <EquippedEquipmentPanel weapon={equippedWeapon} armor={equippedArmor} character={character} headerAction={<Link className="text-button" to="/equipment">장비 관리</Link>} />;
+  return <EquippedEquipmentPanel weapon={equippedWeapon} armor={equippedArmor} character={character} isLoading={isEquipmentLoading} headerAction={<Link className="text-button" to="/equipment">장비 관리</Link>} />;
 }
 
 function createEmptyStatAllocation(): CharacterStatAllocation {

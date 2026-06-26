@@ -10,10 +10,11 @@ import { armorEffect, armorLabel, armorSummary } from "./EquippedEquipmentPanel"
 const armorNames: Record<ArmorType, string> = { plate: "중갑", leather: "경갑", robe: "로브" };
 type ArmorFilter = "all" | ArmorType;
 
-export function ArmorEquipmentPanel({ character, onCharacterChange, onEquippedArmorChange, refreshKey = 0 }: {
+export function ArmorEquipmentPanel({ character, onCharacterChange, onEquippedArmorChange, onLoadingChange, refreshKey = 0 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
   onEquippedArmorChange: (armor: Armor | null) => void;
+  onLoadingChange?: (isLoading: boolean) => void;
   refreshKey?: number;
 }) {
   const { showToast } = useToast();
@@ -32,8 +33,10 @@ export function ArmorEquipmentPanel({ character, onCharacterChange, onEquippedAr
 
   async function loadArmors() {
     setIsLoading(true);
+    onLoadingChange?.(true);
     const result = await getMyArmors();
     setIsLoading(false);
+    onLoadingChange?.(false);
     if (!result.ok) { setMessage(result.message); return; }
     setArmors(result.inventory.armors);
     setEquippedArmorId(result.inventory.equippedArmorId);

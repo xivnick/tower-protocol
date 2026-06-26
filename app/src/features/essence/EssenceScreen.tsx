@@ -81,8 +81,8 @@ export function EssenceScreen({ character }: { character: Character | null }) {
           {slots.map(({ slotIndex, essence }) => (
             <div key={slotIndex}>
               <span>SLOT {slotIndex}</span>
-              <strong>{essence ? `${essence.name} ${formatGrade(essence.grade)}` : "비어 있음"}</strong>
-              {essence && <button className="text-button" type="button" disabled={isBusy} onClick={() => void handleUnequip(slotIndex)}>{pendingAction === `unequip:${slotIndex}` ? "해제 중..." : "해제"}</button>}
+              <strong>{isLoading ? "정수 불러오는 중..." : essence ? `${essence.name} ${formatGrade(essence.grade)}` : "비어 있음"}</strong>
+              {!isLoading && essence && <button className="text-button" type="button" disabled={isBusy} onClick={() => void handleUnequip(slotIndex)}>{pendingAction === `unequip:${slotIndex}` ? "해제 중..." : "해제"}</button>}
             </div>
           ))}
         </div>

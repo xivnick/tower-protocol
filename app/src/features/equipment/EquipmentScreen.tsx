@@ -26,6 +26,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
   const [weapons, setWeapons] = useState<Weapon[]>([]);
   const [equippedWeaponId, setEquippedWeaponId] = useState<string | null>(null);
   const [equippedArmor, setEquippedArmor] = useState<Armor | null>(null);
+  const [isArmorLoading, setIsArmorLoading] = useState(true);
   const [armorRefreshKey, setArmorRefreshKey] = useState(0);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -126,6 +127,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
         weapon={equippedWeapon}
         armor={equippedArmor}
         character={character}
+        isLoading={isLoading || isArmorLoading}
         weaponAction={equippedWeapon ? <button className="text-button" type="button" onClick={handleUnequip} disabled={isBusy}>{isUnequipping ? "해제 중..." : "해제"}</button> : undefined}
         armorAction={equippedArmor ? <button className="text-button" type="button" onClick={handleUnequipArmor} disabled={isBusy}>{isUnequippingArmor ? "해제 중..." : "해제"}</button> : undefined}
       />
@@ -182,7 +184,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
         {message && <p className="auth-message is-error" role="status">{message}</p>}
       </article>
 
-      <ArmorEquipmentPanel character={character} onCharacterChange={onCharacterChange} onEquippedArmorChange={setEquippedArmor} refreshKey={armorRefreshKey} />
+      <ArmorEquipmentPanel character={character} onCharacterChange={onCharacterChange} onEquippedArmorChange={setEquippedArmor} onLoadingChange={setIsArmorLoading} refreshKey={armorRefreshKey} />
     </section>
   );
 }
