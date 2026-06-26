@@ -49,6 +49,7 @@ export type HuntCombatant = {
   maxHp: number;
   experience?: number;
   info?: MonsterInfo;
+  essence?: { code: string; name: string; grade: number };
 };
 
 export type HuntRewardEquipment = {
@@ -176,7 +177,7 @@ type HuntBattlePayload = {
   started_at?: string;
   ends_at?: string;
   player?: { name?: string; level?: number; max_hp?: number; experience?: number; start_hp?: number; current_hp?: number };
-  enemy?: { name?: string; level?: number; max_hp?: number; combat_stats?: MonsterInfoPayload };
+  enemy?: { name?: string; level?: number; max_hp?: number; combat_stats?: MonsterInfoPayload; essence?: { code?: string; name?: string; grade?: number } };
   gained_experience?: number;
   gained_credits?: number;
   rewards?: HuntRewardsPayload;
@@ -618,6 +619,9 @@ function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
     enemy: {
       name: payload.enemy?.name ?? "허수아비", level: payload.enemy?.level ?? 0, maxHp: payload.enemy?.max_hp ?? 0,
       info: payload.enemy?.combat_stats ? mapMonsterInfo(payload.enemy.combat_stats) : undefined,
+      essence: payload.enemy?.essence?.code && payload.enemy.essence.name
+        ? { code: payload.enemy.essence.code, name: payload.enemy.essence.name, grade: payload.enemy.essence.grade ?? 1 }
+        : undefined,
     },
     gainedExperience: payload.gained_experience ?? 0,
     levelBefore: payload.level_before ?? 0,

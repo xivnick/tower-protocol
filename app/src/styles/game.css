@@ -1540,6 +1540,12 @@ button:disabled {
   color: #84dcff;
 }
 
+.combat-essence {
+  margin: 5px 0 0;
+  color: #ffd479;
+  font-size: 12px;
+}
+
 .combat-character-link {
   position: absolute;
   top: 12px;
