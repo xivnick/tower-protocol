@@ -1750,6 +1750,10 @@ button:disabled {
   color: var(--mut-2);
 }
 
+.combat-log li.is-linked span {
+  padding-left: 10px;
+}
+
 .combat-log-damage { color: var(--neg); }
 .combat-log-recovery { color: var(--txt); }
 .combat-log-shield { color: #84dcff; }

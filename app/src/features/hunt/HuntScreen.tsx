@@ -475,7 +475,7 @@ function TrainingDummyGround({
                 {displayedLogs.map((log, index) => {
                   const entry = log.entries[0];
                   const isLinkedLog = isLinkedCombatLog(entry);
-                  return <li className={`is-${log.kind}`} key={`${log.timeTenths}-${log.kind}-${index}`}>
+                  return <li className={`is-${log.kind} ${isLinkedLog ? "is-linked" : ""}`} key={`${log.timeTenths}-${log.kind}-${index}`}>
                     <time className={getLogTimeTone(entry)} aria-hidden={isLinkedLog}>{isLinkedLog ? "" : `[${formatTime(log.timeTenths)}]`}</time>
                     <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(entry, result.player.name, result.enemy.name, result.enemy.level, result.gainedExperience, result.gainedCredits ?? result.rewards?.credits ?? 0)}</span>
                   </li>;
