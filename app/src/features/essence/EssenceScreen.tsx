@@ -35,11 +35,13 @@ export function EssenceScreen({ character }: { character: Character | null }) {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const unlockedSlotCount = getUnlockedSlotCount(character?.level ?? 1);
 
   const slots = useMemo(() => slotIndexes.map((slotIndex) => ({
     slotIndex,
     essence: essences.find((essence) => essence.equippedSlotIndex === slotIndex) ?? null,
-  })), [essences]);
+    isLocked: slotIndex > unlockedSlotCount,
+  })), [essences, unlockedSlotCount]);
 
   async function loadEssences() {
     setIsLoading(true);
@@ -97,11 +99,11 @@ export function EssenceScreen({ character }: { character: Character | null }) {
           <h2>장착 정수</h2>
         </div>
         <div className="hunt-result-summary">
-          {slots.map(({ slotIndex, essence }) => (
+          {slots.map(({ slotIndex, essence, isLocked }) => (
             <div key={slotIndex}>
               <span>SLOT {slotIndex}</span>
-              <strong>{isLoading ? "정수 불러오는 중..." : essence ? `${essence.name} ${formatGrade(essence.grade)}` : "비어 있음"}</strong>
-              {!isLoading && essence && <button className="text-button" type="button" disabled={isBusy} onClick={() => void handleUnequip(slotIndex)}>{pendingAction === `unequip:${slotIndex}` ? "해제 중..." : "해제"}</button>}
+              <strong>{isLoading ? "정수 불러오는 중..." : isLocked ? `${getSlotUnlockLevel(slotIndex)} 해금` : essence ? `${essence.name} ${formatGrade(essence.grade)}` : "비어 있음"}</strong>
+              {!isLoading && !isLocked && essence && <button className="text-button" type="button" disabled={isBusy} onClick={() => void handleUnequip(slotIndex)}>{pendingAction === `unequip:${slotIndex}` ? "해제 중..." : "해제"}</button>}
             </div>
           ))}
         </div>
@@ -128,7 +130,7 @@ export function EssenceScreen({ character }: { character: Character | null }) {
                   {isSelected && <div className="weapon-detail">
                     <div className="weapon-detail-info"><span>효과</span><strong>{getEssenceEffect(essence)}</strong></div>
                     <div className="button-row">
-                      {slotIndexes.map((slotIndex) => (
+                      {slotIndexes.filter((slotIndex) => slotIndex <= unlockedSlotCount).map((slotIndex) => (
                         <button className="btn primary" type="button" disabled={isBusy} onClick={() => void handleEquip(essence, slotIndex)} key={slotIndex}>
                           {pendingAction === `${essence.id}:${slotIndex}` ? "장착 중..." : `SLOT ${slotIndex}`}
                         </button>
@@ -148,6 +150,16 @@ export function EssenceScreen({ character }: { character: Character | null }) {
 
 function formatGrade(grade: number) {
   return ["", "I", "II", "III", "IV", "V"][grade] ?? `${grade}`;
+}
+
+function getUnlockedSlotCount(level: number) {
+  if (level >= 30) return 3;
+  if (level >= 10) return 2;
+  return 1;
+}
+
+function getSlotUnlockLevel(slotIndex: number) {
+  return slotIndex === 2 ? "LV.10" : "LV.30";
 }
 
 function getEssenceSummary(essence: Essence) {
