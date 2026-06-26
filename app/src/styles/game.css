@@ -1544,6 +1544,7 @@ button:disabled {
   margin: 5px 0 0;
   color: var(--txt-bright);
   font-size: 12px;
+  font-weight: 700;
 }
 
 .combat-character-link {
