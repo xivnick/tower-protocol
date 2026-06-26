@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { configureAutoHunt, encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getHuntGrounds, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntGround, HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
@@ -472,12 +472,20 @@ function TrainingDummyGround({
           <ol className="combat-log" aria-label="전투 로그" ref={logRef} onScroll={handleCombatLogScroll}>
             {result ? (
               <>
-                {displayedLogs.map((log, index) => (
-                  <li className={`is-${log.kind}`} key={`${log.timeTenths}-${log.kind}-${index}`}>
-                    <time className={getLogTimeTone(log.entries[0])}>[{formatTime(log.timeTenths)}]</time>
-                    <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(log.entries[0], result.player.name, result.enemy.name, result.enemy.level, result.gainedExperience, result.gainedCredits ?? result.rewards?.credits ?? 0)}</span>
-                  </li>
-                ))}
+                {displayedLogs.map((log, index) => {
+                  const entry = log.entries[0];
+                  const essenceCastEffect = entry.kind === "essence_cast" ? getEssenceCastEffect(entry.name ?? "", entry.grade) : "";
+                  return <Fragment key={`${log.timeTenths}-${log.kind}-${index}`}>
+                    <li className={`is-${log.kind}`}>
+                      <time className={getLogTimeTone(entry)}>[{formatTime(log.timeTenths)}]</time>
+                      <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(entry, result.player.name, result.enemy.name, result.enemy.level, result.gainedExperience, result.gainedCredits ?? result.rewards?.credits ?? 0)}</span>
+                    </li>
+                    {essenceCastEffect && <li className="is-essence-effect">
+                      <time aria-hidden="true" />
+                      <span>- {essenceCastEffect}</span>
+                    </li>}
+                  </Fragment>;
+                })}
               </>
             ) : (
               <li className="is-empty">{hasEncounteredMonster ? "조우 완료. 전투를 시작하세요." : "몬스터 찾기를 기다리고 있습니다."}</li>
@@ -663,19 +671,20 @@ function Kv({ label, value }: { label: string; value: string }) {
 }
 
 function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: string, enemyLevel: number, gainedExperience: number, gainedCredits: number): ReactNode {
-  const damage = <b className="combat-log-damage">-{formatAmount(entry.amount)} HP</b>;
+  const damage = entry.shieldAbsorbed && entry.shieldAbsorbed > 0
+    ? <>{<b className="combat-log-shield">-{formatAmount(entry.shieldAbsorbed)} S</b>}{entry.amount > 0 && <> <b className="combat-log-damage">-{formatAmount(entry.amount)} HP</b></>}</>
+    : <b className="combat-log-damage">-{formatAmount(entry.amount)} HP</b>;
   const recovery = <b className="combat-log-recovery">+{formatAmount(entry.amount)} HP</b>;
   const linkedEffect = <b className="combat-log-linked">-</b>;
   const essenceUser = entry.source === "enemy" ? enemyName : playerName;
   const essenceName = entry.name ?? "정수";
   const essenceGrade = entry.grade ? formatEssenceGrade(entry.grade) : "";
-  const essenceCastEffect = getEssenceCastEffect(essenceName, entry.grade);
   if (entry.kind === "encounter") return `LV.${enemyLevel} ${enemyName}${withAnd(enemyName)} 조우했습니다.`;
   if (entry.kind === "defeat") return `전투 승리 · +${gainedExperience} EXP · +${gainedCredits} CR`;
   if (entry.kind === "player_defeat") return "전투에서 패배했습니다.";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
-  if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> <b className="combat-log-essence-cast">{essenceName} {essenceGrade}</b> 발동{essenceCastEffect && <span className="combat-log-effect"> - {essenceCastEffect}</span>}</>;
+  if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> <b className="combat-log-essence-cast">{essenceName} {essenceGrade}</b> 발동</>;
   if (entry.kind === "essence_damage") return <>{linkedEffect} <b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceName}</b> 피해 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {damage}</>;
   if (entry.kind === "essence_heal") return <>{linkedEffect} <b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceName}</b> 회복 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {recovery}</>;
   if (entry.kind === "essence_shield") return <>{linkedEffect} <b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> 방어막 <b className="combat-log-shield">+{formatAmount(entry.amount)} S</b></>;
@@ -839,6 +848,9 @@ function getVisibleShield(logs: HuntLogEntry[], target: "player" | "enemy", play
       if (remaining <= 0) return 0;
       if (entry.kind === "shield_absorb") {
         return entry.shieldRemaining ?? Math.max(0, remaining - entry.amount);
+      }
+      if (entry.shieldAbsorbed && entry.shieldAbsorbed > 0) {
+        return Math.max(0, remaining - entry.shieldAbsorbed);
       }
       return remaining;
     }, shieldLog.amount);
