@@ -658,7 +658,7 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "player_defeat") return "전투에서 패배했습니다.";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
-  if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> <b className="combat-log-essence-cast">{essenceName}</b> {essenceGrade} 발동</>;
+  if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> <b className="combat-log-essence-cast">{essenceName} {essenceGrade}</b> 발동</>;
   if (entry.kind === "essence_damage") return <>{linkedEffect} <b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceName}</b> 피해 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {damage}</>;
   if (entry.kind === "essence_shield") return <>{linkedEffect} <b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> 방어막 <b className="combat-log-shield">+{formatAmount(entry.amount)} S</b></>;
   if (entry.kind === "shield_absorb") return <>{linkedEffect} <b className={entry.target === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{entry.target === "enemy" ? enemyName : playerName}</b> 방어막 흡수 <b className="combat-log-shield">-{formatAmount(entry.amount)} S</b></>;
