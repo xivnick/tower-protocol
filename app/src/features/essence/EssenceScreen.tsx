@@ -95,16 +95,19 @@ export function EssenceScreen({ character }: { character: Character | null }) {
   return (
     <section className="screen-panel">
       <article className="panel">
-        <div className="panel-head">
-          <span>ESSENCE SLOTS</span>
-          <h2>장착 정수</h2>
+        <div className="panel-head action-head">
+          <div><span>EQUIPPED</span><h2>장착 중인 정수</h2></div>
         </div>
-        <div className="hunt-result-summary">
+        <div className="equipped-summary">
           {slots.map(({ slotIndex, essence, isLocked }) => (
-            <div className="essence-slot" key={slotIndex}>
+            <div className="equipped-summary-row" key={slotIndex}>
               <span>SLOT {slotIndex}</span>
-              <strong>{isLoading ? "정수 불러오는 중..." : isLocked ? `${getSlotUnlockLevel(slotIndex)} 해금` : essence ? `${essence.name} ${formatGrade(essence.grade)}` : "비어 있음"}</strong>
-              {!isLoading && !isLocked && essence && <button className="text-button essence-slot-unequip" type="button" disabled={isBusy} onClick={() => void handleUnequip(slotIndex)}>{pendingAction === `unequip:${slotIndex}` ? "해제 중..." : "해제"}</button>}
+              {isLocked ? <strong>{getSlotUnlockLevel(slotIndex)} 해금</strong> : essence ? (
+                <div className="equipped-summary-content">
+                  <strong><b>{essence.name} {formatGrade(essence.grade)}</b><small>{getEssenceEffect(essence)}</small></strong>
+                  {!isLoading && <button className="text-button" type="button" disabled={isBusy} onClick={() => void handleUnequip(slotIndex)}>{pendingAction === `unequip:${slotIndex}` ? "해제 중..." : "해제"}</button>}
+                </div>
+              ) : <strong>{isLoading ? "정수 불러오는 중..." : "장착한 정수 없음"}</strong>}
             </div>
           ))}
         </div>
@@ -149,17 +152,17 @@ export function EssenceScreen({ character }: { character: Character | null }) {
   );
 }
 
-function formatGrade(grade: number) {
+export function formatGrade(grade: number) {
   return ["", "I", "II", "III", "IV", "V"][grade] ?? `${grade}`;
 }
 
-function getUnlockedSlotCount(level: number) {
+export function getUnlockedSlotCount(level: number) {
   if (level >= 30) return 3;
   if (level >= 10) return 2;
   return 1;
 }
 
-function getSlotUnlockLevel(slotIndex: number) {
+export function getSlotUnlockLevel(slotIndex: number) {
   return slotIndex === 2 ? "LV.10" : "LV.30";
 }
 

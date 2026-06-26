@@ -18,7 +18,7 @@ import type { Armor, Weapon } from "../../api/equipmentApi";
 import { EquippedEquipmentPanel } from "../equipment/EquippedEquipmentPanel";
 import { getMyEssences } from "../../api/essenceApi";
 import type { Essence } from "../../api/essenceApi";
-import { getEssenceEffect } from "../essence/EssenceScreen";
+import { formatGrade, getEssenceEffect, getSlotUnlockLevel, getUnlockedSlotCount } from "../essence/EssenceScreen";
 
 export function CharacterScreen({
   character,
@@ -552,7 +552,7 @@ function CharacterEquippedEssencePanel({ character }: { character: Character }) 
     return () => { isActive = false; };
   }, [character.id]);
 
-  const unlockedSlotCount = character.level >= 30 ? 3 : character.level >= 10 ? 2 : 1;
+  const unlockedSlotCount = getUnlockedSlotCount(character.level);
 
   return (
     <article className="panel">
@@ -566,16 +566,16 @@ function CharacterEquippedEssencePanel({ character }: { character: Character }) 
           const isLocked = slotIndex > unlockedSlotCount;
           return <div className="equipped-summary-row" key={slotIndex}>
             <span>SLOT {slotIndex}</span>
-            {isLocked ? <strong>LV.{slotIndex === 2 ? 10 : 30} 해금</strong> : essence ? <strong><b>{essence.name} {formatEssenceGrade(essence.grade)}</b><small>{getEssenceEffect(essence)}</small></strong> : <strong>{isLoading ? "정수 불러오는 중..." : "장착한 정수 없음"}</strong>}
+            {isLocked ? <strong>{getSlotUnlockLevel(slotIndex)} 해금</strong> : essence ? (
+              <div className="equipped-summary-content">
+                <strong><b>{essence.name} {formatGrade(essence.grade)}</b><small>{getEssenceEffect(essence)}</small></strong>
+              </div>
+            ) : <strong>{isLoading ? "정수 불러오는 중..." : "장착한 정수 없음"}</strong>}
           </div>;
         })}
       </div>
     </article>
   );
-}
-
-function formatEssenceGrade(grade: number) {
-  return ["", "I", "II", "III", "IV", "V"][grade] ?? `${grade}`;
 }
 
 function createEmptyStatAllocation(): CharacterStatAllocation {
