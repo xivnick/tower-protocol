@@ -669,7 +669,7 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "regeneration") return <><b className="combat-log-enemy">{enemyName}</b> 재생 {recovery}</>;
   if (entry.kind === "player_regeneration") return <><b className="combat-log-player">{playerName}</b> 재생 {recovery}</>;
   if (entry.kind === "enemy_attack") return <><b className="combat-log-enemy">{enemyName}</b> 공격 <i className="combat-log-arrow is-enemy">≫</i> {damage}</>;
-  if (entry.kind === "reflect") return <><b className="combat-log-player">{playerName}</b> 반사 피해 <i className="combat-log-arrow is-player">≫</i> {damage}</>;
+  if (entry.kind === "reflect") return <>{linkedEffect} <b className="combat-log-player">{playerName}</b> 반사 피해 <i className="combat-log-arrow is-player">≫</i> {damage}</>;
   if (entry.kind === "critical") return <><b className="combat-log-player">{playerName}</b> <b className="combat-log-critical">치명타</b> <i className="combat-log-arrow is-player">≫</i> {damage}</>;
   return <><b className="combat-log-player">{playerName}</b> 공격 <i className="combat-log-arrow is-player">≫</i> {damage}</>;
 }
@@ -684,10 +684,7 @@ function groupCombatLogs(logs: HuntLogEntry[]) {
   const groups: Array<{ kind: HuntLogEntry["kind"] | "combined_regeneration"; timeTenths: number; entries: HuntLogEntry[] }> = [];
   const orderedLogs = [...logs].sort((left, right) => {
     if (left.timeTenths !== right.timeTenths) return left.timeTenths - right.timeTenths;
-    const leftIsShieldAbsorb = left.kind === "shield_absorb";
-    const rightIsShieldAbsorb = right.kind === "shield_absorb";
-    if (leftIsShieldAbsorb !== rightIsShieldAbsorb) return leftIsShieldAbsorb ? 1 : -1;
-    return 0;
+    return getCombatLogSequence(left.kind) - getCombatLogSequence(right.kind);
   });
 
   for (const entry of orderedLogs) {
@@ -700,6 +697,12 @@ function groupCombatLogs(logs: HuntLogEntry[]) {
     groups.push({ kind: isRegeneration ? "combined_regeneration" : entry.kind, timeTenths: entry.timeTenths, entries: [entry] });
   }
   return groups;
+}
+
+function getCombatLogSequence(kind: HuntLogEntry["kind"]) {
+  if (kind === "shield_absorb") return 1;
+  if (kind === "reflect" || kind === "essence_reflect") return 2;
+  return 0;
 }
 
 function formatCombinedRegeneration(entries: HuntLogEntry[]): ReactNode {
