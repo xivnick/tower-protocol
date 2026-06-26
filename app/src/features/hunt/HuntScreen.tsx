@@ -82,6 +82,7 @@ function TrainingDummyGround({
   const [now, setNow] = useState(Date.now());
   const [frozenPlaybackTenths, setFrozenPlaybackTenths] = useState(0);
   const logRef = useRef<HTMLOListElement>(null);
+  const isLogPinnedToBottomRef = useRef(true);
   const completedResultRef = useRef<HuntResult | null>(null);
   const settlementAttemptRef = useRef<string | null>(null);
   const autoActionRef = useRef<string | null>(null);
@@ -103,8 +104,8 @@ function TrainingDummyGround({
   const enemyLogs = visibleLogs.filter((entry) => entry.target !== "player");
   const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
   const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
-  const playerShield = useMemo(() => getVisibleShield(visibleLogs, "player", playbackTenths), [playbackTenths, visibleLogs]);
-  const enemyShield = useMemo(() => getVisibleShield(visibleLogs, "enemy", playbackTenths), [playbackTenths, visibleLogs]);
+  const playerShield = useMemo(() => isBattleInProgress ? getVisibleShield(visibleLogs, "player", playbackTenths) : 0, [isBattleInProgress, playbackTenths, visibleLogs]);
+  const enemyShield = useMemo(() => isBattleInProgress ? getVisibleShield(visibleLogs, "enemy", playbackTenths) : 0, [isBattleInProgress, playbackTenths, visibleLogs]);
   const hasEncounteredMonster = result?.status === "encountered";
   const recoveredPlayerHp = getRecoveredPlayerHp(huntState, now);
   const playerHp = isBattleInProgress
@@ -163,10 +164,20 @@ function TrainingDummyGround({
   }, [isRecovering, isRecoveryLocked, remainingTenths]);
 
   useEffect(() => {
-    if (visibleLogs.length > 0 && logRef.current) {
+    if (visibleLogs.length > 0 && logRef.current && isLogPinnedToBottomRef.current) {
       logRef.current.scrollTop = logRef.current.scrollHeight;
     }
   }, [visibleLogs.length]);
+
+  useEffect(() => {
+    isLogPinnedToBottomRef.current = true;
+  }, [result?.startedAt]);
+
+  function handleCombatLogScroll() {
+    const log = logRef.current;
+    if (!log) return;
+    isLogPinnedToBottomRef.current = log.scrollHeight - log.scrollTop - log.clientHeight <= 16;
+  }
 
   useEffect(() => {
     if (!result || hasEncounteredMonster || isBattleInProgress || !isPlaybackComplete || completedResultRef.current === result) return;
@@ -457,7 +468,7 @@ function TrainingDummyGround({
               expandedContent={result?.enemy.info ? <MonsterInfoStats info={result.enemy.info} /> : null}
             />
           </div>
-          <ol className="combat-log" aria-label="전투 로그" ref={logRef}>
+          <ol className="combat-log" aria-label="전투 로그" ref={logRef} onScroll={handleCombatLogScroll}>
             {result ? (
               <>
                 {displayedLogs.map((log, index) => (
