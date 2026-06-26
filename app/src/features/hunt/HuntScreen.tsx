@@ -529,7 +529,7 @@ function CombatHpCard({
         {!isUnknown && <i style={{ width: `${hpPercent}%` }} />}
         {!isUnknown && shieldPercent > 0 && <em style={{ left: `${hpPercent}%`, width: `${shieldPercent}%` }} />}
       </div>
-      <b>{isUnknown ? "HP ???" : `HP ${formatAmount(currentHp ?? 0)} / ${formatAmount(maxHp ?? 0)}${shield > 0 ? ` +${formatAmount(shield)} SH` : ""}`}</b>
+      <b>{isUnknown ? "HP ???" : <>HP {formatAmount(currentHp ?? 0)} / {formatAmount(maxHp ?? 0)}{shield > 0 && <span className="combat-hp-shield-value"> +{formatAmount(shield)} S</span>}</>}</b>
       {detail && <CombatDetail {...detail} />}
       {expandedContent && <div className={`combat-card-expansion ${isExpanded ? "is-expanded" : ""}`}><div>{expandedContent}</div></div>}
     </div>
@@ -649,6 +649,7 @@ function Kv({ label, value }: { label: string; value: string }) {
 function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: string, enemyLevel: number, gainedExperience: number, gainedCredits: number): ReactNode {
   const damage = <b className="combat-log-damage">-{formatAmount(entry.amount)} HP</b>;
   const recovery = <b className="combat-log-recovery">+{formatAmount(entry.amount)} HP</b>;
+  const linkedEffect = <b className="combat-log-linked">-</b>;
   const essenceUser = entry.source === "enemy" ? enemyName : playerName;
   const essenceName = entry.name ?? "정수";
   const essenceGrade = entry.grade ? formatEssenceGrade(entry.grade) : "";
@@ -657,12 +658,12 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "player_defeat") return "전투에서 패배했습니다.";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
-  if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> {essenceName} {essenceGrade} 발동</>;
-  if (entry.kind === "essence_damage") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceName}</b> 피해 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {damage}</>;
-  if (entry.kind === "essence_shield") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> 방어막 <b className="combat-log-recovery">+{formatAmount(entry.amount)}</b></>;
-  if (entry.kind === "shield_absorb") return <><b className={entry.target === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{entry.target === "enemy" ? enemyName : playerName}</b> 방어막 흡수 <b className="combat-log-shield">-{formatAmount(entry.amount)} SH</b></>;
-  if (entry.kind === "essence_extra_hit") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceName}</b> 추가타 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {damage}</>;
-  if (entry.kind === "essence_reflect") return <><b className="combat-log-enemy">{essenceName}</b> 반격 <i className="combat-log-arrow is-enemy">≫</i> {damage}</>;
+  if (entry.kind === "essence_cast") return <b className="combat-log-essence-cast">{essenceUser} {essenceName} {essenceGrade} 발동</b>;
+  if (entry.kind === "essence_damage") return <>{linkedEffect} <b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceName}</b> 피해 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {damage}</>;
+  if (entry.kind === "essence_shield") return <>{linkedEffect} <b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> 방어막 <b className="combat-log-shield">+{formatAmount(entry.amount)} S</b></>;
+  if (entry.kind === "shield_absorb") return <>{linkedEffect} <b className={entry.target === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{entry.target === "enemy" ? enemyName : playerName}</b> 방어막 흡수 <b className="combat-log-shield">-{formatAmount(entry.amount)} S</b></>;
+  if (entry.kind === "essence_extra_hit") return <>{linkedEffect} <b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceName}</b> 추가타 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {damage}</>;
+  if (entry.kind === "essence_reflect") return <>{linkedEffect} <b className="combat-log-enemy">{essenceName}</b> 반격 <i className="combat-log-arrow is-enemy">≫</i> {damage}</>;
   if (entry.kind === "miss") return <><b className="combat-log-player">{playerName}</b> 공격이 빗나갔습니다.</>;
   if (entry.kind === "enemy_miss") return <><b className="combat-log-enemy">{enemyName}</b> 공격을 <b className="combat-log-evasion">회피</b>했습니다.</>;
   if (entry.kind === "regeneration") return <><b className="combat-log-enemy">{enemyName}</b> 재생 {recovery}</>;

@@ -1536,6 +1536,10 @@ button:disabled {
   font-size: 12px;
 }
 
+.combat-hp-shield-value {
+  color: #84dcff;
+}
+
 .combat-character-link {
   position: absolute;
   top: 12px;
@@ -1732,6 +1736,8 @@ button:disabled {
 .combat-log-damage { color: var(--neg); }
 .combat-log-recovery { color: var(--txt); }
 .combat-log-shield { color: #84dcff; }
+.combat-log-essence-cast { color: #ffd479; }
+.combat-log-linked { color: var(--mut); margin-right: 2px; }
 
 .combat-log-player { color: var(--acc); }
 .combat-log-critical { color: var(--acc-2); }
