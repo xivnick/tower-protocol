@@ -475,9 +475,10 @@ function TrainingDummyGround({
                 {displayedLogs.map((log, index) => {
                   const entry = log.entries[0];
                   const essenceCastEffect = entry.kind === "essence_cast" ? getEssenceCastEffect(entry.name ?? "", entry.grade) : "";
+                  const isLinkedLog = isLinkedCombatLog(entry);
                   return <Fragment key={`${log.timeTenths}-${log.kind}-${index}`}>
                     <li className={`is-${log.kind}`}>
-                      <time className={getLogTimeTone(entry)}>[{formatTime(log.timeTenths)}]</time>
+                      <time className={getLogTimeTone(entry)} aria-hidden={isLinkedLog}>{isLinkedLog ? "" : `[${formatTime(log.timeTenths)}]`}</time>
                       <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(entry, result.player.name, result.enemy.name, result.enemy.level, result.gainedExperience, result.gainedCredits ?? result.rewards?.credits ?? 0)}</span>
                     </li>
                     {essenceCastEffect && <li className="is-essence-effect">
@@ -805,12 +806,16 @@ function getEssenceCastEffect(name: string, grade = 1) {
   const effectByGrade: Record<string, string[]> = {
     "성난 멧돼지의 괴력": ["다음 일반 공격 피해 +60%", "다음 일반 공격 피해 +90%", "다음 일반 공격 피해 +180%", "다음 일반 공격 피해 +220%", "다음 일반 공격 피해 +260%"],
     "숲 늑대의 연격": ["4초 동안 일반 공격 추가타 30%", "4초 동안 일반 공격 추가타 40%", "4초 동안 일반 공격 추가타 80%", "4초 동안 일반 공격 추가타 95%", "5초 동안 일반 공격 추가타 110%"],
-    "바위 딱정벌레의 돌가죽": ["4초 동안 최대 HP 8% 방어막", "4초 동안 최대 HP 10% 방어막", "4초 동안 최대 HP 20% 방어막", "4초 동안 최대 HP 24% 방어막", "5초 동안 최대 HP 28% 방어막"],
     "붉은가시 맹수의 역린": ["4초 동안 가시 피해 15%", "4초 동안 가시 피해 25%", "4초 동안 가시 피해 50%", "4초 동안 가시 피해 60%", "5초 동안 가시 피해 75%"],
     "칼날 딱정벌레의 날붙이": ["5초 동안 일반 공격 출혈 15%", "5초 동안 일반 공격 출혈 25%", "5초 동안 일반 공격 출혈 45%", "5초 동안 일반 공격 출혈 55%", "6초 동안 일반 공격 출혈 65%"],
     "수정 도마뱀의 굴절비늘": ["4초 동안 마법 추가 피해 15%", "4초 동안 마법 추가 피해 25%", "4초 동안 마법 추가 피해 50%", "4초 동안 마법 추가 피해 60%", "5초 동안 마법 추가 피해 75%"],
   };
   return effectByGrade[name]?.[grade - 1] ?? "";
+}
+
+function isLinkedCombatLog(entry: HuntLogEntry) {
+  return entry.kind === "essence_damage" || entry.kind === "essence_heal" || entry.kind === "essence_shield"
+    || entry.kind === "shield_absorb" || entry.kind === "essence_extra_hit" || entry.kind === "essence_reflect" || entry.kind === "reflect";
 }
 
 function getRecoveredPlayerHp(huntState: HuntState | null, now: number) {
