@@ -681,12 +681,8 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> <b className="combat-log-essence-cast">{essenceName} {essenceGrade}</b> 발동</>;
   if (entry.kind === "essence_damage") return formatTargetedEssenceEffect(entry, essenceName, "피해", damage);
   if (entry.kind === "essence_dot") return formatTargetedEssenceEffect(entry, essenceName, "독 피해", damage);
-  if (entry.kind === "essence_heal") return entry.target === "player"
-    ? <>{recovery} <i className="combat-log-arrow is-player">≪</i> <b className={essenceSourceClass}>{essenceName}</b> 회복</>
-    : <><b className={essenceSourceClass}>{essenceName}</b> 회복 <i className="combat-log-arrow is-enemy">≫</i> {recovery}</>;
-  if (entry.kind === "essence_shield") return entry.target === "player"
-    ? <><b className="combat-log-shield">+{formatAmount(entry.amount)} S</b> <i className="combat-log-arrow is-player">≪</i> <b className={essenceSourceClass}>{essenceName}</b> 방어막</>
-    : <><b className={essenceSourceClass}>{essenceName}</b> 방어막 <i className="combat-log-arrow is-enemy">≫</i> <b className="combat-log-shield">+{formatAmount(entry.amount)} S</b></>;
+  if (entry.kind === "essence_heal") return <><b className={essenceSourceClass}>{essenceName}</b> 회복 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {recovery}</>;
+  if (entry.kind === "essence_shield") return <><b className={essenceSourceClass}>{essenceName}</b> 방어막 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> <b className="combat-log-shield">+{formatAmount(entry.amount)} S</b></>;
   if (entry.kind === "shield_absorb") return <><b className={entry.target === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{entry.target === "enemy" ? enemyName : playerName}</b> 방어막 흡수 <b className="combat-log-shield">-{formatAmount(entry.amount)} S</b></>;
   if (entry.kind === "essence_extra_hit") return formatTargetedEssenceEffect(entry, essenceName, "추가타", damage);
   if (entry.kind === "essence_reflect") return formatTargetedEssenceEffect(entry, essenceName, "반격", damage);
@@ -694,7 +690,7 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "enemy_miss") return <><b className="combat-log-enemy">{enemyName}</b> 공격을 <b className="combat-log-evasion">회피</b>했습니다.</>;
   if (entry.kind === "regeneration") return <><b className="combat-log-enemy">{enemyName}</b> 재생 {recovery}</>;
   if (entry.kind === "player_regeneration") return <><b className="combat-log-player">{playerName}</b> 재생 {recovery}</>;
-  if (entry.kind === "enemy_attack") return <>{damage} <i className="combat-log-arrow is-enemy">≪</i> <b className="combat-log-enemy">{enemyName}</b> 공격</>;
+  if (entry.kind === "enemy_attack") return <><b className="combat-log-enemy">{enemyName}</b> 공격 <i className="combat-log-arrow is-enemy">≫</i> {damage}</>;
   if (entry.kind === "reflect") return <><b className="combat-log-player">{playerName}</b> 반사 피해 <i className="combat-log-arrow is-player">≫</i> {damage}</>;
   if (entry.kind === "critical") return <><b className="combat-log-player">{playerName}</b> <b className="combat-log-critical">치명타</b> <i className="combat-log-arrow is-player">≫</i> {damage}</>;
   return <><b className="combat-log-player">{playerName}</b> 공격 <i className="combat-log-arrow is-player">≫</i> {damage}</>;
@@ -776,9 +772,9 @@ function formatCombinedRegeneration(entries: HuntLogEntry[]): ReactNode {
   const player = entries.find((entry) => entry.kind === "player_regeneration");
   const enemy = entries.find((entry) => entry.kind === "regeneration");
   return <>
-    {player && <><b className="combat-log-recovery">+{formatAmount(player.amount)} HP</b> <i className="combat-log-arrow is-player">≪</i></>}{" "}
-    재생
-    {" "}{enemy && <><i className="combat-log-arrow is-enemy">≫</i> <b className="combat-log-recovery">+{formatAmount(enemy.amount)} HP</b></>}
+    재생 <i className="combat-log-arrow is-player">≫</i>
+    {player && <> <b className="combat-log-recovery">+{formatAmount(player.amount)} HP</b></>}
+    {enemy && <> <i className="combat-log-arrow is-enemy">≫</i> <b className="combat-log-recovery">+{formatAmount(enemy.amount)} HP</b></>}
   </>;
 }
 
@@ -807,10 +803,8 @@ function isLinkedCombatLog(entry: HuntLogEntry) {
 
 function formatTargetedEssenceEffect(entry: HuntLogEntry, essenceName: string, action: string, result: ReactNode) {
   const sourceClass = entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player";
-  const arrowClass = entry.target === "player" ? "is-player" : "is-enemy";
-  return entry.target === "player"
-    ? <>{result} <i className={`combat-log-arrow ${arrowClass}`}>≪</i> <b className={sourceClass}>{essenceName}</b> {action}</>
-    : <><b className={sourceClass}>{essenceName}</b> {action} <i className={`combat-log-arrow ${arrowClass}`}>≫</i> {result}</>;
+  const arrowClass = entry.source === "enemy" ? "is-enemy" : "is-player";
+  return <><b className={sourceClass}>{essenceName}</b> {action} <i className={`combat-log-arrow ${arrowClass}`}>≫</i> {result}</>;
 }
 
 function getRecoveredPlayerHp(huntState: HuntState | null, now: number) {
