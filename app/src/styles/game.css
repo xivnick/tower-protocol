@@ -855,7 +855,7 @@ button:disabled {
 
 .equipped-summary-row {
   display: grid;
-  grid-template-columns: 86px minmax(0, 1fr);
+  grid-template-columns: 68px minmax(0, 1fr);
   gap: 12px;
   padding: 11px 10px;
 }

@@ -16,6 +16,9 @@ import { useToast } from "../toast/ToastProvider";
 import { getMyArmors, getMyWeapons } from "../../api/equipmentApi";
 import type { Armor, Weapon } from "../../api/equipmentApi";
 import { EquippedEquipmentPanel } from "../equipment/EquippedEquipmentPanel";
+import { getMyEssences } from "../../api/essenceApi";
+import type { Essence } from "../../api/essenceApi";
+import { getEssenceEffect } from "../essence/EssenceScreen";
 
 export function CharacterScreen({
   character,
@@ -50,6 +53,7 @@ export function CharacterScreen({
 
         <CharacterStatsPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
         <CharacterEquippedEquipmentPanel character={character} />
+        <CharacterEquippedEssencePanel character={character} />
         <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
       </section>
     );
@@ -529,6 +533,49 @@ function CharacterEquippedEquipmentPanel({ character }: { character: Character }
   }, [character.id]);
 
   return <EquippedEquipmentPanel weapon={equippedWeapon} armor={equippedArmor} character={character} isLoading={isEquipmentLoading} headerAction={<Link className="text-button" to="/equipment">장비 관리</Link>} />;
+}
+
+function CharacterEquippedEssencePanel({ character }: { character: Character }) {
+  const [essences, setEssences] = useState<Essence[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isActive = true;
+    setEssences([]);
+    setIsLoading(true);
+
+    void getMyEssences().then((result) => {
+      if (!isActive) return;
+      if (result.ok) setEssences(result.inventory.essences);
+      setIsLoading(false);
+    });
+    return () => { isActive = false; };
+  }, [character.id]);
+
+  const unlockedSlotCount = character.level >= 30 ? 3 : character.level >= 10 ? 2 : 1;
+
+  return (
+    <article className="panel">
+      <div className="panel-head action-head">
+        <div><span>EQUIPPED</span><h2>장착 중인 정수</h2></div>
+        <Link className="text-button" to="/essences">정수 관리</Link>
+      </div>
+      <div className="equipped-summary">
+        {[1, 2, 3].map((slotIndex) => {
+          const essence = essences.find((item) => item.equippedSlotIndex === slotIndex) ?? null;
+          const isLocked = slotIndex > unlockedSlotCount;
+          return <div className="equipped-summary-row" key={slotIndex}>
+            <span>SLOT {slotIndex}</span>
+            {isLocked ? <strong>LV.{slotIndex === 2 ? 10 : 30} 해금</strong> : essence ? <strong><b>{essence.name} {formatEssenceGrade(essence.grade)}</b><small>{getEssenceEffect(essence)}</small></strong> : <strong>{isLoading ? "정수 불러오는 중..." : "장착한 정수 없음"}</strong>}
+          </div>;
+        })}
+      </div>
+    </article>
+  );
+}
+
+function formatEssenceGrade(grade: number) {
+  return ["", "I", "II", "III", "IV", "V"][grade] ?? `${grade}`;
 }
 
 function createEmptyStatAllocation(): CharacterStatAllocation {

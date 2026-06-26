@@ -737,11 +737,16 @@ function orderCombatLogs(logs: HuntLogEntry[]) {
 function orderCombatLogTick(entries: HuntLogEntry[]) {
   const ordered: HuntLogEntry[] = [];
   const pendingShieldAbsorbs: HuntLogEntry[] = [];
+  const pendingEssenceHeals: HuntLogEntry[] = [];
   const deferredDefeats: HuntLogEntry[] = [];
 
   for (const entry of entries) {
     if (entry.kind === "shield_absorb") {
       pendingShieldAbsorbs.push(entry);
+      continue;
+    }
+    if (entry.kind === "essence_heal") {
+      pendingEssenceHeals.push(entry);
       continue;
     }
     if (entry.kind === "defeat" || entry.kind === "player_defeat") {
@@ -750,6 +755,14 @@ function orderCombatLogTick(entries: HuntLogEntry[]) {
     }
 
     ordered.push(entry);
+    if (entry.kind === "essence_damage") {
+      for (let index = pendingEssenceHeals.length - 1; index >= 0; index -= 1) {
+        const essenceHeal = pendingEssenceHeals[index];
+        if (essenceHeal.source !== entry.source) continue;
+        ordered.push(essenceHeal);
+        pendingEssenceHeals.splice(index, 1);
+      }
+    }
     if (!isDamageLog(entry)) continue;
 
     for (let index = pendingShieldAbsorbs.length - 1; index >= 0; index -= 1) {
@@ -760,7 +773,7 @@ function orderCombatLogTick(entries: HuntLogEntry[]) {
     }
   }
 
-  return [...ordered, ...pendingShieldAbsorbs, ...deferredDefeats];
+  return [...ordered, ...pendingEssenceHeals, ...pendingShieldAbsorbs, ...deferredDefeats];
 }
 
 function isDamageLog(entry: HuntLogEntry) {

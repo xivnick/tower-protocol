@@ -89,6 +89,7 @@ export function EssenceScreen({ character }: { character: Character | null }) {
   if (!character) return <section className="screen-panel"><article className="panel"><p className="panel-message">캐릭터를 먼저 생성해주세요.</p></article></section>;
 
   const selectedEssence = essences.find((essence) => essence.id === selectedEssenceId) ?? essences[0] ?? null;
+  const sortedEssences = useMemo(() => [...essences].sort((left, right) => getEssenceMonsterOrder(left.code) - getEssenceMonsterOrder(right.code) || left.createdAt.localeCompare(right.createdAt)), [essences]);
   const isBusy = pendingAction !== null;
 
   return (
@@ -116,7 +117,7 @@ export function EssenceScreen({ character }: { character: Character | null }) {
         </div>
         {isLoading ? <p className="panel-message">정수를 불러오는 중...</p> : essences.length === 0 ? <p className="panel-message">보유한 정수가 없습니다.</p> : (
           <div className="weapon-list">
-            {essences.map((essence) => {
+            {sortedEssences.map((essence) => {
               const isSelected = essence.id === selectedEssence?.id;
               return (
                 <article className={`weapon-entry ${isSelected ? "is-open" : ""} ${essence.equippedSlotIndex ? "is-equipped" : ""}`} key={essence.id}>
@@ -162,10 +163,21 @@ function getSlotUnlockLevel(slotIndex: number) {
   return slotIndex === 2 ? "LV.10" : "LV.30";
 }
 
-function getEssenceSummary(essence: Essence) {
+export function getEssenceSummary(essence: Essence) {
   return ESSENCE_DETAILS[essence.code]?.summary ?? "정수 효과";
 }
 
-function getEssenceEffect(essence: Essence) {
+export function getEssenceEffect(essence: Essence) {
   return ESSENCE_DETAILS[essence.code]?.effects[essence.grade - 1] ?? "정수 효과를 전투 중 자동 사용합니다.";
+}
+
+function getEssenceMonsterOrder(code: string) {
+  const order = [
+    "angry-boar-might", "forest-wolf-flurry", "firefly-spirit-ember", "stone-beetle-stonehide",
+    "forest-warden-stag-charge", "green-viper-fang", "vine-hunter-bind", "moss-slime-regeneration",
+    "leafshade-panther-counter", "redthorn-beast-spines", "blackneedle-bat-leech", "bigeye-bat-night-sight",
+    "blade-beetle-edge", "crystal-lizard-refraction", "crystaljaw-centipede-crush", "cave-vampire-bat-bloodcry",
+  ];
+  const index = order.indexOf(code);
+  return index < 0 ? Number.MAX_SAFE_INTEGER : index;
 }
