@@ -672,6 +672,7 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   const essenceUser = entry.source === "enemy" ? enemyName : playerName;
   const essenceName = entry.name ?? "정수";
   const essenceGrade = entry.grade ? formatEssenceGrade(entry.grade) : "";
+  const essenceSourceClass = entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player";
   if (entry.kind === "encounter") return `LV.${enemyLevel} ${enemyName}${withAnd(enemyName)} 조우했습니다.`;
   if (entry.kind === "defeat") return `전투 승리 · +${gainedExperience} EXP · +${gainedCredits} CR`;
   if (entry.kind === "player_defeat") return "전투에서 패배했습니다.";
@@ -680,11 +681,11 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> <b className="combat-log-essence-cast">{essenceName} {essenceGrade}</b> 발동</>;
   if (entry.kind === "essence_damage") return formatTargetedEssenceEffect(entry, essenceName, "피해", damage);
   if (entry.kind === "essence_heal") return entry.target === "player"
-    ? <>{recovery} <i className="combat-log-arrow is-player">≪</i> <b className="combat-log-essence-cast">{essenceName}</b> 회복</>
-    : <><b className="combat-log-essence-cast">{essenceName}</b> 회복 <i className="combat-log-arrow is-enemy">≫</i> {recovery}</>;
+    ? <>{recovery} <i className="combat-log-arrow is-player">≪</i> <b className={essenceSourceClass}>{essenceName}</b> 회복</>
+    : <><b className={essenceSourceClass}>{essenceName}</b> 회복 <i className="combat-log-arrow is-enemy">≫</i> {recovery}</>;
   if (entry.kind === "essence_shield") return entry.target === "player"
-    ? <><b className="combat-log-shield">+{formatAmount(entry.amount)} S</b> <i className="combat-log-arrow is-player">≪</i> <b className="combat-log-essence-cast">{essenceName}</b> 방어막</>
-    : <><b className="combat-log-essence-cast">{essenceName}</b> 방어막 <i className="combat-log-arrow is-enemy">≫</i> <b className="combat-log-shield">+{formatAmount(entry.amount)} S</b></>;
+    ? <><b className="combat-log-shield">+{formatAmount(entry.amount)} S</b> <i className="combat-log-arrow is-player">≪</i> <b className={essenceSourceClass}>{essenceName}</b> 방어막</>
+    : <><b className={essenceSourceClass}>{essenceName}</b> 방어막 <i className="combat-log-arrow is-enemy">≫</i> <b className="combat-log-shield">+{formatAmount(entry.amount)} S</b></>;
   if (entry.kind === "shield_absorb") return <><b className={entry.target === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{entry.target === "enemy" ? enemyName : playerName}</b> 방어막 흡수 <b className="combat-log-shield">-{formatAmount(entry.amount)} S</b></>;
   if (entry.kind === "essence_extra_hit") return formatTargetedEssenceEffect(entry, essenceName, "추가타", damage);
   if (entry.kind === "essence_reflect") return formatTargetedEssenceEffect(entry, essenceName, "반격", damage);
