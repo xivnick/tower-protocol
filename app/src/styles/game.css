@@ -1754,9 +1754,6 @@ button:disabled {
 .combat-log-recovery { color: var(--txt); }
 .combat-log-shield { color: #84dcff; }
 .combat-log-essence-cast { color: #ffd479; }
-.combat-log .is-essence-effect time { visibility: hidden; }
-.combat-log .is-essence-effect span { color: var(--mut); font-weight: 600; }
-.combat-log-linked { color: var(--mut); margin-right: 2px; }
 
 .combat-log-player { color: var(--acc); }
 .combat-log-critical { color: var(--acc-2); }

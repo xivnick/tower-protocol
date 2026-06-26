@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { configureAutoHunt, encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getHuntGrounds, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntGround, HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
@@ -474,18 +474,11 @@ function TrainingDummyGround({
               <>
                 {displayedLogs.map((log, index) => {
                   const entry = log.entries[0];
-                  const essenceCastEffect = entry.kind === "essence_cast" ? getEssenceCastEffect(entry.name ?? "", entry.grade) : "";
                   const isLinkedLog = isLinkedCombatLog(entry);
-                  return <Fragment key={`${log.timeTenths}-${log.kind}-${index}`}>
-                    <li className={`is-${log.kind}`}>
-                      <time className={getLogTimeTone(entry)} aria-hidden={isLinkedLog}>{isLinkedLog ? "" : `[${formatTime(log.timeTenths)}]`}</time>
-                      <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(entry, result.player.name, result.enemy.name, result.enemy.level, result.gainedExperience, result.gainedCredits ?? result.rewards?.credits ?? 0)}</span>
-                    </li>
-                    {essenceCastEffect && <li className="is-essence-effect">
-                      <time aria-hidden="true" />
-                      <span>- {essenceCastEffect}</span>
-                    </li>}
-                  </Fragment>;
+                  return <li className={`is-${log.kind}`} key={`${log.timeTenths}-${log.kind}-${index}`}>
+                    <time className={getLogTimeTone(entry)} aria-hidden={isLinkedLog}>{isLinkedLog ? "" : `[${formatTime(log.timeTenths)}]`}</time>
+                    <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(entry, result.player.name, result.enemy.name, result.enemy.level, result.gainedExperience, result.gainedCredits ?? result.rewards?.credits ?? 0)}</span>
+                  </li>;
                 })}
               </>
             ) : (
@@ -676,7 +669,6 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
     ? <>{<b className="combat-log-shield">-{formatAmount(entry.shieldAbsorbed)} S</b>}{entry.amount > 0 && <> <b className="combat-log-damage">-{formatAmount(entry.amount)} HP</b></>}</>
     : <b className="combat-log-damage">-{formatAmount(entry.amount)} HP</b>;
   const recovery = <b className="combat-log-recovery">+{formatAmount(entry.amount)} HP</b>;
-  const linkedEffect = <b className="combat-log-linked">-</b>;
   const essenceUser = entry.source === "enemy" ? enemyName : playerName;
   const essenceName = entry.name ?? "정수";
   const essenceGrade = entry.grade ? formatEssenceGrade(entry.grade) : "";
@@ -686,22 +678,22 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
   if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> <b className="combat-log-essence-cast">{essenceName} {essenceGrade}</b> 발동</>;
-  if (entry.kind === "essence_damage") return <>{linkedEffect} {formatTargetedEssenceEffect(entry, essenceName, "피해", damage)}</>;
+  if (entry.kind === "essence_damage") return formatTargetedEssenceEffect(entry, essenceName, "피해", damage);
   if (entry.kind === "essence_heal") return entry.target === "player"
     ? <>{recovery} <i className="combat-log-arrow is-player">≪</i> <b className="combat-log-player">{playerName}</b> 회복</>
     : <><b className="combat-log-enemy">{enemyName}</b> 회복 <i className="combat-log-arrow is-enemy">≫</i> {recovery}</>;
   if (entry.kind === "essence_shield") return entry.target === "player"
     ? <><b className="combat-log-shield">+{formatAmount(entry.amount)} S</b> <i className="combat-log-arrow is-player">≪</i> <b className="combat-log-player">{playerName}</b> 방어막</>
     : <><b className="combat-log-enemy">{enemyName}</b> 방어막 <i className="combat-log-arrow is-enemy">≫</i> <b className="combat-log-shield">+{formatAmount(entry.amount)} S</b></>;
-  if (entry.kind === "shield_absorb") return <>{linkedEffect} <b className={entry.target === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{entry.target === "enemy" ? enemyName : playerName}</b> 방어막 흡수 <b className="combat-log-shield">-{formatAmount(entry.amount)} S</b></>;
-  if (entry.kind === "essence_extra_hit") return <>{linkedEffect} {formatTargetedEssenceEffect(entry, essenceName, "추가타", damage)}</>;
-  if (entry.kind === "essence_reflect") return <>{linkedEffect} {formatTargetedEssenceEffect(entry, essenceName, "반격", damage)}</>;
+  if (entry.kind === "shield_absorb") return <><b className={entry.target === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{entry.target === "enemy" ? enemyName : playerName}</b> 방어막 흡수 <b className="combat-log-shield">-{formatAmount(entry.amount)} S</b></>;
+  if (entry.kind === "essence_extra_hit") return formatTargetedEssenceEffect(entry, essenceName, "추가타", damage);
+  if (entry.kind === "essence_reflect") return formatTargetedEssenceEffect(entry, essenceName, "반격", damage);
   if (entry.kind === "miss") return <><b className="combat-log-player">{playerName}</b> 공격이 빗나갔습니다.</>;
   if (entry.kind === "enemy_miss") return <><b className="combat-log-enemy">{enemyName}</b> 공격을 <b className="combat-log-evasion">회피</b>했습니다.</>;
   if (entry.kind === "regeneration") return <><b className="combat-log-enemy">{enemyName}</b> 재생 {recovery}</>;
   if (entry.kind === "player_regeneration") return <><b className="combat-log-player">{playerName}</b> 재생 {recovery}</>;
   if (entry.kind === "enemy_attack") return <>{damage} <i className="combat-log-arrow is-enemy">≪</i> <b className="combat-log-enemy">{enemyName}</b> 공격</>;
-  if (entry.kind === "reflect") return <>{linkedEffect} <b className="combat-log-player">{playerName}</b> 반사 피해 <i className="combat-log-arrow is-player">≫</i> {damage}</>;
+  if (entry.kind === "reflect") return <><b className="combat-log-player">{playerName}</b> 반사 피해 <i className="combat-log-arrow is-player">≫</i> {damage}</>;
   if (entry.kind === "critical") return <><b className="combat-log-player">{playerName}</b> <b className="combat-log-critical">치명타</b> <i className="combat-log-arrow is-player">≫</i> {damage}</>;
   return <><b className="combat-log-player">{playerName}</b> 공격 <i className="combat-log-arrow is-player">≫</i> {damage}</>;
 }
@@ -804,17 +796,6 @@ function withAnd(word: string) {
 
 function formatEssenceGrade(grade: number) {
   return ["", "I", "II", "III", "IV", "V"][grade] ?? `${grade}`;
-}
-
-function getEssenceCastEffect(name: string, grade = 1) {
-  const effectByGrade: Record<string, string[]> = {
-    "성난 멧돼지의 괴력": ["다음 일반 공격 피해 +60%", "다음 일반 공격 피해 +90%", "다음 일반 공격 피해 +180%", "다음 일반 공격 피해 +220%", "다음 일반 공격 피해 +260%"],
-    "숲 늑대의 연격": ["4초 동안 일반 공격 추가타 30%", "4초 동안 일반 공격 추가타 40%", "4초 동안 일반 공격 추가타 80%", "4초 동안 일반 공격 추가타 95%", "5초 동안 일반 공격 추가타 110%"],
-    "붉은가시 맹수의 역린": ["4초 동안 가시 피해 15%", "4초 동안 가시 피해 25%", "4초 동안 가시 피해 50%", "4초 동안 가시 피해 60%", "5초 동안 가시 피해 75%"],
-    "칼날 딱정벌레의 날붙이": ["5초 동안 일반 공격 출혈 15%", "5초 동안 일반 공격 출혈 25%", "5초 동안 일반 공격 출혈 45%", "5초 동안 일반 공격 출혈 55%", "6초 동안 일반 공격 출혈 65%"],
-    "수정 도마뱀의 굴절비늘": ["4초 동안 마법 추가 피해 15%", "4초 동안 마법 추가 피해 25%", "4초 동안 마법 추가 피해 50%", "4초 동안 마법 추가 피해 60%", "5초 동안 마법 추가 피해 75%"],
-  };
-  return effectByGrade[name]?.[grade - 1] ?? "";
 }
 
 function isLinkedCombatLog(entry: HuntLogEntry) {
