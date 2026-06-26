@@ -1777,12 +1777,12 @@ button:disabled {
 
 .combat-log .is-regeneration .combat-log-recovery,
 .combat-log .is-player_regeneration .combat-log-recovery {
-  color: var(--txt-bright);
+  color: var(--neg);
   font-weight: 400;
 }
 
 .combat-log .is-combined_regeneration .combat-log-recovery {
-  color: var(--txt-bright);
+  color: var(--neg);
   font-weight: 400;
 }
 
