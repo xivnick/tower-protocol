@@ -682,7 +682,15 @@ function getLogTimeTone(entry: HuntLogEntry) {
 
 function groupCombatLogs(logs: HuntLogEntry[]) {
   const groups: Array<{ kind: HuntLogEntry["kind"] | "combined_regeneration"; timeTenths: number; entries: HuntLogEntry[] }> = [];
-  for (const entry of logs) {
+  const orderedLogs = [...logs].sort((left, right) => {
+    if (left.timeTenths !== right.timeTenths) return left.timeTenths - right.timeTenths;
+    const leftIsShieldAbsorb = left.kind === "shield_absorb";
+    const rightIsShieldAbsorb = right.kind === "shield_absorb";
+    if (leftIsShieldAbsorb !== rightIsShieldAbsorb) return leftIsShieldAbsorb ? 1 : -1;
+    return 0;
+  });
+
+  for (const entry of orderedLogs) {
     const previous = groups[groups.length - 1];
     const isRegeneration = entry.kind === "regeneration" || entry.kind === "player_regeneration";
     if (isRegeneration && previous?.kind === "combined_regeneration" && previous.timeTenths === entry.timeTenths) {
