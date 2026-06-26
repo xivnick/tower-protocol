@@ -545,7 +545,7 @@ function CombatHpCard({
         {!isUnknown && shieldPercent > 0 && <em style={{ left: `${hpPercent}%`, width: `${shieldPercent}%` }} />}
       </div>
       <b>{isUnknown ? "HP ???" : <>HP {formatAmount(currentHp ?? 0)} / {formatAmount(maxHp ?? 0)}{shield > 0 && <span className="combat-hp-shield-value"> +{formatAmount(shield)} S</span>}</>}</b>
-      {essence && <p className="combat-essence">{essence.name}</p>}
+      {essence && <p className="combat-essence">정수 {essence.name} {formatEssenceGrade(essence.grade)}</p>}
       {detail && <CombatDetail {...detail} />}
       {expandedContent && <div className={`combat-card-expansion ${isExpanded ? "is-expanded" : ""}`}><div>{expandedContent}</div></div>}
     </div>
