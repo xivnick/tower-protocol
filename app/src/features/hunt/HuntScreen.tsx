@@ -671,14 +671,14 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   const recovery = <b className="combat-log-recovery">+{formatAmount(entry.amount)} HP</b>;
   const essenceUser = entry.source === "enemy" ? enemyName : playerName;
   const essenceName = entry.name ?? "정수";
-  const essenceGrade = entry.grade ? formatEssenceGrade(entry.grade) : "";
+  const essenceLabel = entry.grade ? `${essenceName} ${formatEssenceGrade(entry.grade)}` : essenceName;
   const essenceSourceClass = entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player";
   if (entry.kind === "encounter") return `LV.${enemyLevel} ${enemyName}${withAnd(enemyName)} 조우했습니다.`;
   if (entry.kind === "defeat") return `전투 승리 · +${gainedExperience} EXP · +${gainedCredits} CR`;
   if (entry.kind === "player_defeat") return "전투에서 패배했습니다.";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
-  if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> <b className="combat-log-essence-cast">{essenceName} {essenceGrade}</b> 발동</>;
+  if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> · <b className="combat-log-essence-cast">{essenceLabel}</b></>;
   if (entry.kind === "essence_damage") return formatTargetedEssenceEffect(entry, essenceName, "피해", damage);
   if (entry.kind === "essence_dot") return formatTargetedEssenceEffect(entry, essenceName, "독 피해", damage);
   if (entry.kind === "essence_heal") return <><b className={essenceSourceClass}>{essenceName}</b> 회복 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {recovery}</>;
