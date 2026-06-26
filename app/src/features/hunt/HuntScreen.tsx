@@ -514,8 +514,9 @@ function CombatHpCard({
   expandedContent?: ReactNode;
 }) {
   const isUnknown = currentHp === null || maxHp === null;
-  const hpPercent = isUnknown ? 0 : Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
-  const shieldPercent = isUnknown ? 0 : Math.max(0, Math.min(100 - hpPercent, (shield / maxHp) * 100));
+  const barMaximum = isUnknown ? 0 : Math.max(maxHp, currentHp + shield);
+  const hpPercent = isUnknown || barMaximum === 0 ? 0 : Math.max(0, Math.min(100, (currentHp / barMaximum) * 100));
+  const shieldPercent = isUnknown || barMaximum === 0 ? 0 : Math.max(0, Math.min(100 - hpPercent, (shield / barMaximum) * 100));
 
   return (
     <div className="combat-hp-card">
