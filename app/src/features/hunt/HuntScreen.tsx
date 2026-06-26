@@ -682,10 +682,7 @@ function getLogTimeTone(entry: HuntLogEntry) {
 
 function groupCombatLogs(logs: HuntLogEntry[]) {
   const groups: Array<{ kind: HuntLogEntry["kind"] | "combined_regeneration"; timeTenths: number; entries: HuntLogEntry[] }> = [];
-  const orderedLogs = [...logs].sort((left, right) => {
-    if (left.timeTenths !== right.timeTenths) return left.timeTenths - right.timeTenths;
-    return getCombatLogSequence(left.kind) - getCombatLogSequence(right.kind);
-  });
+  const orderedLogs = orderCombatLogs(logs);
 
   for (const entry of orderedLogs) {
     const previous = groups[groups.length - 1];
@@ -699,11 +696,54 @@ function groupCombatLogs(logs: HuntLogEntry[]) {
   return groups;
 }
 
-function getCombatLogSequence(kind: HuntLogEntry["kind"]) {
-  if (kind === "shield_absorb") return 1;
-  if (kind === "reflect" || kind === "essence_reflect") return 2;
-  if (kind === "defeat" || kind === "player_defeat") return 3;
-  return 0;
+function orderCombatLogs(logs: HuntLogEntry[]) {
+  const ordered: HuntLogEntry[] = [];
+  let tickEntries: HuntLogEntry[] = [];
+
+  for (const entry of logs) {
+    if (tickEntries.length > 0 && tickEntries[0].timeTenths !== entry.timeTenths) {
+      ordered.push(...orderCombatLogTick(tickEntries));
+      tickEntries = [];
+    }
+    tickEntries.push(entry);
+  }
+
+  if (tickEntries.length > 0) ordered.push(...orderCombatLogTick(tickEntries));
+  return ordered;
+}
+
+function orderCombatLogTick(entries: HuntLogEntry[]) {
+  const ordered: HuntLogEntry[] = [];
+  const pendingShieldAbsorbs: HuntLogEntry[] = [];
+  const deferredDefeats: HuntLogEntry[] = [];
+
+  for (const entry of entries) {
+    if (entry.kind === "shield_absorb") {
+      pendingShieldAbsorbs.push(entry);
+      continue;
+    }
+    if (entry.kind === "defeat" || entry.kind === "player_defeat") {
+      deferredDefeats.push(entry);
+      continue;
+    }
+
+    ordered.push(entry);
+    if (!isDamageLog(entry)) continue;
+
+    for (let index = pendingShieldAbsorbs.length - 1; index >= 0; index -= 1) {
+      const shieldAbsorb = pendingShieldAbsorbs[index];
+      if (shieldAbsorb.target !== entry.target) continue;
+      ordered.push(shieldAbsorb);
+      pendingShieldAbsorbs.splice(index, 1);
+    }
+  }
+
+  return [...ordered, ...pendingShieldAbsorbs, ...deferredDefeats];
+}
+
+function isDamageLog(entry: HuntLogEntry) {
+  return entry.kind === "attack" || entry.kind === "critical" || entry.kind === "enemy_attack"
+    || entry.kind === "essence_damage" || entry.kind === "essence_extra_hit" || entry.kind === "reflect" || entry.kind === "essence_reflect";
 }
 
 function formatCombinedRegeneration(entries: HuntLogEntry[]): ReactNode {
