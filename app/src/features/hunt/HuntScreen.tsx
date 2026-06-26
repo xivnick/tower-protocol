@@ -660,6 +660,7 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> {essenceName} {essenceGrade} 발동</>;
   if (entry.kind === "essence_damage") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceName}</b> 피해 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {damage}</>;
   if (entry.kind === "essence_shield") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> 방어막 <b className="combat-log-recovery">+{formatAmount(entry.amount)}</b></>;
+  if (entry.kind === "shield_absorb") return <><b className={entry.target === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{entry.target === "enemy" ? enemyName : playerName}</b> 방어막 흡수 <b className="combat-log-shield">-{formatAmount(entry.amount)} SH</b></>;
   if (entry.kind === "essence_extra_hit") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceName}</b> 추가타 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {damage}</>;
   if (entry.kind === "essence_reflect") return <><b className="combat-log-enemy">{essenceName}</b> 반격 <i className="combat-log-arrow is-enemy">≫</i> {damage}</>;
   if (entry.kind === "miss") return <><b className="combat-log-player">{playerName}</b> 공격이 빗나갔습니다.</>;
@@ -742,7 +743,7 @@ function getVisibleShield(logs: HuntLogEntry[], target: "player" | "enemy", play
     .filter((entry) => entry.timeTenths > shieldLog.timeTenths && entry.timeTenths <= playbackTenths && entry.target === target)
     .reduce((remaining, entry) => {
       if (remaining <= 0) return 0;
-      if (entry.kind === "attack" || entry.kind === "critical" || entry.kind === "enemy_attack" || entry.kind === "essence_damage" || entry.kind === "essence_extra_hit" || entry.kind === "essence_reflect" || entry.kind === "reflect") {
+      if (entry.kind === "shield_absorb") {
         return Math.max(0, remaining - entry.amount);
       }
       return remaining;
