@@ -103,6 +103,8 @@ function TrainingDummyGround({
   const enemyLogs = visibleLogs.filter((entry) => entry.target !== "player");
   const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
   const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
+  const playerShield = useMemo(() => getVisibleShield(visibleLogs, "player", playbackTenths), [playbackTenths, visibleLogs]);
+  const enemyShield = useMemo(() => getVisibleShield(visibleLogs, "enemy", playbackTenths), [playbackTenths, visibleLogs]);
   const hasEncounteredMonster = result?.status === "encountered";
   const recoveredPlayerHp = getRecoveredPlayerHp(huntState, now);
   const playerHp = isBattleInProgress
@@ -439,6 +441,7 @@ function TrainingDummyGround({
               name={result ? `LV.${result.player.level} ${result.player.name}` : `LV.${character.level} ${character.name}`}
               currentHp={playerHp}
               maxHp={result?.player.maxHp ?? huntState?.playerMaxHp ?? combatStats.maxHp}
+              shield={playerShield}
               detail={{ value: `EXP ${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()}`, percent: experiencePercent, isExperience: true }}
               linkToCharacter
             />
@@ -447,6 +450,7 @@ function TrainingDummyGround({
               name={result ? `LV.${result.enemy.level} ${result.enemy.name}` : "???"}
               currentHp={result ? targetHp : null}
               maxHp={result ? dummyMaxHp : null}
+              shield={enemyShield}
               onInfoClick={result?.enemy.info ? () => setIsMonsterInfoOpen((current) => !current) : undefined}
               isInfoOpen={isMonsterInfoOpen}
               isExpanded={isMonsterInfoOpen}
@@ -478,6 +482,7 @@ function CombatHpCard({
   name,
   currentHp,
   maxHp,
+  shield = 0,
   detail,
   linkToCharacter = false,
   onInfoClick,
@@ -489,6 +494,7 @@ function CombatHpCard({
   name: string;
   currentHp: number | null;
   maxHp: number | null;
+  shield?: number;
   detail?: { value: string; percent: number; isUnknown?: boolean; isExperience?: boolean };
   linkToCharacter?: boolean;
   onInfoClick?: () => void;
@@ -498,6 +504,7 @@ function CombatHpCard({
 }) {
   const isUnknown = currentHp === null || maxHp === null;
   const hpPercent = isUnknown ? 0 : Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
+  const shieldPercent = isUnknown ? 0 : Math.max(0, Math.min(100 - hpPercent, (shield / maxHp) * 100));
 
   return (
     <div className="combat-hp-card">
@@ -520,8 +527,9 @@ function CombatHpCard({
       )}
       <div className={`combat-hp ${isUnknown ? "is-unknown" : ""}`} role="progressbar" aria-label={`${name} 체력`} aria-valuemin={0} aria-valuemax={maxHp ?? undefined} aria-valuenow={currentHp ?? undefined}>
         {!isUnknown && <i style={{ width: `${hpPercent}%` }} />}
+        {!isUnknown && shieldPercent > 0 && <em style={{ left: `${hpPercent}%`, width: `${shieldPercent}%` }} />}
       </div>
-      <b>{isUnknown ? "HP ???" : `HP ${formatAmount(currentHp ?? 0)} / ${formatAmount(maxHp ?? 0)}`}</b>
+      <b>{isUnknown ? "HP ???" : `HP ${formatAmount(currentHp ?? 0)} / ${formatAmount(maxHp ?? 0)}${shield > 0 ? ` +${formatAmount(shield)} SH` : ""}`}</b>
       {detail && <CombatDetail {...detail} />}
       {expandedContent && <div className={`combat-card-expansion ${isExpanded ? "is-expanded" : ""}`}><div>{expandedContent}</div></div>}
     </div>
@@ -724,6 +732,21 @@ function getRecoveredPlayerHp(huntState: HuntState | null, now: number) {
     return Math.min(maxHp, Math.floor(startHp + ((maxHp - startHp) * recoveredSteps / recoveryDurationSeconds)));
   }
   return Math.min(maxHp, Math.floor(startHp + (maxHp * 0.2 * recoveredSteps)));
+}
+
+function getVisibleShield(logs: HuntLogEntry[], target: "player" | "enemy", playbackTenths: number) {
+  const shieldLog = [...logs].reverse().find((entry) => entry.kind === "essence_shield" && entry.target === target);
+  if (!shieldLog || playbackTenths > shieldLog.timeTenths + 40) return 0;
+
+  return logs
+    .filter((entry) => entry.timeTenths > shieldLog.timeTenths && entry.timeTenths <= playbackTenths && entry.target === target)
+    .reduce((remaining, entry) => {
+      if (remaining <= 0) return 0;
+      if (entry.kind === "attack" || entry.kind === "critical" || entry.kind === "enemy_attack" || entry.kind === "essence_damage" || entry.kind === "essence_extra_hit" || entry.kind === "essence_reflect" || entry.kind === "reflect") {
+        return Math.max(0, remaining - entry.amount);
+      }
+      return remaining;
+    }, shieldLog.amount);
 }
 
 function getElapsedTenths(startedAt: string, durationTicks: number, now = Date.now()) {
