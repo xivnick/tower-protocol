@@ -568,7 +568,7 @@ function CharacterEquippedEssencePanel({ character }: { character: Character }) 
             <span>SLOT {slotIndex}</span>
             {isLocked ? <strong>{getSlotUnlockLevel(slotIndex)} 해금</strong> : essence ? (
               <div className="equipped-summary-content">
-                <strong><b>{essence.name} {formatGrade(essence.grade)}</b><small>{getEssenceEffect(essence)}</small></strong>
+                <strong><span className="equipped-summary-title"><b>{essence.name} {formatGrade(essence.grade)}</b></span><small>{getEssenceEffect(essence)}</small></strong>
               </div>
             ) : <strong>{isLoading ? "정수 불러오는 중..." : "장착한 정수 없음"}</strong>}
           </div>;

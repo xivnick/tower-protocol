@@ -104,8 +104,7 @@ export function EssenceScreen({ character }: { character: Character | null }) {
               <span>SLOT {slotIndex}</span>
               {isLocked ? <strong>{getSlotUnlockLevel(slotIndex)} 해금</strong> : essence ? (
                 <div className="equipped-summary-content">
-                  <strong><b>{essence.name} {formatGrade(essence.grade)}</b><small>{getEssenceEffect(essence)}</small></strong>
-                  {!isLoading && <button className="text-button" type="button" disabled={isBusy} onClick={() => void handleUnequip(slotIndex)}>{pendingAction === `unequip:${slotIndex}` ? "해제 중..." : "해제"}</button>}
+                  <strong><span className="equipped-summary-title"><b>{essence.name} {formatGrade(essence.grade)}</b>{!isLoading && <button className="text-button" type="button" disabled={isBusy} onClick={() => void handleUnequip(slotIndex)}>{pendingAction === `unequip:${slotIndex}` ? "해제 중..." : "해제"}</button>}</span><small>{getEssenceEffect(essence)}</small></strong>
                 </div>
               ) : <strong>{isLoading ? "정수 불러오는 중..." : "장착한 정수 없음"}</strong>}
             </div>
