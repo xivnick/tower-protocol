@@ -1736,7 +1736,7 @@ button:disabled {
   display: grid;
   grid-template-columns: 58px minmax(0, 1fr);
   gap: 10px;
-  color: var(--txt);
+  color: var(--txt-bright);
   font-size: 12px;
   animation: combat-log-in 160ms ease-out both;
 }
@@ -1755,9 +1755,9 @@ button:disabled {
 }
 
 .combat-log-damage { color: var(--neg); }
-.combat-log-recovery { color: var(--txt); }
+.combat-log-recovery { color: var(--txt-bright); }
 .combat-log-shield { color: #84dcff; }
-.combat-log-essence-cast { color: #ffd479; }
+.combat-log-essence-cast { color: var(--txt-bright); }
 
 .combat-log-player { color: var(--acc); }
 .combat-log-critical { color: var(--acc-2); }
@@ -1768,21 +1768,21 @@ button:disabled {
 .combat-log-arrow.is-enemy { color: var(--neg); }
 
 .combat-log .is-regeneration span {
-  color: var(--txt);
+  color: var(--txt-bright);
 }
 
 .combat-log .is-player_regeneration span {
-  color: var(--txt);
+  color: var(--txt-bright);
 }
 
 .combat-log .is-regeneration .combat-log-recovery,
 .combat-log .is-player_regeneration .combat-log-recovery {
-  color: var(--txt);
+  color: var(--txt-bright);
   font-weight: 400;
 }
 
 .combat-log .is-combined_regeneration .combat-log-recovery {
-  color: var(--txt);
+  color: var(--txt-bright);
   font-weight: 400;
 }
 
@@ -1801,7 +1801,7 @@ button:disabled {
 }
 
 .combat-log .is-timeout span {
-  color: var(--mut);
+  color: var(--txt-bright);
   font-weight: 800;
 }
 
