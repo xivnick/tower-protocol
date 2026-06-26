@@ -1542,7 +1542,7 @@ button:disabled {
 
 .combat-essence {
   margin: 5px 0 0;
-  color: #ffd479;
+  color: var(--txt-bright);
   font-size: 12px;
 }
 
