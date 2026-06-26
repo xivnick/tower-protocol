@@ -1755,7 +1755,7 @@ button:disabled {
 }
 
 .combat-log-damage { color: var(--neg); }
-.combat-log-recovery { color: var(--txt-bright); }
+.combat-log-recovery { color: var(--neg); }
 .combat-log-shield { color: #84dcff; }
 .combat-log-essence-cast { color: #ffd479; }
 
@@ -1768,11 +1768,11 @@ button:disabled {
 .combat-log-arrow.is-enemy { color: var(--neg); }
 
 .combat-log .is-regeneration span {
-  color: var(--txt-bright);
+  color: var(--neg);
 }
 
 .combat-log .is-player_regeneration span {
-  color: var(--txt-bright);
+  color: var(--neg);
 }
 
 .combat-log .is-regeneration .combat-log-recovery,
