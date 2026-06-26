@@ -680,6 +680,7 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
   if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> <b className="combat-log-essence-cast">{essenceName} {essenceGrade}</b> 발동</>;
   if (entry.kind === "essence_damage") return formatTargetedEssenceEffect(entry, essenceName, "피해", damage);
+  if (entry.kind === "essence_dot") return formatTargetedEssenceEffect(entry, essenceName, "독 피해", damage);
   if (entry.kind === "essence_heal") return entry.target === "player"
     ? <>{recovery} <i className="combat-log-arrow is-player">≪</i> <b className={essenceSourceClass}>{essenceName}</b> 회복</>
     : <><b className={essenceSourceClass}>{essenceName}</b> 회복 <i className="combat-log-arrow is-enemy">≫</i> {recovery}</>;
@@ -768,7 +769,7 @@ function orderCombatLogTick(entries: HuntLogEntry[]) {
 
 function isDamageLog(entry: HuntLogEntry) {
   return entry.kind === "attack" || entry.kind === "critical" || entry.kind === "enemy_attack"
-    || entry.kind === "essence_damage" || entry.kind === "essence_extra_hit" || entry.kind === "reflect" || entry.kind === "essence_reflect";
+    || entry.kind === "essence_damage" || entry.kind === "essence_dot" || entry.kind === "essence_extra_hit" || entry.kind === "reflect" || entry.kind === "essence_reflect";
 }
 
 function formatCombinedRegeneration(entries: HuntLogEntry[]): ReactNode {
