@@ -665,7 +665,7 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   const essenceUser = entry.source === "enemy" ? enemyName : playerName;
   const essenceName = entry.name ?? "정수";
   const essenceGrade = entry.grade ? formatEssenceGrade(entry.grade) : "";
-  if (entry.kind === "encounter") return `LV.${enemyLevel} ${enemyName}과 조우했습니다.`;
+  if (entry.kind === "encounter") return `LV.${enemyLevel} ${enemyName}${withAnd(enemyName)} 조우했습니다.`;
   if (entry.kind === "defeat") return `전투 승리 +${gainedExperience} EXP · +${gainedCredits} CR`;
   if (entry.kind === "player_defeat") return "전투에서 패배했습니다.";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
@@ -774,6 +774,12 @@ function formatTime(tenths: number) {
 
 function formatAmount(value: number) {
   return Number.isInteger(value) ? value.toLocaleString() : value.toFixed(1);
+}
+
+function withAnd(word: string) {
+  const finalCode = word.charCodeAt(word.length - 1);
+  const hasFinalConsonant = finalCode >= 0xac00 && finalCode <= 0xd7a3 && (finalCode - 0xac00) % 28 !== 0;
+  return hasFinalConsonant ? "과" : "와";
 }
 
 function formatEssenceGrade(grade: number) {
