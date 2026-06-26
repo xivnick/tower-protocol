@@ -641,11 +641,19 @@ function Kv({ label, value }: { label: string; value: string }) {
 function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: string, enemyLevel: number, gainedExperience: number): ReactNode {
   const damage = <b className="combat-log-damage">-{formatAmount(entry.amount)} HP</b>;
   const recovery = <b className="combat-log-recovery">+{formatAmount(entry.amount)} HP</b>;
+  const essenceUser = entry.source === "enemy" ? enemyName : playerName;
+  const essenceName = entry.name ?? "정수";
+  const essenceGrade = entry.grade ? formatEssenceGrade(entry.grade) : "";
   if (entry.kind === "encounter") return `LV.${enemyLevel} ${enemyName}과 조우했습니다.`;
   if (entry.kind === "defeat") return `전투 승리 +${gainedExperience} EXP`;
   if (entry.kind === "player_defeat") return "전투에서 패배했습니다.";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
+  if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> {essenceName} {essenceGrade} 발동</>;
+  if (entry.kind === "essence_damage") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceName}</b> 피해 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {damage}</>;
+  if (entry.kind === "essence_shield") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> 방어막 <b className="combat-log-recovery">+{formatAmount(entry.amount)}</b></>;
+  if (entry.kind === "essence_extra_hit") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceName}</b> 추가타 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {damage}</>;
+  if (entry.kind === "essence_reflect") return <><b className="combat-log-enemy">{essenceName}</b> 반격 <i className="combat-log-arrow is-enemy">≫</i> {damage}</>;
   if (entry.kind === "miss") return <><b className="combat-log-player">{playerName}</b> 공격이 빗나갔습니다.</>;
   if (entry.kind === "enemy_miss") return <><b className="combat-log-enemy">{enemyName}</b> 공격을 <b className="combat-log-evasion">회피</b>했습니다.</>;
   if (entry.kind === "regeneration") return <><b className="combat-log-enemy">{enemyName}</b> 재생 {recovery}</>;
@@ -657,8 +665,8 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
 }
 
 function getLogTimeTone(entry: HuntLogEntry) {
-  if (entry.kind === "enemy_attack" || entry.kind === "enemy_miss") return "is-enemy-action";
-  if (entry.kind === "attack" || entry.kind === "critical" || entry.kind === "miss" || entry.kind === "reflect") return "is-player-action";
+  if (entry.kind === "enemy_attack" || entry.kind === "enemy_miss" || (entry.kind.startsWith("essence_") && entry.source === "enemy")) return "is-enemy-action";
+  if (entry.kind === "attack" || entry.kind === "critical" || entry.kind === "miss" || entry.kind === "reflect" || (entry.kind.startsWith("essence_") && entry.source === "player")) return "is-player-action";
   return "";
 }
 
@@ -692,6 +700,10 @@ function formatTime(tenths: number) {
 
 function formatAmount(value: number) {
   return Number.isInteger(value) ? value.toLocaleString() : value.toFixed(1);
+}
+
+function formatEssenceGrade(grade: number) {
+  return ["", "I", "II", "III", "IV", "V"][grade] ?? `${grade}`;
 }
 
 function getRecoveredPlayerHp(huntState: HuntState | null, now: number) {

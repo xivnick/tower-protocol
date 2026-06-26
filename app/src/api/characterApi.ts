@@ -33,10 +33,13 @@ export type TrainingState = {
 
 export type HuntLogEntry = {
   timeTenths: number;
-  kind: "encounter" | "attack" | "critical" | "miss" | "regeneration" | "player_regeneration" | "defeat" | "fled" | "timeout" | "enemy_attack" | "enemy_miss" | "player_defeat" | "reflect";
+  kind: "encounter" | "attack" | "critical" | "miss" | "regeneration" | "player_regeneration" | "defeat" | "fled" | "timeout" | "enemy_attack" | "enemy_miss" | "player_defeat" | "reflect" | "essence_cast" | "essence_damage" | "essence_shield" | "essence_extra_hit" | "essence_reflect";
   amount: number;
   targetHp: number;
   target?: "enemy" | "player";
+  source?: "player" | "enemy";
+  name?: string;
+  grade?: number;
 };
 
 export type HuntCombatant = {
@@ -190,6 +193,9 @@ type HuntBattlePayload = {
     amount: number;
     target_hp: number;
     target?: HuntLogEntry["target"];
+    source?: HuntLogEntry["source"];
+    name?: string;
+    grade?: number;
   }>;
 };
 
@@ -622,7 +628,16 @@ function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
     totalRegeneration: payload.total_regeneration ?? 0,
     gainedCredits: payload.gained_credits,
     rewards: mapHuntRewards(payload.rewards),
-    logs: (payload.logs ?? []).map((log) => ({ timeTenths: log.time_tenths, kind: log.kind, amount: log.amount, targetHp: log.target_hp, target: log.target })),
+    logs: (payload.logs ?? []).map((log) => ({
+      timeTenths: log.time_tenths,
+      kind: log.kind,
+      amount: log.amount,
+      targetHp: log.target_hp,
+      target: log.target,
+      source: log.source,
+      name: log.name,
+      grade: log.grade,
+    })),
   };
 }
 
