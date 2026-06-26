@@ -807,11 +807,16 @@ function getRecoveredPlayerHp(huntState: HuntState | null, now: number) {
 }
 
 function getVisibleShield(logs: HuntLogEntry[], target: "player" | "enemy", playbackTenths: number) {
-  const shieldLog = [...logs].reverse().find((entry) => entry.kind === "essence_shield" && entry.target === target);
-  if (!shieldLog || playbackTenths > shieldLog.timeTenths + 40) return 0;
+  const reversedShieldLogIndex = [...logs].reverse().findIndex((entry) => entry.kind === "essence_shield" && entry.target === target);
+  const shieldLogIndex = reversedShieldLogIndex < 0 ? -1 : logs.length - 1 - reversedShieldLogIndex;
+  if (shieldLogIndex < 0) return 0;
 
-  return logs
-    .filter((entry) => entry.timeTenths > shieldLog.timeTenths && entry.timeTenths <= playbackTenths && entry.target === target)
+  const shieldLog = logs[shieldLogIndex];
+  const durationTenths = shieldLog.grade === 5 ? 50 : 40;
+  if (playbackTenths > shieldLog.timeTenths + durationTenths) return 0;
+
+  return logs.slice(shieldLogIndex + 1)
+    .filter((entry) => entry.timeTenths <= playbackTenths && entry.target === target)
     .reduce((remaining, entry) => {
       if (remaining <= 0) return 0;
       if (entry.kind === "shield_absorb") {
