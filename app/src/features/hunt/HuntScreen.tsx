@@ -820,7 +820,7 @@ function getVisibleShield(logs: HuntLogEntry[], target: "player" | "enemy", play
     .reduce((remaining, entry) => {
       if (remaining <= 0) return 0;
       if (entry.kind === "shield_absorb") {
-        return Math.max(0, remaining - entry.amount);
+        return entry.shieldRemaining ?? Math.max(0, remaining - entry.amount);
       }
       return remaining;
     }, shieldLog.amount);

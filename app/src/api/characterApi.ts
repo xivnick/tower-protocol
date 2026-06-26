@@ -40,6 +40,7 @@ export type HuntLogEntry = {
   source?: "player" | "enemy";
   name?: string;
   grade?: number;
+  shieldRemaining?: number;
 };
 
 export type HuntCombatant = {
@@ -196,6 +197,7 @@ type HuntBattlePayload = {
     source?: HuntLogEntry["source"];
     name?: string;
     grade?: number;
+    shield_remaining?: number;
   }>;
 };
 
@@ -637,6 +639,7 @@ function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
       source: log.source,
       name: log.name,
       grade: log.grade,
+      shieldRemaining: log.shield_remaining,
     })),
   };
 }
