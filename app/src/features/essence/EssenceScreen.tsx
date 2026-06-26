@@ -100,10 +100,10 @@ export function EssenceScreen({ character }: { character: Character | null }) {
         </div>
         <div className="hunt-result-summary">
           {slots.map(({ slotIndex, essence, isLocked }) => (
-            <div key={slotIndex}>
+            <div className="essence-slot" key={slotIndex}>
               <span>SLOT {slotIndex}</span>
               <strong>{isLoading ? "정수 불러오는 중..." : isLocked ? `${getSlotUnlockLevel(slotIndex)} 해금` : essence ? `${essence.name} ${formatGrade(essence.grade)}` : "비어 있음"}</strong>
-              {!isLoading && !isLocked && essence && <button className="text-button" type="button" disabled={isBusy} onClick={() => void handleUnequip(slotIndex)}>{pendingAction === `unequip:${slotIndex}` ? "해제 중..." : "해제"}</button>}
+              {!isLoading && !isLocked && essence && <button className="text-button essence-slot-unequip" type="button" disabled={isBusy} onClick={() => void handleUnequip(slotIndex)}>{pendingAction === `unequip:${slotIndex}` ? "해제 중..." : "해제"}</button>}
             </div>
           ))}
         </div>
