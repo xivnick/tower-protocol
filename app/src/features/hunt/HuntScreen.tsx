@@ -702,6 +702,7 @@ function groupCombatLogs(logs: HuntLogEntry[]) {
 function getCombatLogSequence(kind: HuntLogEntry["kind"]) {
   if (kind === "shield_absorb") return 1;
   if (kind === "reflect" || kind === "essence_reflect") return 2;
+  if (kind === "defeat" || kind === "player_defeat") return 3;
   return 0;
 }
 
