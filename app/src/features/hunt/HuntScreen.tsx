@@ -669,12 +669,13 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   const essenceUser = entry.source === "enemy" ? enemyName : playerName;
   const essenceName = entry.name ?? "정수";
   const essenceGrade = entry.grade ? formatEssenceGrade(entry.grade) : "";
+  const essenceCastEffect = getEssenceCastEffect(essenceName, entry.grade);
   if (entry.kind === "encounter") return `LV.${enemyLevel} ${enemyName}${withAnd(enemyName)} 조우했습니다.`;
   if (entry.kind === "defeat") return `전투 승리 · +${gainedExperience} EXP · +${gainedCredits} CR`;
   if (entry.kind === "player_defeat") return "전투에서 패배했습니다.";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
-  if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> <b className="combat-log-essence-cast">{essenceName} {essenceGrade}</b> 발동</>;
+  if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> <b className="combat-log-essence-cast">{essenceName} {essenceGrade}</b> 발동{essenceCastEffect && <span className="combat-log-effect"> - {essenceCastEffect}</span>}</>;
   if (entry.kind === "essence_damage") return <>{linkedEffect} <b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceName}</b> 피해 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {damage}</>;
   if (entry.kind === "essence_heal") return <>{linkedEffect} <b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceName}</b> 회복 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {recovery}</>;
   if (entry.kind === "essence_shield") return <>{linkedEffect} <b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> 방어막 <b className="combat-log-shield">+{formatAmount(entry.amount)} S</b></>;
@@ -789,6 +790,18 @@ function withAnd(word: string) {
 
 function formatEssenceGrade(grade: number) {
   return ["", "I", "II", "III", "IV", "V"][grade] ?? `${grade}`;
+}
+
+function getEssenceCastEffect(name: string, grade = 1) {
+  const effectByGrade: Record<string, string[]> = {
+    "성난 멧돼지의 괴력": ["다음 일반 공격 피해 +60%", "다음 일반 공격 피해 +90%", "다음 일반 공격 피해 +180%", "다음 일반 공격 피해 +220%", "다음 일반 공격 피해 +260%"],
+    "숲 늑대의 연격": ["4초 동안 일반 공격 추가타 30%", "4초 동안 일반 공격 추가타 40%", "4초 동안 일반 공격 추가타 80%", "4초 동안 일반 공격 추가타 95%", "5초 동안 일반 공격 추가타 110%"],
+    "바위 딱정벌레의 돌가죽": ["4초 동안 최대 HP 8% 방어막", "4초 동안 최대 HP 10% 방어막", "4초 동안 최대 HP 20% 방어막", "4초 동안 최대 HP 24% 방어막", "5초 동안 최대 HP 28% 방어막"],
+    "붉은가시 맹수의 역린": ["4초 동안 가시 피해 15%", "4초 동안 가시 피해 25%", "4초 동안 가시 피해 50%", "4초 동안 가시 피해 60%", "5초 동안 가시 피해 75%"],
+    "칼날 딱정벌레의 날붙이": ["5초 동안 일반 공격 출혈 15%", "5초 동안 일반 공격 출혈 25%", "5초 동안 일반 공격 출혈 45%", "5초 동안 일반 공격 출혈 55%", "6초 동안 일반 공격 출혈 65%"],
+    "수정 도마뱀의 굴절비늘": ["4초 동안 마법 추가 피해 15%", "4초 동안 마법 추가 피해 25%", "4초 동안 마법 추가 피해 50%", "4초 동안 마법 추가 피해 60%", "5초 동안 마법 추가 피해 75%"],
+  };
+  return effectByGrade[name]?.[grade - 1] ?? "";
 }
 
 function getRecoveredPlayerHp(huntState: HuntState | null, now: number) {
