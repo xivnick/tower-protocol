@@ -687,7 +687,7 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
   if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> · <b className="combat-log-essence-cast">{essenceLabel}</b></>;
   if (entry.kind === "essence_status") return <><b className={essenceSourceClass}>{essenceName}</b> {entry.effect ?? "효과 준비"}</>;
-  if (entry.kind === "essence_damage") return formatTargetedEssenceEffect(entry, essenceName, "피해", damage);
+  if (entry.kind === "essence_damage") return formatTargetedEssenceEffect(entry, essenceName, entry.effect ?? "피해", damage);
   if (entry.kind === "essence_dot") return formatTargetedEssenceEffect(entry, essenceName, "독 피해", damage);
   if (entry.kind === "essence_heal") return <><b className={essenceSourceClass}>{essenceName}</b> 회복 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {recovery}</>;
   if (entry.kind === "essence_shield") return <><b className={essenceSourceClass}>{essenceName}</b> 방어막 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> <b className="combat-log-shield">+{formatAmount(entry.amount)} S</b></>;
@@ -750,7 +750,7 @@ function getEssenceStatusEffect(name?: string) {
   if (!name) return "";
   if (name.includes("분노한 멧돼지")) return "일반공격 강화";
   if (name.includes("숲 늑대")) return "일반공격 추가타";
-  if (name.includes("붉은가시 맹수")) return "가시 활성화";
+  if (name.includes("붉은가시 맹수")) return "가시 상태";
   if (name.includes("칼날 딱정벌레")) return "출혈 준비";
   if (name.includes("수정 도마뱀")) return "마법 추가피해";
   return "";
