@@ -16,7 +16,7 @@ export function calculateWeaponCombatBonus(weapon: WeaponStatSource | null): Wea
   if (!weapon) return {};
 
   const power = 3 + Math.floor(weapon.weaponLevel * 1.5);
-  const percentBonus = Math.floor((20 + weapon.weaponLevel * 0.5) * 10) / 10;
+  const percentBonus = Math.floor((18 + weapon.weaponLevel * 0.4) * 10) / 10;
 
   if (weapon.weaponType === "longsword") return { physicalAttackFlat: power };
   if (weapon.weaponType === "greatsword") return { physicalAttackPct: percentBonus };

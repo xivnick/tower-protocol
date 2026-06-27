@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Armor, Weapon } from "../../api/equipmentApi";
 import { calculateArmorCombatBonus } from "../../shared/armorStats";
+import { combatBaseAttack } from "../../shared/stats";
 import { bowAccuracyPenalty, bowFixedDamage } from "../../shared/weaponStats";
 import type { Character } from "../../types/character";
 
@@ -86,15 +87,15 @@ export function weaponEffect(weapon: Weapon, character: Character | null = null)
   const level = weapon.weaponLevel;
   const power = 3 + Math.floor(level * 1.5);
   if (weapon.weaponType === "longsword") return `물리 공격력 +${power}`;
-  if (weapon.weaponType === "greatsword") return formatPercentBonus("물리 공격력", percentWeaponBonus(level), character?.strength);
+  if (weapon.weaponType === "greatsword") return formatPercentBonus("물리 공격력", percentWeaponBonus(level), character ? combatBaseAttack(character.level) + character.strength : undefined);
   if (weapon.weaponType === "dagger") return <>{formatPercentBonus("명중", -Math.min(23, 15 + Math.floor((level - 1) / 12)), character ? 100 + character.dexterity : undefined)}{", "}{formatPercentBonus("전체 공속", 20 + Math.floor(level * 0.2), character ? 1 + character.agility / 100 : undefined)}</>;
   if (weapon.weaponType === "bow") return <>{formatPercentBonus("명중", -bowAccuracyPenalty(level), character ? 100 + character.dexterity : undefined)}{", "}+{bowFixedDamage(level)} 고정 피해</>;
   if (weapon.weaponType === "wand") return `마법 공격력 +${power}`;
-  return formatPercentBonus("마법 공격력", percentWeaponBonus(level), character?.intelligence);
+  return formatPercentBonus("마법 공격력", percentWeaponBonus(level), character ? combatBaseAttack(character.level) + character.intelligence : undefined);
 }
 
 function percentWeaponBonus(level: number) {
-  return Math.floor((20 + level * 0.5) * 10) / 10;
+  return Math.floor((18 + level * 0.4) * 10) / 10;
 }
 
 function formatPercent(value: number) {
