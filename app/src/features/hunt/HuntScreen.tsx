@@ -853,12 +853,19 @@ function formatEssenceGrade(grade: number) {
 
 function isLinkedCombatLog(entry: HuntLogEntry, previousEntry?: HuntLogEntry) {
   if (entry.parentSequence !== undefined || entry.sequence !== undefined) {
-    return entry.parentSequence !== undefined
-      && (entry.parentSequence === previousEntry?.sequence || entry.parentSequence === previousEntry?.parentSequence);
+    if (entry.parentSequence !== undefined) {
+      return entry.parentSequence === previousEntry?.sequence || entry.parentSequence === previousEntry?.parentSequence;
+    }
+    return isEssenceFollowUp(entry) && (previousEntry?.kind === "essence_cast" || isEssenceFollowUp(previousEntry)) && entry.source === previousEntry?.source;
   }
 
+  return isEssenceFollowUp(entry) || entry.kind === "reflect";
+}
+
+function isEssenceFollowUp(entry?: HuntLogEntry) {
+  if (!entry) return false;
   return entry.kind === "essence_damage" || entry.kind === "essence_heal" || entry.kind === "essence_shield"
-    || entry.kind === "shield_absorb" || entry.kind === "essence_extra_hit" || entry.kind === "essence_reflect" || entry.kind === "essence_status" || entry.kind === "reflect";
+    || entry.kind === "shield_absorb" || entry.kind === "essence_extra_hit" || entry.kind === "essence_reflect" || entry.kind === "essence_status";
 }
 
 function formatTargetedEssenceEffect(entry: HuntLogEntry, essenceName: string, action: string, result: ReactNode) {
