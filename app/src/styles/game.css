@@ -1606,25 +1606,10 @@ button:disabled {
 }
 
 .monster-info-essence {
-  margin-top: 8px;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.monster-info-essence span {
-  display: block;
+  margin: 6px 0 0;
   color: var(--mut);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-}
-
-.monster-info-essence strong {
-  display: block;
-  margin-top: 4px;
-  color: var(--txt-bright);
   font-size: 12px;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 .monster-info-stats {

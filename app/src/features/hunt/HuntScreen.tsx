@@ -560,10 +560,7 @@ function MonsterInfoStats({ info, essence }: { info: MonsterInfo; essence?: { co
   return (
     <>
       {essence && (
-        <div className="monster-info-essence">
-          <span>EFFECT</span>
-          <strong>{getEssenceEffect(essence)}</strong>
-        </div>
+        <p className="monster-info-essence">{getEssenceEffect(essence)}</p>
       )}
       <div className="combat-stat-grid monster-info-stats">
         <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalAttack} value={info.physicalAttack} />
