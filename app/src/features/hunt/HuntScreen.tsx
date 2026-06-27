@@ -4,6 +4,7 @@ import { configureAutoHunt, encounterHuntMonster, fleeHuntEncounter, fleeTrainin
 import type { HuntGround, HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
+import { getEssenceEffect } from "../../shared/essenceDetails";
 import type { Character } from "../../types/character";
 import type { ToastInput } from "../../types/toast";
 import { toastMessages } from "../../shared/toastMessages";
@@ -466,7 +467,7 @@ function TrainingDummyGround({
               onInfoClick={result?.enemy.info ? () => setIsMonsterInfoOpen((current) => !current) : undefined}
               isInfoOpen={isMonsterInfoOpen}
               isExpanded={isMonsterInfoOpen}
-              expandedContent={result?.enemy.info ? <MonsterInfoStats info={result.enemy.info} /> : null}
+              expandedContent={result?.enemy.info ? <MonsterInfoStats info={result.enemy.info} essence={result.enemy.essence} /> : null}
             />
           </div>
           <ol className="combat-log" aria-label="전투 로그" ref={logRef} onScroll={handleCombatLogScroll}>
@@ -511,7 +512,7 @@ function CombatHpCard({
   currentHp: number | null;
   maxHp: number | null;
   shield?: number;
-  essence?: { name: string; grade: number };
+  essence?: { code: string; name: string; grade: number };
   detail?: { value: string; percent: number; isUnknown?: boolean; isExperience?: boolean };
   linkToCharacter?: boolean;
   onInfoClick?: () => void;
@@ -555,22 +556,30 @@ function CombatHpCard({
   );
 }
 
-function MonsterInfoStats({ info }: { info: MonsterInfo }) {
+function MonsterInfoStats({ info, essence }: { info: MonsterInfo; essence?: { code: string; name: string; grade: number } }) {
   return (
-    <div className="combat-stat-grid monster-info-stats">
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalAttack} value={info.physicalAttack} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.magicAttack} value={info.magicAttack} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalDefense} value={info.physicalDefense} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.magicDefense} value={info.magicDefense} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.maxHp} value={info.maxHp} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.regeneration} value={(info.regeneration / info.maxHp) * 100} suffix="%/초" digits={1} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.attackSpeed} value={info.attacksPerSecond} digits={2} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.cooldownReduction} value={info.cooldownReduction * 100} suffix="%" digits={1} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.accuracy} value={info.accuracy} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.evasionRate} value={info.evasionRate} suffix="%" digits={1} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.criticalChance} value={info.criticalChance} suffix="%" digits={1} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.criticalDamage} value={info.criticalDamage} suffix="%" />
-    </div>
+    <>
+      {essence && (
+        <div className="monster-info-essence">
+          <span>EFFECT</span>
+          <strong>{getEssenceEffect(essence)}</strong>
+        </div>
+      )}
+      <div className="combat-stat-grid monster-info-stats">
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalAttack} value={info.physicalAttack} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.magicAttack} value={info.magicAttack} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalDefense} value={info.physicalDefense} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.magicDefense} value={info.magicDefense} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.maxHp} value={info.maxHp} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.regeneration} value={(info.regeneration / info.maxHp) * 100} suffix="%/초" digits={1} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.attackSpeed} value={info.attacksPerSecond} digits={2} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.cooldownReduction} value={info.cooldownReduction * 100} suffix="%" digits={1} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.accuracy} value={info.accuracy} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.evasionRate} value={info.evasionRate} suffix="%" digits={1} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.criticalChance} value={info.criticalChance} suffix="%" digits={1} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.criticalDamage} value={info.criticalDamage} suffix="%" />
+      </div>
+    </>
   );
 }
 

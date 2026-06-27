@@ -1605,6 +1605,28 @@ button:disabled {
   color: var(--acc-2);
 }
 
+.monster-info-essence {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.monster-info-essence span {
+  display: block;
+  color: var(--mut);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.monster-info-essence strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--txt-bright);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .monster-info-stats {
   margin-top: 12px;
 }
@@ -1628,7 +1650,7 @@ button:disabled {
 }
 
 .combat-card-expansion.is-expanded {
-  max-height: 320px;
+  max-height: 420px;
 }
 
 .combat-card-detail {

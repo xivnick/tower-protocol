@@ -18,7 +18,8 @@ import type { Armor, Weapon } from "../../api/equipmentApi";
 import { EquippedEquipmentPanel } from "../equipment/EquippedEquipmentPanel";
 import { getMyEssences } from "../../api/essenceApi";
 import type { Essence } from "../../api/essenceApi";
-import { formatGrade, getEssenceEffect, getSlotUnlockLevel, getUnlockedSlotCount } from "../essence/EssenceScreen";
+import { getEssenceEffect } from "../../shared/essenceDetails";
+import { formatGrade, getSlotUnlockLevel, getUnlockedSlotCount } from "../essence/EssenceScreen";
 
 export function CharacterScreen({
   character,
