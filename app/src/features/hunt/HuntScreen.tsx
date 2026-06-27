@@ -686,7 +686,12 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
   if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> · <b className="combat-log-essence-cast">{essenceLabel}</b></>;
-  if (entry.kind === "essence_status") return <><b className={essenceSourceClass}>{essenceName}</b> {entry.effect ?? "효과 준비"}</>;
+  if (entry.kind === "essence_status") {
+    if (entry.timeTenths === 0 && entry.parentSequence === undefined) {
+      return <><b className={essenceSourceClass}>{essenceUser}</b> · <b className="combat-log-essence-cast">{essenceLabel}</b></>;
+    }
+    return <><b className={essenceSourceClass}>{essenceName}</b> {entry.effect ?? "효과 준비"}</>;
+  }
   if (entry.kind === "essence_damage") return formatTargetedEssenceEffect(entry, essenceName, entry.effect ?? "피해", damage);
   if (entry.kind === "essence_dot") return formatTargetedEssenceEffect(entry, essenceName, "독 피해", damage);
   if (entry.kind === "essence_heal") return <><b className={essenceSourceClass}>{essenceName}</b> 회복 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {recovery}</>;
