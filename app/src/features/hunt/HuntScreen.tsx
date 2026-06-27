@@ -736,6 +736,10 @@ function orderCombatLogs(logs: HuntLogEntry[]) {
 }
 
 function orderCombatLogTick(entries: HuntLogEntry[]) {
+  if (entries.some((entry) => entry.parentSequence !== undefined)) {
+    return orderCombatLogTickByParent(entries);
+  }
+
   const ordered: HuntLogEntry[] = [];
   const pendingShieldAbsorbs: HuntLogEntry[] = [];
   const pendingEssenceHeals: HuntLogEntry[] = [];
@@ -775,6 +779,45 @@ function orderCombatLogTick(entries: HuntLogEntry[]) {
   }
 
   return [...ordered, ...pendingEssenceHeals, ...pendingShieldAbsorbs, ...deferredDefeats];
+}
+
+function orderCombatLogTickByParent(entries: HuntLogEntry[]) {
+  const ordered: HuntLogEntry[] = [];
+  const childrenByParent = new Map<number, HuntLogEntry[]>();
+  const deferredDefeats: HuntLogEntry[] = [];
+  const appended = new Set<HuntLogEntry>();
+
+  for (const entry of entries) {
+    if (entry.kind === "defeat" || entry.kind === "player_defeat") {
+      deferredDefeats.push(entry);
+      continue;
+    }
+    if (entry.parentSequence === undefined) continue;
+
+    const siblings = childrenByParent.get(entry.parentSequence) ?? [];
+    siblings.push(entry);
+    childrenByParent.set(entry.parentSequence, siblings);
+  }
+
+  for (const entry of entries) {
+    if (entry.parentSequence !== undefined || entry.kind === "defeat" || entry.kind === "player_defeat") continue;
+
+    ordered.push(entry);
+    appended.add(entry);
+
+    const children = entry.sequence !== undefined ? childrenByParent.get(entry.sequence) ?? [] : [];
+    for (const child of children) {
+      ordered.push(child);
+      appended.add(child);
+    }
+  }
+
+  for (const entry of entries) {
+    if (appended.has(entry) || entry.kind === "defeat" || entry.kind === "player_defeat") continue;
+    ordered.push(entry);
+  }
+
+  return [...ordered, ...deferredDefeats];
 }
 
 function isDamageLog(entry: HuntLogEntry) {

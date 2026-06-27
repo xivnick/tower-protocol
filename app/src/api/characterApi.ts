@@ -42,6 +42,8 @@ export type HuntLogEntry = {
   grade?: number;
   shieldRemaining?: number;
   shieldAbsorbed?: number;
+  sequence?: number;
+  parentSequence?: number;
 };
 
 export type HuntCombatant = {
@@ -201,6 +203,8 @@ type HuntBattlePayload = {
     grade?: number;
     shield_remaining?: number;
     shield_absorbed?: number;
+    sequence?: number;
+    parent_sequence?: number;
   }>;
 };
 
@@ -647,6 +651,8 @@ function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
       grade: log.grade,
       shieldRemaining: log.shield_remaining,
       shieldAbsorbed: log.shield_absorbed,
+      sequence: log.sequence,
+      parentSequence: log.parent_sequence,
     })),
   };
 }
