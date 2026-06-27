@@ -1793,7 +1793,8 @@ button:disabled {
   font-weight: 900;
 }
 
-.combat-log .is-enemy_attack span {
+.combat-log .is-enemy_attack span,
+.combat-log .is-enemy_critical span {
   color: var(--txt-bright);
 }
 
