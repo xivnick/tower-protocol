@@ -856,7 +856,7 @@ function isLinkedCombatLog(entry: HuntLogEntry, previousEntry?: HuntLogEntry) {
     if (entry.parentSequence !== undefined) {
       return entry.parentSequence === previousEntry?.sequence || entry.parentSequence === previousEntry?.parentSequence;
     }
-    return isEssenceFollowUp(entry) && (previousEntry?.kind === "essence_cast" || isEssenceFollowUp(previousEntry)) && entry.source === previousEntry?.source;
+    return entry.kind !== "essence_status" && isEssenceFollowUp(entry) && (previousEntry?.kind === "essence_cast" || isEssenceFollowUp(previousEntry)) && entry.source === previousEntry?.source;
   }
 
   return isEssenceFollowUp(entry) || entry.kind === "reflect";
