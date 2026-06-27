@@ -90,5 +90,5 @@ export function calculateCombatStats(character: Character, weaponBonus: WeaponCo
 }
 
 export function combatBaseAttack(level: number) {
-  return Math.floor(Math.max(0, level) * 0.7);
+  return Math.max(0, level);
 }

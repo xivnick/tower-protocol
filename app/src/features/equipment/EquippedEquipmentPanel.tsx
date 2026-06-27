@@ -95,7 +95,7 @@ export function weaponEffect(weapon: Weapon, character: Character | null = null)
 }
 
 function percentWeaponBonus(level: number) {
-  return Math.floor((18 + level * 0.4) * 10) / 10;
+  return Math.floor((15 + level * 0.4) * 10) / 10;
 }
 
 function formatPercent(value: number) {
