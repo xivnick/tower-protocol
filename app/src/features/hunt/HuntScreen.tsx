@@ -101,7 +101,7 @@ function TrainingDummyGround({
     ? getElapsedTenths(result.startedAt, result.durationTicks, combatNow)
     : frozenPlaybackTenths;
   const visibleLogs = useMemo(() => result?.logs.filter((entry) => entry.timeTenths <= playbackTenths) ?? [], [playbackTenths, result]);
-  const displayedLogs = useMemo(() => groupCombatLogs(visibleLogs), [visibleLogs]);
+  const displayedLogs = useMemo(() => groupCombatLogs(withEssenceStatusLogs(visibleLogs)), [visibleLogs]);
   const enemyLogs = visibleLogs.filter((entry) => entry.target !== "player");
   const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
   const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
@@ -686,6 +686,7 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
   if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> · <b className="combat-log-essence-cast">{essenceLabel}</b></>;
+  if (entry.kind === "essence_status") return <><b className={essenceSourceClass}>{essenceName}</b> {entry.effect ?? "효과 준비"}</>;
   if (entry.kind === "essence_damage") return formatTargetedEssenceEffect(entry, essenceName, "피해", damage);
   if (entry.kind === "essence_dot") return formatTargetedEssenceEffect(entry, essenceName, "독 피해", damage);
   if (entry.kind === "essence_heal") return <><b className={essenceSourceClass}>{essenceName}</b> 회복 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {recovery}</>;
@@ -724,6 +725,35 @@ function groupCombatLogs(logs: HuntLogEntry[]) {
     groups.push({ kind: isRegeneration ? "combined_regeneration" : entry.kind, timeTenths: entry.timeTenths, entries: [entry] });
   }
   return groups;
+}
+
+function withEssenceStatusLogs(logs: HuntLogEntry[]) {
+  const result: HuntLogEntry[] = [];
+  for (const entry of logs) {
+    result.push(entry);
+    if (entry.kind !== "essence_cast") continue;
+    const effect = getEssenceStatusEffect(entry.name);
+    if (!effect) continue;
+    result.push({
+      ...entry,
+      kind: "essence_status",
+      amount: 0,
+      effect,
+      sequence: entry.sequence === undefined ? undefined : entry.sequence + 0.001,
+      parentSequence: entry.sequence,
+    });
+  }
+  return result;
+}
+
+function getEssenceStatusEffect(name?: string) {
+  if (!name) return "";
+  if (name.includes("분노한 멧돼지")) return "일반공격 강화";
+  if (name.includes("숲 늑대")) return "일반공격 추가타";
+  if (name.includes("붉은가시 맹수")) return "가시 활성화";
+  if (name.includes("칼날 딱정벌레")) return "출혈 준비";
+  if (name.includes("수정 도마뱀")) return "마법 추가피해";
+  return "";
 }
 
 function orderCombatLogs(logs: HuntLogEntry[]) {
@@ -828,7 +858,7 @@ function isLinkedCombatLog(entry: HuntLogEntry, previousEntry?: HuntLogEntry) {
   }
 
   return entry.kind === "essence_damage" || entry.kind === "essence_heal" || entry.kind === "essence_shield"
-    || entry.kind === "shield_absorb" || entry.kind === "essence_extra_hit" || entry.kind === "essence_reflect" || entry.kind === "reflect";
+    || entry.kind === "shield_absorb" || entry.kind === "essence_extra_hit" || entry.kind === "essence_reflect" || entry.kind === "essence_status" || entry.kind === "reflect";
 }
 
 function formatTargetedEssenceEffect(entry: HuntLogEntry, essenceName: string, action: string, result: ReactNode) {

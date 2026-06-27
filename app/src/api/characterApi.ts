@@ -33,12 +33,13 @@ export type TrainingState = {
 
 export type HuntLogEntry = {
   timeTenths: number;
-  kind: "encounter" | "attack" | "critical" | "miss" | "regeneration" | "player_regeneration" | "defeat" | "fled" | "timeout" | "enemy_attack" | "enemy_critical" | "enemy_miss" | "player_defeat" | "reflect" | "essence_cast" | "essence_damage" | "essence_dot" | "essence_heal" | "essence_shield" | "shield_absorb" | "essence_extra_hit" | "essence_reflect";
+  kind: "encounter" | "attack" | "critical" | "miss" | "regeneration" | "player_regeneration" | "defeat" | "fled" | "timeout" | "enemy_attack" | "enemy_critical" | "enemy_miss" | "player_defeat" | "reflect" | "essence_cast" | "essence_damage" | "essence_dot" | "essence_heal" | "essence_shield" | "shield_absorb" | "essence_extra_hit" | "essence_reflect" | "essence_status";
   amount: number;
   targetHp: number;
   target?: "enemy" | "player";
   source?: "player" | "enemy";
   name?: string;
+  effect?: string;
   grade?: number;
   shieldRemaining?: number;
   shieldAbsorbed?: number;
