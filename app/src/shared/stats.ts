@@ -51,7 +51,7 @@ export function calculateEvasionRate(evasion: number, opponentAccuracy: number) 
 
 export function calculateCombatStats(character: Character, weaponBonus: WeaponCombatBonus = {}, armorBonus: ArmorCombatBonus = {}) {
   const baseAttack = combatBaseAttack(character.level);
-  const maxHp = 100 + character.level * 20 + character.vitality * 10;
+  const maxHp = 100 + character.level * 30 + character.vitality * 10;
   const attackSpeed = 100 + character.agility;
   const accuracy = (100 + character.dexterity) * (1 - (weaponBonus.accuracyPenaltyPct ?? 0) / 100);
   const evasion = (character.agility + (armorBonus.evasionFlat ?? 0)) * (1 + (armorBonus.evasionPct ?? 0) / 100);

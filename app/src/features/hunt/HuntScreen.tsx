@@ -13,7 +13,7 @@ import { useToast } from "../toast/ToastProvider";
 const trainingDummy = {
   maxHp(level: number) {
     const vitality = 10 + ((level - 1) * 5);
-    return 100 + (level * 20) + (vitality * 10);
+    return 100 + (level * 30) + (vitality * 10);
   },
 };
 
