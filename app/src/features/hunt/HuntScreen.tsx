@@ -474,7 +474,8 @@ function TrainingDummyGround({
               <>
                 {displayedLogs.map((log, index) => {
                   const entry = log.entries[0];
-                  const isLinkedLog = isLinkedCombatLog(entry);
+                  const previousEntry = index > 0 ? displayedLogs[index - 1].entries[0] : undefined;
+                  const isLinkedLog = isLinkedCombatLog(entry, previousEntry);
                   return <li className={`is-${log.kind} ${isLinkedLog ? "is-linked" : ""}`} key={`${log.timeTenths}-${log.kind}-${index}`}>
                     <time className={getLogTimeTone(entry)} aria-hidden={isLinkedLog}>{isLinkedLog ? "" : `[${formatTime(log.timeTenths)}]`}</time>
                     <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(entry, result.player.name, result.enemy.name, result.enemy.level, result.gainedExperience, result.gainedCredits ?? result.rewards?.credits ?? 0)}</span>
@@ -720,6 +721,10 @@ function groupCombatLogs(logs: HuntLogEntry[]) {
 }
 
 function orderCombatLogs(logs: HuntLogEntry[]) {
+  if (logs.some((entry) => entry.sequence !== undefined)) {
+    return logs;
+  }
+
   const ordered: HuntLogEntry[] = [];
   let tickEntries: HuntLogEntry[] = [];
 
@@ -736,10 +741,6 @@ function orderCombatLogs(logs: HuntLogEntry[]) {
 }
 
 function orderCombatLogTick(entries: HuntLogEntry[]) {
-  if (entries.some((entry) => entry.parentSequence !== undefined)) {
-    return orderCombatLogTickByParent(entries);
-  }
-
   const ordered: HuntLogEntry[] = [];
   const pendingShieldAbsorbs: HuntLogEntry[] = [];
   const pendingEssenceHeals: HuntLogEntry[] = [];
@@ -781,45 +782,6 @@ function orderCombatLogTick(entries: HuntLogEntry[]) {
   return [...ordered, ...pendingEssenceHeals, ...pendingShieldAbsorbs, ...deferredDefeats];
 }
 
-function orderCombatLogTickByParent(entries: HuntLogEntry[]) {
-  const ordered: HuntLogEntry[] = [];
-  const childrenByParent = new Map<number, HuntLogEntry[]>();
-  const deferredDefeats: HuntLogEntry[] = [];
-  const appended = new Set<HuntLogEntry>();
-
-  for (const entry of entries) {
-    if (entry.kind === "defeat" || entry.kind === "player_defeat") {
-      deferredDefeats.push(entry);
-      continue;
-    }
-    if (entry.parentSequence === undefined) continue;
-
-    const siblings = childrenByParent.get(entry.parentSequence) ?? [];
-    siblings.push(entry);
-    childrenByParent.set(entry.parentSequence, siblings);
-  }
-
-  for (const entry of entries) {
-    if (entry.parentSequence !== undefined || entry.kind === "defeat" || entry.kind === "player_defeat") continue;
-
-    ordered.push(entry);
-    appended.add(entry);
-
-    const children = entry.sequence !== undefined ? childrenByParent.get(entry.sequence) ?? [] : [];
-    for (const child of children) {
-      ordered.push(child);
-      appended.add(child);
-    }
-  }
-
-  for (const entry of entries) {
-    if (appended.has(entry) || entry.kind === "defeat" || entry.kind === "player_defeat") continue;
-    ordered.push(entry);
-  }
-
-  return [...ordered, ...deferredDefeats];
-}
-
 function isDamageLog(entry: HuntLogEntry) {
   return entry.kind === "attack" || entry.kind === "critical" || entry.kind === "enemy_attack" || entry.kind === "enemy_critical"
     || entry.kind === "essence_damage" || entry.kind === "essence_dot" || entry.kind === "essence_extra_hit" || entry.kind === "reflect" || entry.kind === "essence_reflect";
@@ -853,7 +815,11 @@ function formatEssenceGrade(grade: number) {
   return ["", "I", "II", "III", "IV", "V"][grade] ?? `${grade}`;
 }
 
-function isLinkedCombatLog(entry: HuntLogEntry) {
+function isLinkedCombatLog(entry: HuntLogEntry, previousEntry?: HuntLogEntry) {
+  if (entry.parentSequence !== undefined || entry.sequence !== undefined) {
+    return entry.parentSequence !== undefined && entry.parentSequence === previousEntry?.sequence;
+  }
+
   return entry.kind === "essence_damage" || entry.kind === "essence_heal" || entry.kind === "essence_shield"
     || entry.kind === "shield_absorb" || entry.kind === "essence_extra_hit" || entry.kind === "essence_reflect" || entry.kind === "reflect";
 }
