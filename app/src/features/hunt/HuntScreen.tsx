@@ -817,7 +817,8 @@ function formatEssenceGrade(grade: number) {
 
 function isLinkedCombatLog(entry: HuntLogEntry, previousEntry?: HuntLogEntry) {
   if (entry.parentSequence !== undefined || entry.sequence !== undefined) {
-    return entry.parentSequence !== undefined && entry.parentSequence === previousEntry?.sequence;
+    return entry.parentSequence !== undefined
+      && (entry.parentSequence === previousEntry?.sequence || entry.parentSequence === previousEntry?.parentSequence);
   }
 
   return entry.kind === "essence_damage" || entry.kind === "essence_heal" || entry.kind === "essence_shield"
