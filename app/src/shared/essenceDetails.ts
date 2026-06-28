@@ -1,5 +1,6 @@
 export type EssenceDetailSource = {
-  code: string;
+  code?: string;
+  name?: string;
   grade: number;
 };
 
@@ -32,10 +33,33 @@ export const ESSENCE_DETAILS: Record<string, { summary: string; effects: string[
   "cave-vampire-bat-bloodcry": { summary: "흡혈 물리 피해", effects: ["CD 8.0초 · 물리 80% 피해 · 피해의 15% 흡혈", "CD 5.0초 · 물리 100% 피해 · 피해의 20% 흡혈", "CD 5.0초 · 물리 190% 피해 · 피해의 25% 흡혈", "CD 4.0초 · 물리 230% 피해 · 피해의 30% 흡혈", "CD 4.0초 · 물리 280% 피해 · 피해의 35% 흡혈"] },
 };
 
+const ESSENCE_NAME_CODES: Record<string, keyof typeof ESSENCE_DETAILS> = {
+  "인공 정수: 강타": "artificial-strike",
+  "인공 정수: 완력": "artificial-might",
+  "인공 정수: 마탄": "artificial-bolt",
+  "인공 정수: 지식": "artificial-knowledge",
+  "인공 정수: 철갑": "artificial-armor",
+  "인공 정수: 수호": "artificial-guard",
+  "인공 정수: 생명": "artificial-life",
+  "인공 정수: 집중": "artificial-focus",
+  "인공 정수: 치명": "artificial-critical",
+  "인공 정수: 관통": "artificial-pierce",
+};
+
+function getEssenceDetail(essence: EssenceDetailSource) {
+  const code = essence.code?.trim();
+  if (code && ESSENCE_DETAILS[code]) return ESSENCE_DETAILS[code];
+  const nameCode = essence.name ? ESSENCE_NAME_CODES[essence.name.trim()] : undefined;
+  return nameCode ? ESSENCE_DETAILS[nameCode] : undefined;
+}
+
 export function getEssenceSummary(essence: EssenceDetailSource) {
-  return ESSENCE_DETAILS[essence.code]?.summary ?? "정수 효과";
+  return getEssenceDetail(essence)?.summary ?? "정수 효과";
 }
 
 export function getEssenceEffect(essence: EssenceDetailSource) {
-  return ESSENCE_DETAILS[essence.code]?.effects[essence.grade - 1] ?? "정수 효과를 전투 중 자동 사용합니다.";
+  const detail = getEssenceDetail(essence);
+  if (!detail) return "정수 효과를 전투 중 자동 사용합니다.";
+  const gradeIndex = Math.max(0, Math.min(detail.effects.length - 1, Math.trunc(essence.grade) - 1));
+  return detail.effects[gradeIndex];
 }
