@@ -96,9 +96,18 @@ export function AppShell({
       if (settlementAttemptRef.current === battle.startedAt) return;
 
       settlementAttemptRef.current = battle.startedAt;
-      void settleTrainingDummyHunt().then((nextResult) => {
+      void settleTrainingDummyHunt().then(async (nextResult) => {
         settlementAttemptRef.current = null;
-        if (!isActive || !nextResult.ok) return;
+        if (!isActive) return;
+        if (!nextResult.ok) {
+          const nextState = await getMyHuntState();
+          if (!isActive || !nextState.ok) return;
+          setActiveHuntState(nextState.state);
+          if (nextState.state?.lastBattle?.startedAt === battle.startedAt && nextState.state.lastBattle.status !== "in_progress") {
+            void onCharacterRefresh();
+          }
+          return;
+        }
 
         setActiveHuntState(nextResult.huntState);
         markInventoryRewardNotice(nextResult);
@@ -116,13 +125,13 @@ export function AppShell({
           showToast(toastMessages.character.levelUp(nextResult.levelAfter));
         }
       });
-    }, Math.max(0, endsAt - Date.now()) + 180);
+    }, Math.max(0, endsAt - Date.now()) + 800);
 
     return () => {
       isActive = false;
       window.clearTimeout(timeoutId);
     };
-  }, [activeHuntState, location.pathname, onCharacterChange]);
+  }, [activeHuntState, location.pathname, onCharacterChange, onCharacterRefresh]);
 
   useEffect(() => {
     if (location.pathname.startsWith("/hunt") || !activeHuntState?.autoHuntEnabled) return;
