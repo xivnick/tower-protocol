@@ -19,8 +19,8 @@ const trainingDummy = {
 };
 
 const DEFAULT_HUNT_GROUNDS: HuntGround[] = [
-  { id: "training-dummy", name: "허수아비 훈련장", recommendedMinLevel: 1, recommendedMaxLevel: 100 },
-  { id: "wooden-doll", name: "목각인형 훈련장", recommendedMinLevel: 1, recommendedMaxLevel: 100 },
+  { id: "training-dummy", name: "허수아비 훈련장", recommendedMinLevel: 1, recommendedMaxLevel: 20 },
+  { id: "wooden-doll", name: "목각인형 훈련장", recommendedMinLevel: 1, recommendedMaxLevel: 20 },
 ];
 
 export function HuntScreen({
