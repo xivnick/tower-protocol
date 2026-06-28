@@ -80,6 +80,7 @@ function TrainingDummyGround({
   const [lastResult, setLastResult] = useState<HuntResult | null>(null);
   const [huntState, setHuntState] = useState<HuntState | null>(null);
   const [isMonsterInfoOpen, setIsMonsterInfoOpen] = useState(false);
+  const [isPlayerEssenceInfoOpen, setIsPlayerEssenceInfoOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEncountering, setIsEncountering] = useState(false);
   const [isStartingBattle, setIsStartingBattle] = useState(false);
@@ -185,10 +186,18 @@ function TrainingDummyGround({
   }, [isRecovering, isRecoveryLocked, remainingTenths]);
 
   useEffect(() => {
-    if (visibleLogs.length > 0 && logRef.current && isLogPinnedToBottomRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight;
-    }
-  }, [visibleLogs.length]);
+    if (visibleLogs.length === 0 || !logRef.current || !isLogPinnedToBottomRef.current) return;
+
+    const scrollLogToBottom = () => {
+      if (logRef.current && isLogPinnedToBottomRef.current) {
+        logRef.current.scrollTop = logRef.current.scrollHeight;
+      }
+    };
+    const animationFrameId = window.requestAnimationFrame(scrollLogToBottom);
+
+    scrollLogToBottom();
+    return () => window.cancelAnimationFrame(animationFrameId);
+  }, [isMonsterInfoOpen, isPlayerEssenceInfoOpen, visibleLogs.length]);
 
   useEffect(() => {
     isLogPinnedToBottomRef.current = true;
@@ -506,6 +515,8 @@ function TrainingDummyGround({
               activeEssenceCastNames={activeEssenceCastNames.player}
               detail={{ value: `EXP ${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()}`, percent: experiencePercent, isExperience: true }}
               linkToCharacter
+              isEssenceInfoOpen={isPlayerEssenceInfoOpen}
+              onEssenceInfoToggle={() => setIsPlayerEssenceInfoOpen((current) => !current)}
             />
             <CombatHpCard
               label="ENEMY"
@@ -558,6 +569,8 @@ function CombatHpCard({
   onInfoClick,
   isInfoOpen = false,
   isExpanded = false,
+  isEssenceInfoOpen = false,
+  onEssenceInfoToggle,
   expandedContent,
 }: {
   label: string;
@@ -573,9 +586,10 @@ function CombatHpCard({
   onInfoClick?: () => void;
   isInfoOpen?: boolean;
   isExpanded?: boolean;
+  isEssenceInfoOpen?: boolean;
+  onEssenceInfoToggle?: () => void;
   expandedContent?: ReactNode;
 }) {
-  const [isEssenceInfoOpen, setIsEssenceInfoOpen] = useState(false);
   const isUnknown = currentHp === null || maxHp === null;
   const barMaximum = isUnknown ? 0 : Math.max(maxHp, currentHp + shield);
   const hpPercent = isUnknown || barMaximum === 0 ? 0 : Math.max(0, Math.min(100, (currentHp / barMaximum) * 100));
@@ -604,7 +618,7 @@ function CombatHpCard({
         </button>
       )}
       {hasEssenceSlots && (
-        <button className="combat-info-button" type="button" onClick={() => setIsEssenceInfoOpen((current) => !current)} aria-label={`${name} 정수 정보 보기`} aria-expanded={isEssenceInfoOpen}>
+        <button className="combat-info-button" type="button" onClick={onEssenceInfoToggle} aria-label={`${name} 정수 정보 보기`} aria-expanded={isEssenceInfoOpen}>
           <svg aria-hidden="true" viewBox="0 0 16 16">
             <circle cx="8" cy="8" r="5.5" />
             <path d="M8 7v3.5M8 5.2h.01" />
