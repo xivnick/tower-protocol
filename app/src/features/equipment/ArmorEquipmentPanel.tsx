@@ -6,15 +6,18 @@ import { toastMessages } from "../../shared/toastMessages";
 import type { Character } from "../../types/character";
 import { useToast } from "../toast/ToastProvider";
 import { armorEffect, armorLabel, armorSummary } from "./EquippedEquipmentPanel";
+import { getInventoryNoticeStatus, markInventoryItemSeen } from "../../api/inventoryNoticeApi";
+import type { InventoryNoticeStatus } from "../../api/inventoryNoticeApi";
 
 const armorNames: Record<ArmorType, string> = { plate: "중갑", leather: "경갑", robe: "로브" };
 type ArmorFilter = "all" | ArmorType;
 
-export function ArmorEquipmentPanel({ character, onCharacterChange, onEquippedArmorChange, onLoadingChange, refreshKey = 0 }: {
+export function ArmorEquipmentPanel({ character, onCharacterChange, onEquippedArmorChange, onLoadingChange, onNoticeChange, refreshKey = 0 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
   onEquippedArmorChange: (armor: Armor | null) => void;
   onLoadingChange?: (isLoading: boolean) => void;
+  onNoticeChange?: (status: InventoryNoticeStatus) => void;
   refreshKey?: number;
 }) {
   const { showToast } = useToast();
@@ -43,6 +46,11 @@ export function ArmorEquipmentPanel({ character, onCharacterChange, onEquippedAr
     onEquippedArmorChange(result.inventory.armors.find((armor) => armor.id === result.inventory.equippedArmorId) ?? null);
   }
 
+  async function refreshNoticeStatus() {
+    const result = await getInventoryNoticeStatus();
+    if (result.ok) onNoticeChange?.(result.status);
+  }
+
   useEffect(() => { void loadArmors(); }, [character.id, refreshKey]);
 
   async function handleOpenBox() {
@@ -54,6 +62,7 @@ export function ArmorEquipmentPanel({ character, onCharacterChange, onEquippedAr
     setOpenedArmor(result.armor);
     showToast(toastMessages.equipment.armorFound(armorLabel(result.armor)));
     await loadArmors();
+    await refreshNoticeStatus();
   }
 
   async function handleEquip(armor: Armor) {
@@ -85,6 +94,15 @@ export function ArmorEquipmentPanel({ character, onCharacterChange, onEquippedAr
     setOpenedArmor((current) => current?.id === armor.id ? null : current);
     setSelectedArmorId(null);
     showToast(toastMessages.equipment.armorSold(result.gainedCredits));
+    await refreshNoticeStatus();
+  }
+
+  async function handleArmorSelect(armor: Armor, isSelected: boolean) {
+    setSelectedArmorId(isSelected ? null : armor.id);
+    if (isSelected || armor.seenAt) return;
+    setArmors((current) => current.map((candidate) => candidate.id === armor.id ? { ...candidate, seenAt: new Date().toISOString() } : candidate));
+    const result = await markInventoryItemSeen("armor", armor.id);
+    if (result.ok) onNoticeChange?.(result.status);
   }
 
   const equippedArmor = armors.find((armor) => armor.id === equippedArmorId) ?? null;
@@ -102,7 +120,7 @@ export function ArmorEquipmentPanel({ character, onCharacterChange, onEquippedAr
       <div className="panel-head"><span>INVENTORY</span><h2>보유 방어구</h2><div className="weapon-filter-list" role="group" aria-label="방어구 종류 필터"><button className={`weapon-filter ${armorFilter === "all" ? "is-active" : ""}`} type="button" onClick={() => setArmorFilter("all")} disabled={isBusy}>전체 {armors.length}</button>{(Object.keys(armorNames) as ArmorType[]).map((type) => <button className={`weapon-filter ${armorFilter === type ? "is-active" : ""}`} type="button" onClick={() => setArmorFilter(type)} disabled={isBusy} key={type}>{armorNames[type]}</button>)}</div></div>
       {isLoading ? <p className="panel-message">방어구를 불러오는 중...</p> : armors.length === 0 ? <p className="panel-message">보유한 방어구가 없습니다.</p> : filteredArmors.length === 0 ? <p className="panel-message">조건에 맞는 방어구가 없습니다.</p> : <div className="weapon-list">{filteredArmors.map((armor) => {
         const isSelected = armor.id === selectedArmorId; const isEquipped = armor.id === equippedArmorId;
-        return <article className={`weapon-entry ${isSelected ? "is-open" : ""} ${isEquipped ? "is-equipped" : ""}`} key={armor.id}><button className="weapon-row" type="button" onClick={() => setSelectedArmorId(isSelected ? null : armor.id)} aria-expanded={isSelected}><div className="weapon-row-title"><strong>{armorLabel(armor)}</strong><small>{armorSummary(armor)}</small></div><span>{isEquipped ? "장착 중" : "상세"}</span></button>{isSelected && <div className="weapon-detail"><div className="weapon-detail-info"><span>효과</span><strong>{armorEffect(armor, character)}</strong></div><div className="button-row">{!isEquipped && <button className="btn primary" type="button" disabled={isBusy} onClick={() => handleEquip(armor)}>{pendingArmorId === armor.id ? "장착 중..." : "장착"}</button>}{isEquipped ? <><button className="btn ghost" type="button" disabled={isBusy} onClick={handleUnequip}>{isUnequipping ? "해제 중..." : "해제"}</button><span className="weapon-equipped-note">장착 중인 방어구는 판매할 수 없습니다.</span></> : <div className="weapon-sale-action"><button className="btn ghost" type="button" disabled={isBusy} onClick={() => handleSell(armor)}>{sellingArmorId === armor.id ? "판매 중..." : "판매"}</button><small>20 CR</small></div>}</div></div>}</article>;
+        return <article className={`weapon-entry ${isSelected ? "is-open" : ""} ${isEquipped ? "is-equipped" : ""}`} key={armor.id}><button className="weapon-row" type="button" onClick={() => void handleArmorSelect(armor, isSelected)} aria-expanded={isSelected}><div className="weapon-row-title"><strong className="inventory-item-title">{armorLabel(armor)}{!armor.seenAt && <span className="inventory-new-dot" aria-label="새 장비" />}</strong><small>{armorSummary(armor)}</small></div><span>{isEquipped ? "장착 중" : "상세"}</span></button>{isSelected && <div className="weapon-detail"><div className="weapon-detail-info"><span>효과</span><strong>{armorEffect(armor, character)}</strong></div><div className="button-row">{!isEquipped && <button className="btn primary" type="button" disabled={isBusy} onClick={() => handleEquip(armor)}>{pendingArmorId === armor.id ? "장착 중..." : "장착"}</button>}{isEquipped ? <><button className="btn ghost" type="button" disabled={isBusy} onClick={handleUnequip}>{isUnequipping ? "해제 중..." : "해제"}</button><span className="weapon-equipped-note">장착 중인 방어구는 판매할 수 없습니다.</span></> : <div className="weapon-sale-action"><button className="btn ghost" type="button" disabled={isBusy} onClick={() => handleSell(armor)}>{sellingArmorId === armor.id ? "판매 중..." : "판매"}</button><small>20 CR</small></div>}</div></div>}</article>;
       })}</div>}
       {message && <p className="auth-message is-error" role="status">{message}</p>}
     </article>

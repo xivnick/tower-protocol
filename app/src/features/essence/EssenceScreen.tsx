@@ -6,10 +6,12 @@ import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import type { Character } from "../../types/character";
 import { useToast } from "../toast/ToastProvider";
 import { getEssenceEffect, getEssenceSummary } from "../../shared/essenceDetails";
+import { markInventoryItemSeen } from "../../api/inventoryNoticeApi";
+import type { InventoryNoticeStatus } from "../../api/inventoryNoticeApi";
 
 const slotIndexes = [1, 2, 3];
 
-export function EssenceScreen({ character }: { character: Character | null }) {
+export function EssenceScreen({ character, onNoticeChange }: { character: Character | null; onNoticeChange?: (status: InventoryNoticeStatus) => void }) {
   useDocumentTitle("TOWER://ESSENCE");
   const { showToast } = useToast();
   const [essences, setEssences] = useState<Essence[]>([]);
@@ -68,6 +70,14 @@ export function EssenceScreen({ character }: { character: Character | null }) {
     showToast(toastMessages.essence.unequipped(slotIndex));
   }
 
+  async function handleEssenceSelect(essence: Essence, isSelected: boolean) {
+    setSelectedEssenceId(isSelected ? null : essence.id);
+    if (isSelected || essence.seenAt) return;
+    setEssences((current) => current.map((candidate) => candidate.id === essence.id ? { ...candidate, seenAt: new Date().toISOString() } : candidate));
+    const result = await markInventoryItemSeen("essence", essence.id);
+    if (result.ok) onNoticeChange?.(result.status);
+  }
+
   if (!character) return <section className="screen-panel"><article className="panel"><p className="panel-message">캐릭터를 먼저 생성해주세요.</p></article></section>;
 
   const selectedEssence = essences.find((essence) => essence.id === selectedEssenceId) ?? essences[0] ?? null;
@@ -105,9 +115,9 @@ export function EssenceScreen({ character }: { character: Character | null }) {
               const isSelected = essence.id === selectedEssence?.id;
               return (
                 <article className={`weapon-entry ${isSelected ? "is-open" : ""} ${essence.equippedSlotIndex ? "is-equipped" : ""}`} key={essence.id}>
-                  <button className="weapon-row" type="button" onClick={() => setSelectedEssenceId(isSelected ? null : essence.id)} aria-expanded={isSelected}>
+                  <button className="weapon-row" type="button" onClick={() => void handleEssenceSelect(essence, isSelected)} aria-expanded={isSelected}>
                     <div className="weapon-row-title">
-                      <strong>{essence.name} {formatGrade(essence.grade)}</strong>
+                      <strong className="inventory-item-title">{essence.name} {formatGrade(essence.grade)}{!essence.seenAt && <span className="inventory-new-dot" aria-label="새 정수" />}</strong>
                       <small>{getEssenceSummary(essence)}</small>
                     </div>
                     <span>x{essence.quantity}</span>

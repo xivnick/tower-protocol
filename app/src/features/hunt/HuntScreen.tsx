@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { configureAutoHunt, encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getHuntGrounds, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntGround, HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
+import { getMyEssences } from "../../api/essenceApi";
+import type { Essence } from "../../api/essenceApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
 import { getEssenceEffect } from "../../shared/essenceDetails";
@@ -28,11 +30,13 @@ export function HuntScreen({
   onCharacterChange,
   onCharacterRefresh,
   onHuntStateChange,
+  onInventoryReward,
 }: {
   character: Character | null;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
   onHuntStateChange: (huntState: HuntState | null) => void;
+  onInventoryReward?: (reward: { equipment: boolean; essence: boolean }) => void;
 }) {
   useEffect(() => {
     void onCharacterRefresh();
@@ -55,7 +59,7 @@ export function HuntScreen({
     );
   }
 
-  return <TrainingDummyGround character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={onHuntStateChange} />;
+  return <TrainingDummyGround character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={onHuntStateChange} onInventoryReward={onInventoryReward} />;
 }
 
 function TrainingDummyGround({
@@ -63,11 +67,13 @@ function TrainingDummyGround({
   onCharacterChange,
   onCharacterRefresh,
   onHuntStateChange,
+  onInventoryReward,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
   onHuntStateChange: (huntState: HuntState | null) => void;
+  onInventoryReward?: (reward: { equipment: boolean; essence: boolean }) => void;
 }) {
   const { showToast } = useToast();
   const [result, setResult] = useState<HuntResult | null>(null);
@@ -80,6 +86,7 @@ function TrainingDummyGround({
   const [isResolving, setIsResolving] = useState(false);
   const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
   const [huntGrounds, setHuntGrounds] = useState<HuntGround[]>(DEFAULT_HUNT_GROUNDS);
+  const [essences, setEssences] = useState<Essence[]>([]);
   const [now, setNow] = useState(Date.now());
   const [frozenPlaybackTenths, setFrozenPlaybackTenths] = useState(0);
   const logRef = useRef<HTMLOListElement>(null);
@@ -102,6 +109,7 @@ function TrainingDummyGround({
     : frozenPlaybackTenths;
   const visibleLogs = useMemo(() => result?.logs.filter((entry) => entry.timeTenths <= playbackTenths) ?? [], [playbackTenths, result]);
   const displayedLogs = useMemo(() => groupCombatLogs(withEssenceStatusLogs(visibleLogs)), [visibleLogs]);
+  const activeEssenceCastNames = useMemo(() => getActiveEssenceCastNames(visibleLogs, playbackTenths), [playbackTenths, visibleLogs]);
   const enemyLogs = visibleLogs.filter((entry) => entry.target !== "player");
   const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
   const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
@@ -131,9 +139,21 @@ function TrainingDummyGround({
   const displayExperience = result ? (isPlaybackComplete ? result.experienceAfter : result.player.experience ?? 0) : character.experience;
   const requiredExperience = getRequiredExperienceForLevel(displayLevel + 1) ?? 1;
   const experiencePercent = displayLevel >= 100 ? 100 : (displayExperience / requiredExperience) * 100;
+  const equippedEssenceSlots = useMemo(() => essences
+    .filter((essence) => essence.equippedSlotIndex !== null)
+    .sort((left, right) => (left.equippedSlotIndex ?? 0) - (right.equippedSlotIndex ?? 0))
+    .map((essence) => ({
+      slotIndex: essence.equippedSlotIndex ?? 0,
+      essence: { code: essence.code, name: essence.name, grade: essence.grade },
+    })), [essences]);
 
   useEffect(() => {
     let isActive = true;
+
+    void getMyEssences().then((result) => {
+      if (!isActive || !result.ok) return;
+      setEssences(result.inventory.essences);
+    });
 
     void getHuntGrounds().then((result) => {
       if (!isActive || !result.ok || result.grounds.length === 0) return;
@@ -204,13 +224,14 @@ function TrainingDummyGround({
     if (!result.character) return;
 
     completedResultRef.current = result;
+    notifyInventoryReward(result, onInventoryReward);
     onCharacterChange(result.character);
     showToast(toastMessages.hunt.completed(result.gainedExperience, result.gainedCredits ?? result.rewards?.credits ?? 0));
 
     if (result.levelAfter > result.levelBefore) {
       showToast(toastMessages.character.levelUp(result.levelAfter));
     }
-  }, [hasEncounteredMonster, isBattleInProgress, isPlaybackComplete, onCharacterChange, result, showToast]);
+  }, [hasEncounteredMonster, isBattleInProgress, isPlaybackComplete, onCharacterChange, onInventoryReward, result, showToast]);
 
   useEffect(() => {
     if (!result || result.status !== "in_progress" || !isPlaybackComplete || isResolving || settlementAttemptRef.current === result.startedAt) return;
@@ -454,6 +475,8 @@ function TrainingDummyGround({
               currentHp={playerHp}
               maxHp={result?.player.maxHp ?? huntState?.playerMaxHp ?? combatStats.maxHp}
               shield={playerShield}
+              essenceSlots={equippedEssenceSlots}
+              activeEssenceCastNames={activeEssenceCastNames.player}
               detail={{ value: `EXP ${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()}`, percent: experiencePercent, isExperience: true }}
               linkToCharacter
             />
@@ -464,6 +487,7 @@ function TrainingDummyGround({
               maxHp={result ? dummyMaxHp : null}
               shield={enemyShield}
               essence={result?.enemy.essence}
+              activeEssenceCastNames={activeEssenceCastNames.enemy}
               onInfoClick={result?.enemy.info ? () => setIsMonsterInfoOpen((current) => !current) : undefined}
               isInfoOpen={isMonsterInfoOpen}
               isExpanded={isMonsterInfoOpen}
@@ -500,6 +524,8 @@ function CombatHpCard({
   maxHp,
   shield = 0,
   essence,
+  essenceSlots,
+  activeEssenceCastNames,
   detail,
   linkToCharacter = false,
   onInfoClick,
@@ -513,6 +539,8 @@ function CombatHpCard({
   maxHp: number | null;
   shield?: number;
   essence?: { code: string; name: string; grade: number };
+  essenceSlots?: Array<{ slotIndex: number; essence: { code: string; name: string; grade: number } }>;
+  activeEssenceCastNames?: Set<string>;
   detail?: { value: string; percent: number; isUnknown?: boolean; isExperience?: boolean };
   linkToCharacter?: boolean;
   onInfoClick?: () => void;
@@ -520,24 +548,36 @@ function CombatHpCard({
   isExpanded?: boolean;
   expandedContent?: ReactNode;
 }) {
+  const [isEssenceInfoOpen, setIsEssenceInfoOpen] = useState(false);
   const isUnknown = currentHp === null || maxHp === null;
   const barMaximum = isUnknown ? 0 : Math.max(maxHp, currentHp + shield);
   const hpPercent = isUnknown || barMaximum === 0 ? 0 : Math.max(0, Math.min(100, (currentHp / barMaximum) * 100));
   const shieldPercent = isUnknown || barMaximum === 0 ? 0 : Math.max(0, Math.min(100 - hpPercent, (shield / barMaximum) * 100));
+  const hasEssenceSlots = Boolean(essenceSlots && essenceSlots.length > 0);
 
   return (
     <div className="combat-hp-card">
       <span>{label}</span>
-      <strong>{name}</strong>
-      {linkToCharacter && (
-        <Link className="combat-character-link" to="/character" aria-label="캐릭터 정보 보기">
-          <svg aria-hidden="true" viewBox="0 0 16 16">
-            <path d="M6.5 3.5h6v6M12.5 3.5 7 9m3 3.5H3.5v-6" />
-          </svg>
-        </Link>
-      )}
+      <div className="combat-card-title">
+        <strong>{name}</strong>
+        {linkToCharacter && (
+          <Link className="combat-character-link" to="/character" aria-label="캐릭터 정보 보기">
+            <svg aria-hidden="true" viewBox="0 0 16 16">
+              <path d="M6.5 3.5h6v6M12.5 3.5 7 9m3 3.5H3.5v-6" />
+            </svg>
+          </Link>
+        )}
+      </div>
       {onInfoClick && (
         <button className="combat-info-button" type="button" onClick={onInfoClick} aria-label={`${name} 정보 보기`} aria-expanded={isInfoOpen}>
+          <svg aria-hidden="true" viewBox="0 0 16 16">
+            <circle cx="8" cy="8" r="5.5" />
+            <path d="M8 7v3.5M8 5.2h.01" />
+          </svg>
+        </button>
+      )}
+      {hasEssenceSlots && (
+        <button className="combat-info-button" type="button" onClick={() => setIsEssenceInfoOpen((current) => !current)} aria-label={`${name} 정수 정보 보기`} aria-expanded={isEssenceInfoOpen}>
           <svg aria-hidden="true" viewBox="0 0 16 16">
             <circle cx="8" cy="8" r="5.5" />
             <path d="M8 7v3.5M8 5.2h.01" />
@@ -549,8 +589,18 @@ function CombatHpCard({
         {!isUnknown && shieldPercent > 0 && <em style={{ left: `${hpPercent}%`, width: `${shieldPercent}%` }} />}
       </div>
       <b>{isUnknown ? "HP ???" : <>HP {formatAmount(currentHp ?? 0)} / {formatAmount(maxHp ?? 0)}{shield > 0 && <span className="combat-hp-shield-value"> +{formatAmount(shield)} S</span>}</>}</b>
-      {essence && <b className="combat-essence">ESSENCE {essence.name} {formatEssenceGrade(essence.grade)}</b>}
+      {essence && <b className={`combat-essence ${activeEssenceCastNames?.has(essence.name) ? "is-triggered" : ""}`}>ESSENCE {essence.name} {formatEssenceGrade(essence.grade)}</b>}
       {detail && <CombatDetail {...detail} />}
+      {essenceSlots && essenceSlots.length > 0 && (
+        <div className="combat-essence-slots" aria-label="장착 중인 정수">
+          {essenceSlots.map(({ slotIndex, essence }) => (
+            <div className="combat-essence-slot-row" key={slotIndex}>
+              <b className={`combat-essence-slot ${activeEssenceCastNames?.has(essence.name) ? "is-triggered" : ""}`}>SLOT{slotIndex} {essence.name} {formatEssenceGrade(essence.grade)}</b>
+              {isEssenceInfoOpen && <small>{getEssenceEffect(essence)}</small>}
+            </div>
+          ))}
+        </div>
+      )}
       {expandedContent && <div className={`combat-card-expansion ${isExpanded ? "is-expanded" : ""}`}><div>{expandedContent}</div></div>}
     </div>
   );
@@ -598,6 +648,25 @@ function formatCombatStat(value: number, digits: number) {
 
 function formatRecommendedLevel(ground: HuntGround) {
   return `추천 LV.${ground.recommendedMinLevel}–${ground.recommendedMaxLevel}`;
+}
+
+function getActiveEssenceCastNames(logs: HuntLogEntry[], playbackTenths: number) {
+  const activeWindowTenths = 8;
+  const active = { player: new Set<string>(), enemy: new Set<string>() };
+  for (const entry of logs) {
+    if (entry.kind !== "essence_cast" || !entry.name || playbackTenths - entry.timeTenths > activeWindowTenths) continue;
+    if (entry.source === "enemy") active.enemy.add(entry.name);
+    else active.player.add(entry.name);
+  }
+  return active;
+}
+
+function notifyInventoryReward(result: HuntResult, onInventoryReward?: (reward: { equipment: boolean; essence: boolean }) => void) {
+  if (result.status !== "victory" || !result.rewards) return;
+  onInventoryReward?.({
+    equipment: Boolean(result.rewards.equipment),
+    essence: Boolean(result.rewards.essence),
+  });
 }
 
 function formatEquipmentReward(equipment: NonNullable<HuntResult["rewards"]>["equipment"]) {

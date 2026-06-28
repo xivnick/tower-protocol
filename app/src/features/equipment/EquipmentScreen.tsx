@@ -8,6 +8,8 @@ import { useToast } from "../toast/ToastProvider";
 import { EquippedEquipmentPanel, weaponEffect, weaponLabel, weaponSummary } from "./EquippedEquipmentPanel";
 import { ArmorEquipmentPanel } from "./ArmorEquipmentPanel";
 import type { Armor } from "../../api/equipmentApi";
+import { getInventoryNoticeStatus, markInventoryItemSeen } from "../../api/inventoryNoticeApi";
+import type { InventoryNoticeStatus } from "../../api/inventoryNoticeApi";
 
 const weaponNames: Record<WeaponType, string> = {
   longsword: "장검",
@@ -20,7 +22,7 @@ const weaponNames: Record<WeaponType, string> = {
 
 type WeaponFilter = "all" | WeaponType;
 
-export function EquipmentScreen({ character, onCharacterChange }: { character: Character | null; onCharacterChange: (character: Character | null) => void }) {
+export function EquipmentScreen({ character, onCharacterChange, onNoticeChange }: { character: Character | null; onCharacterChange: (character: Character | null) => void; onNoticeChange?: (status: InventoryNoticeStatus) => void }) {
   useDocumentTitle("TOWER://EQUIPMENT");
   const { showToast } = useToast();
   const [weapons, setWeapons] = useState<Weapon[]>([]);
@@ -52,6 +54,11 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
     setEquippedWeaponId(result.inventory.equippedWeaponId);
   }
 
+  async function refreshNoticeStatus() {
+    const result = await getInventoryNoticeStatus();
+    if (result.ok) onNoticeChange?.(result.status);
+  }
+
   useEffect(() => { if (character) void loadWeapons(); }, [character?.id]);
 
   async function handleOpenBox() {
@@ -67,6 +74,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
     setOpenedWeapon(result.weapon);
     showToast(toastMessages.equipment.weaponFound(weaponLabel(result.weapon)));
     await loadWeapons();
+    await refreshNoticeStatus();
   }
 
   async function handleEquip(weapon: Weapon) {
@@ -113,6 +121,15 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
     setOpenedWeapon((current) => current?.id === weapon.id ? null : current);
     setSelectedWeaponId(null);
     showToast(toastMessages.equipment.sold(result.gainedCredits));
+    await refreshNoticeStatus();
+  }
+
+  async function handleWeaponSelect(weapon: Weapon, isSelected: boolean) {
+    setSelectedWeaponId(isSelected ? null : weapon.id);
+    if (isSelected || weapon.seenAt) return;
+    setWeapons((current) => current.map((candidate) => candidate.id === weapon.id ? { ...candidate, seenAt: new Date().toISOString() } : candidate));
+    const result = await markInventoryItemSeen("weapon", weapon.id);
+    if (result.ok) onNoticeChange?.(result.status);
   }
 
   if (!character) return <section className="screen-panel"><article className="panel"><p className="panel-message">캐릭터를 먼저 생성해주세요.</p></article></section>;
@@ -168,8 +185,8 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
           const isSelected = weapon.id === selectedWeaponId;
           const isEquipped = weapon.id === equippedWeaponId;
           return <article className={`weapon-entry ${isSelected ? "is-open" : ""} ${isEquipped ? "is-equipped" : ""}`} key={weapon.id}>
-            <button className="weapon-row" type="button" onClick={() => setSelectedWeaponId(isSelected ? null : weapon.id)} aria-expanded={isSelected}>
-              <div className="weapon-row-title"><strong>{weaponLabel(weapon)}</strong><small>{weaponSummary(weapon)}</small></div>
+            <button className="weapon-row" type="button" onClick={() => void handleWeaponSelect(weapon, isSelected)} aria-expanded={isSelected}>
+              <div className="weapon-row-title"><strong className="inventory-item-title">{weaponLabel(weapon)}{!weapon.seenAt && <span className="inventory-new-dot" aria-label="새 장비" />}</strong><small>{weaponSummary(weapon)}</small></div>
               <span>{isEquipped ? "장착 중" : "상세"}</span>
             </button>
             {isSelected && <div className="weapon-detail">
@@ -184,7 +201,7 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
         {message && <p className="auth-message is-error" role="status">{message}</p>}
       </article>
 
-      <ArmorEquipmentPanel character={character} onCharacterChange={onCharacterChange} onEquippedArmorChange={setEquippedArmor} onLoadingChange={setIsArmorLoading} refreshKey={armorRefreshKey} />
+      <ArmorEquipmentPanel character={character} onCharacterChange={onCharacterChange} onEquippedArmorChange={setEquippedArmor} onLoadingChange={setIsArmorLoading} onNoticeChange={onNoticeChange} refreshKey={armorRefreshKey} />
     </section>
   );
 }

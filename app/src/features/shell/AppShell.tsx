@@ -8,6 +8,8 @@ import { useCombatClock } from "../../shared/useCombatClock";
 import { getRequiredExperienceForLevel } from "../../shared/progression";
 import { configureAutoHunt, encounterHuntMonster, getMyHuntState, huntTrainingDummy, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntState } from "../../api/characterApi";
+import { getInventoryNoticeStatus } from "../../api/inventoryNoticeApi";
+import type { InventoryNoticeStatus } from "../../api/inventoryNoticeApi";
 import { CharacterScreen } from "../character/CharacterScreen";
 import { EquipmentScreen } from "../equipment/EquipmentScreen";
 import { EssenceScreen } from "../essence/EssenceScreen";
@@ -51,6 +53,7 @@ export function AppShell({
   const [isNavClosing, setIsNavClosing] = useState(false);
   const [routeRefreshKey, setRouteRefreshKey] = useState(0);
   const [activeHuntState, setActiveHuntState] = useState<HuntState | null>(null);
+  const [inventoryNotice, setInventoryNotice] = useState<InventoryNoticeStatus>({ equipment: false, essence: false });
   const settlementAttemptRef = useRef<string | null>(null);
   const recoveryToastRef = useRef<string | null>(null);
   const autoHuntActionRef = useRef<string | null>(null);
@@ -61,16 +64,21 @@ export function AppShell({
   const nickname = profile?.nickname ?? "UNKNOWN";
   const currentNavLabel = getCurrentNavLabel(location.pathname);
   const hasUnspentStatPoints = Boolean(character && character.stat_points > 0);
+  const currentNavHasNotice = hasNavNotice(location.pathname, hasUnspentStatPoints, inventoryNotice);
 
   useEffect(() => {
     if (!character) {
       setActiveHuntState(null);
+      setInventoryNotice({ equipment: false, essence: false });
       return;
     }
 
     let isActive = true;
     void getMyHuntState().then((nextState) => {
       if (isActive && nextState.ok) setActiveHuntState(nextState.state);
+    });
+    void getInventoryNoticeStatus().then((result) => {
+      if (isActive && result.ok) setInventoryNotice(result.status);
     });
 
     return () => { isActive = false; };
@@ -93,6 +101,7 @@ export function AppShell({
         if (!isActive || !nextResult.ok) return;
 
         setActiveHuntState(nextResult.huntState);
+        markInventoryRewardNotice(nextResult);
         if (!nextResult.character) return;
 
         onCharacterChange(nextResult.character);
@@ -205,6 +214,28 @@ export function AppShell({
     setActiveHuntState(huntState);
   }
 
+  function handleInventoryReward(reward: InventoryNoticeStatus) {
+    if (!reward.equipment && !reward.essence) return;
+    setInventoryNotice((current) => {
+      return {
+        equipment: current.equipment || reward.equipment,
+        essence: current.essence || reward.essence,
+      };
+    });
+  }
+
+  function markInventoryRewardNotice(result: { status: string; rewards?: { equipment: unknown; essence: unknown } | null }) {
+    if (result.status !== "victory" || !result.rewards) return;
+    handleInventoryReward({
+      equipment: Boolean(result.rewards.equipment),
+      essence: Boolean(result.rewards.essence),
+    });
+  }
+
+  function handleInventoryNoticeChange(status: InventoryNoticeStatus) {
+    setInventoryNotice(status);
+  }
+
   function toggleAccountMenu() {
     if (isAccountOpen) {
       closeAccountMenu();
@@ -285,7 +316,7 @@ export function AppShell({
           <section className="mobile-nav-panel" aria-label="모바일 메뉴">
             <button className="mobile-nav-trigger" type="button" onClick={toggleNavMenu} aria-expanded={isNavOpen}>
               <span>{currentNavLabel}</span>
-              {currentNavLabel === "캐릭터" && hasUnspentStatPoints && <span className="nav-notice" aria-hidden="true" />}
+              {currentNavHasNotice && <span className="nav-notice" aria-hidden="true" />}
               <svg className="mobile-nav-icon" aria-hidden="true" viewBox="0 0 16 16">
                 <path d="m4 6 4 4 4-4" />
               </svg>
@@ -302,10 +333,10 @@ export function AppShell({
                         refreshCurrentRoute(item.to);
                         closeNavMenu(item.to);
                       }}
-                      aria-label={item.to === "/character" && hasUnspentStatPoints ? "캐릭터, 미분배 스탯 포인트 있음" : item.label}
+                      aria-label={getNavAriaLabel(item.label, item.to, hasUnspentStatPoints, inventoryNotice)}
                     >
                       {item.label}
-                      {item.to === "/character" && hasUnspentStatPoints && <span className="nav-notice" aria-hidden="true" />}
+                      {hasNavNotice(item.to, hasUnspentStatPoints, inventoryNotice) && <span className="nav-notice" aria-hidden="true" />}
                     </button>
                   ) : (
                     <button className="nav-item mobile-nav-item" type="button" disabled key={item.label}>
@@ -326,9 +357,9 @@ export function AppShell({
           <nav className="nav-list" aria-label="게임 화면">
             {navItems.map((item) => (
               item.enabled ? (
-                <NavLink className={({ isActive }) => `nav-item ${isActive ? "is-active" : ""}`} to={item.to} end={item.end} key={item.label} onClick={() => refreshCurrentRoute(item.to)} aria-label={item.to === "/character" && hasUnspentStatPoints ? "캐릭터, 미분배 스탯 포인트 있음" : item.label}>
+                <NavLink className={({ isActive }) => `nav-item ${isActive ? "is-active" : ""}`} to={item.to} end={item.end} key={item.label} onClick={() => refreshCurrentRoute(item.to)} aria-label={getNavAriaLabel(item.label, item.to, hasUnspentStatPoints, inventoryNotice)}>
                   {item.label}
-                  {item.to === "/character" && hasUnspentStatPoints && <span className="nav-notice" aria-hidden="true" />}
+                  {hasNavNotice(item.to, hasUnspentStatPoints, inventoryNotice) && <span className="nav-notice" aria-hidden="true" />}
                 </NavLink>
               ) : (
                 <button className="nav-item" type="button" disabled key={item.label}>
@@ -357,9 +388,9 @@ export function AppShell({
             <Routes>
               <Route path="/" element={<DashboardScreen session={session} profile={profile} character={character} huntState={activeHuntState} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />} />
               <Route path="/character" element={<CharacterScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />} />
-              <Route path="/equipment" element={<EquipmentScreen character={character} onCharacterChange={onCharacterChange} />} />
-              <Route path="/essences" element={<EssenceScreen character={character} />} />
-              <Route path="/hunt" element={<HuntScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={handleHuntStateChange} />} />
+              <Route path="/equipment" element={<EquipmentScreen character={character} onCharacterChange={onCharacterChange} onNoticeChange={handleInventoryNoticeChange} />} />
+              <Route path="/essences" element={<EssenceScreen character={character} onNoticeChange={handleInventoryNoticeChange} />} />
+              <Route path="/hunt" element={<HuntScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={handleHuntStateChange} onInventoryReward={handleInventoryReward} />} />
               <Route path="/ranking" element={<RankingScreen />} />
               <Route path="/patch-notes" element={<PatchNotesArchive />} />
               <Route path="*" element={<Navigate to="/" replace />} />
@@ -380,6 +411,20 @@ function getCurrentNavLabel(pathname: string) {
   if (pathname.startsWith("/ranking")) return "랭킹";
   if (pathname.startsWith("/patch-notes")) return "패치노트";
   return "대시보드";
+}
+
+function hasNavNotice(pathname: string, hasUnspentStatPoints: boolean, inventoryNotice: InventoryNoticeStatus) {
+  if (pathname.startsWith("/character")) return hasUnspentStatPoints;
+  if (pathname.startsWith("/equipment")) return inventoryNotice.equipment;
+  if (pathname.startsWith("/essences")) return inventoryNotice.essence;
+  return false;
+}
+
+function getNavAriaLabel(label: string, pathname: string, hasUnspentStatPoints: boolean, inventoryNotice: InventoryNoticeStatus) {
+  if (pathname === "/character" && hasUnspentStatPoints) return `${label}, 미분배 스탯 포인트 있음`;
+  if (pathname === "/equipment" && inventoryNotice.equipment) return `${label}, 새 장비 있음`;
+  if (pathname === "/essences" && inventoryNotice.essence) return `${label}, 새 정수 있음`;
+  return label;
 }
 
 function AutoBattleHud({ character, huntState }: { character: Character | null; huntState: HuntState | null }) {
