@@ -121,7 +121,7 @@ function TrainingDummyGround({
   const playerHp = isBattleInProgress
     ? playerLogs.length > 0 ? playerLogs[playerLogs.length - 1].targetHp : result?.player.startHp ?? result?.player.maxHp ?? combatStats.maxHp
     : recoveredPlayerHp ?? huntState?.playerCurrentHp ?? result?.player.currentHp ?? result?.player.startHp ?? result?.player.maxHp ?? combatStats.maxHp;
-  const isGoingToDifferentGround = Boolean(isBattleInProgress && result && selectedGroundId !== result.huntGroundId);
+  const isOngoingOnPreviousGround = Boolean(isBattleInProgress && result && selectedGroundId !== result.huntGroundId);
   const isPlaybackComplete = Boolean(result && (!isBattleInProgress || playbackTenths >= result.durationTicks));
   const isRecovering = Boolean(!isBattleInProgress && huntState?.recoveryEndsAt && Date.parse(huntState.recoveryEndsAt) > now);
   const recoveryLockStatus = huntState?.lastBattle?.status ?? result?.status;
@@ -381,16 +381,25 @@ function TrainingDummyGround({
   async function handleGroundChange(huntGroundId: string) {
     setIsLocationMenuOpen(false);
     if (huntGroundId === selectedGroundId) return;
+    setIsResolving(true);
     const nextState = await selectHuntGround(huntGroundId);
+    setIsResolving(false);
     if (!nextState.ok || !nextState.state) {
       showToast({ message: nextState.message, tone: "error" });
       return;
     }
-    setHuntState((currentState) => currentState ? {
-      ...currentState,
-      selectedHuntGroundId: nextState.state!.selectedHuntGroundId,
-    } : nextState.state);
+
+    setHuntState(nextState.state);
     onHuntStateChange(nextState.state);
+    if (!nextState.state.lastBattle) {
+      setResult(null);
+      setFrozenPlaybackTenths(0);
+      return;
+    }
+    if (nextState.state.lastBattle.status === "in_progress") return;
+
+    const restoredResult: HuntResult = { ok: true, character: null, huntState: nextState.state, ...nextState.state.lastBattle, message: "" };
+    setResult(restoredResult);
   }
 
   async function handleEncounterFlee() {
@@ -444,7 +453,7 @@ function TrainingDummyGround({
           aria-controls="hunt-location-menu"
           onClick={() => setIsLocationMenuOpen((current) => !current)}
         >
-          <span>{isGoingToDifferentGround ? "GOING TO.." : "LOCATION"}</span>
+          <span>{isOngoingOnPreviousGround ? "ONGOING" : "LOCATION"}</span>
           <strong>{selectedGround.name}</strong>
           <small>{formatRecommendedLevel(selectedGround)}</small>
           <svg className="hunt-location-icon" aria-hidden="true" viewBox="0 0 16 16">

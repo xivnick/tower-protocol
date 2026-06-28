@@ -1,0 +1,3 @@
+-- Remote migration history placeholder.
+-- The original 163 migration exists in the linked Supabase project but is not present locally on this branch.
+-- Current effective schema is maintained by later migrations in this directory.
