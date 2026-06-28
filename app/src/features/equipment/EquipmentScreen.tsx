@@ -20,7 +20,7 @@ const weaponNames: Record<WeaponType, string> = {
 
 type WeaponFilter = "all" | WeaponType;
 
-export function EquipmentScreen({ character, onCharacterChange }: { character: Character | null; onCharacterChange: (character: Character | null) => void }) {
+export function EquipmentScreen({ character, onCharacterChange, onViewed }: { character: Character | null; onCharacterChange: (character: Character | null) => void; onViewed?: () => void }) {
   useDocumentTitle("TOWER://EQUIPMENT");
   const { showToast } = useToast();
   const [weapons, setWeapons] = useState<Weapon[]>([]);
@@ -39,6 +39,8 @@ export function EquipmentScreen({ character, onCharacterChange }: { character: C
   const [selectedWeaponId, setSelectedWeaponId] = useState<string | null>(null);
   const [weaponFilter, setWeaponFilter] = useState<WeaponFilter>("all");
   const isBusy = isOpeningBox || pendingWeaponId !== null || isUnequipping || isUnequippingArmor || sellingWeaponId !== null;
+
+  useEffect(() => { onViewed?.(); }, []);
 
   async function loadWeapons() {
     setIsLoading(true);

@@ -9,7 +9,7 @@ import { getEssenceEffect, getEssenceSummary } from "../../shared/essenceDetails
 
 const slotIndexes = [1, 2, 3];
 
-export function EssenceScreen({ character }: { character: Character | null }) {
+export function EssenceScreen({ character, onViewed }: { character: Character | null; onViewed?: () => void }) {
   useDocumentTitle("TOWER://ESSENCE");
   const { showToast } = useToast();
   const [essences, setEssences] = useState<Essence[]>([]);
@@ -18,6 +18,8 @@ export function EssenceScreen({ character }: { character: Character | null }) {
   const [isLoading, setIsLoading] = useState(true);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const unlockedSlotCount = getUnlockedSlotCount(character?.level ?? 1);
+
+  useEffect(() => { onViewed?.(); }, []);
 
   const slots = useMemo(() => slotIndexes.map((slotIndex) => ({
     slotIndex,

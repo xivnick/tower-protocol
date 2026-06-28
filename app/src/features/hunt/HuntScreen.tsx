@@ -30,11 +30,13 @@ export function HuntScreen({
   onCharacterChange,
   onCharacterRefresh,
   onHuntStateChange,
+  onInventoryReward,
 }: {
   character: Character | null;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
   onHuntStateChange: (huntState: HuntState | null) => void;
+  onInventoryReward?: (reward: { equipment: boolean; essence: boolean }) => void;
 }) {
   useEffect(() => {
     void onCharacterRefresh();
@@ -57,7 +59,7 @@ export function HuntScreen({
     );
   }
 
-  return <TrainingDummyGround character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={onHuntStateChange} />;
+  return <TrainingDummyGround character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={onHuntStateChange} onInventoryReward={onInventoryReward} />;
 }
 
 function TrainingDummyGround({
@@ -65,11 +67,13 @@ function TrainingDummyGround({
   onCharacterChange,
   onCharacterRefresh,
   onHuntStateChange,
+  onInventoryReward,
 }: {
   character: Character;
   onCharacterChange: (character: Character | null) => void;
   onCharacterRefresh: () => Promise<boolean>;
   onHuntStateChange: (huntState: HuntState | null) => void;
+  onInventoryReward?: (reward: { equipment: boolean; essence: boolean }) => void;
 }) {
   const { showToast } = useToast();
   const [result, setResult] = useState<HuntResult | null>(null);
@@ -105,6 +109,7 @@ function TrainingDummyGround({
     : frozenPlaybackTenths;
   const visibleLogs = useMemo(() => result?.logs.filter((entry) => entry.timeTenths <= playbackTenths) ?? [], [playbackTenths, result]);
   const displayedLogs = useMemo(() => groupCombatLogs(withEssenceStatusLogs(visibleLogs)), [visibleLogs]);
+  const activeEssenceCastNames = useMemo(() => getActiveEssenceCastNames(visibleLogs, playbackTenths), [playbackTenths, visibleLogs]);
   const enemyLogs = visibleLogs.filter((entry) => entry.target !== "player");
   const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
   const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
@@ -219,13 +224,14 @@ function TrainingDummyGround({
     if (!result.character) return;
 
     completedResultRef.current = result;
+    notifyInventoryReward(result, onInventoryReward);
     onCharacterChange(result.character);
     showToast(toastMessages.hunt.completed(result.gainedExperience, result.gainedCredits ?? result.rewards?.credits ?? 0));
 
     if (result.levelAfter > result.levelBefore) {
       showToast(toastMessages.character.levelUp(result.levelAfter));
     }
-  }, [hasEncounteredMonster, isBattleInProgress, isPlaybackComplete, onCharacterChange, result, showToast]);
+  }, [hasEncounteredMonster, isBattleInProgress, isPlaybackComplete, onCharacterChange, onInventoryReward, result, showToast]);
 
   useEffect(() => {
     if (!result || result.status !== "in_progress" || !isPlaybackComplete || isResolving || settlementAttemptRef.current === result.startedAt) return;
@@ -470,6 +476,7 @@ function TrainingDummyGround({
               maxHp={result?.player.maxHp ?? huntState?.playerMaxHp ?? combatStats.maxHp}
               shield={playerShield}
               essenceSlots={equippedEssenceSlots}
+              activeEssenceCastNames={activeEssenceCastNames.player}
               detail={{ value: `EXP ${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()}`, percent: experiencePercent, isExperience: true }}
               linkToCharacter
             />
@@ -480,6 +487,7 @@ function TrainingDummyGround({
               maxHp={result ? dummyMaxHp : null}
               shield={enemyShield}
               essence={result?.enemy.essence}
+              activeEssenceCastNames={activeEssenceCastNames.enemy}
               onInfoClick={result?.enemy.info ? () => setIsMonsterInfoOpen((current) => !current) : undefined}
               isInfoOpen={isMonsterInfoOpen}
               isExpanded={isMonsterInfoOpen}
@@ -517,6 +525,7 @@ function CombatHpCard({
   shield = 0,
   essence,
   essenceSlots,
+  activeEssenceCastNames,
   detail,
   linkToCharacter = false,
   onInfoClick,
@@ -531,6 +540,7 @@ function CombatHpCard({
   shield?: number;
   essence?: { code: string; name: string; grade: number };
   essenceSlots?: Array<{ slotIndex: number; essence: { code: string; name: string; grade: number } }>;
+  activeEssenceCastNames?: Set<string>;
   detail?: { value: string; percent: number; isUnknown?: boolean; isExperience?: boolean };
   linkToCharacter?: boolean;
   onInfoClick?: () => void;
@@ -548,14 +558,16 @@ function CombatHpCard({
   return (
     <div className="combat-hp-card">
       <span>{label}</span>
-      <strong>{name}</strong>
-      {linkToCharacter && (
-        <Link className="combat-character-link" to="/character" aria-label="캐릭터 정보 보기">
-          <svg aria-hidden="true" viewBox="0 0 16 16">
-            <path d="M6.5 3.5h6v6M12.5 3.5 7 9m3 3.5H3.5v-6" />
-          </svg>
-        </Link>
-      )}
+      <div className="combat-card-title">
+        <strong>{name}</strong>
+        {linkToCharacter && (
+          <Link className="combat-character-link" to="/character" aria-label="캐릭터 정보 보기">
+            <svg aria-hidden="true" viewBox="0 0 16 16">
+              <path d="M6.5 3.5h6v6M12.5 3.5 7 9m3 3.5H3.5v-6" />
+            </svg>
+          </Link>
+        )}
+      </div>
       {onInfoClick && (
         <button className="combat-info-button" type="button" onClick={onInfoClick} aria-label={`${name} 정보 보기`} aria-expanded={isInfoOpen}>
           <svg aria-hidden="true" viewBox="0 0 16 16">
@@ -565,7 +577,7 @@ function CombatHpCard({
         </button>
       )}
       {hasEssenceSlots && (
-        <button className={`combat-info-button ${linkToCharacter ? "combat-essence-info-button" : ""}`} type="button" onClick={() => setIsEssenceInfoOpen((current) => !current)} aria-label={`${name} 정수 정보 보기`} aria-expanded={isEssenceInfoOpen}>
+        <button className="combat-info-button" type="button" onClick={() => setIsEssenceInfoOpen((current) => !current)} aria-label={`${name} 정수 정보 보기`} aria-expanded={isEssenceInfoOpen}>
           <svg aria-hidden="true" viewBox="0 0 16 16">
             <circle cx="8" cy="8" r="5.5" />
             <path d="M8 7v3.5M8 5.2h.01" />
@@ -577,12 +589,12 @@ function CombatHpCard({
         {!isUnknown && shieldPercent > 0 && <em style={{ left: `${hpPercent}%`, width: `${shieldPercent}%` }} />}
       </div>
       <b>{isUnknown ? "HP ???" : <>HP {formatAmount(currentHp ?? 0)} / {formatAmount(maxHp ?? 0)}{shield > 0 && <span className="combat-hp-shield-value"> +{formatAmount(shield)} S</span>}</>}</b>
-      {essence && <b className="combat-essence">ESSENCE {essence.name} {formatEssenceGrade(essence.grade)}</b>}
+      {essence && <b className={`combat-essence ${activeEssenceCastNames?.has(essence.name) ? "is-triggered" : ""}`}>ESSENCE {essence.name} {formatEssenceGrade(essence.grade)}</b>}
       {detail && <CombatDetail {...detail} />}
       {essenceSlots && essenceSlots.length > 0 && (
         <div className="combat-essence-slots" aria-label="장착 중인 정수">
           {essenceSlots.map(({ slotIndex, essence }) => (
-            <b className="combat-essence-slot" key={slotIndex}>SLOT{slotIndex} {essence.name} {formatEssenceGrade(essence.grade)}</b>
+            <b className={`combat-essence-slot ${activeEssenceCastNames?.has(essence.name) ? "is-triggered" : ""}`} key={slotIndex}>SLOT{slotIndex} {essence.name} {formatEssenceGrade(essence.grade)}</b>
           ))}
         </div>
       )}
@@ -642,6 +654,25 @@ function formatCombatStat(value: number, digits: number) {
 
 function formatRecommendedLevel(ground: HuntGround) {
   return `추천 LV.${ground.recommendedMinLevel}–${ground.recommendedMaxLevel}`;
+}
+
+function getActiveEssenceCastNames(logs: HuntLogEntry[], playbackTenths: number) {
+  const activeWindowTenths = 8;
+  const active = { player: new Set<string>(), enemy: new Set<string>() };
+  for (const entry of logs) {
+    if (entry.kind !== "essence_cast" || !entry.name || playbackTenths - entry.timeTenths > activeWindowTenths) continue;
+    if (entry.source === "enemy") active.enemy.add(entry.name);
+    else active.player.add(entry.name);
+  }
+  return active;
+}
+
+function notifyInventoryReward(result: HuntResult, onInventoryReward?: (reward: { equipment: boolean; essence: boolean }) => void) {
+  if (result.status !== "victory" || !result.rewards) return;
+  onInventoryReward?.({
+    equipment: Boolean(result.rewards.equipment),
+    essence: Boolean(result.rewards.essence),
+  });
 }
 
 function formatEquipmentReward(equipment: NonNullable<HuntResult["rewards"]>["equipment"]) {
