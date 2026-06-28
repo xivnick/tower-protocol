@@ -200,6 +200,31 @@ function TrainingDummyGround({
     isLogPinnedToBottomRef.current = log.scrollHeight - log.scrollTop - log.clientHeight <= 16;
   }
 
+  async function syncLatestHuntAfterSettlementFailure(startedAt: string, isActive: () => boolean) {
+    const nextState = await getMyHuntState();
+    if (!isActive()) return true;
+    if (!nextState.ok || !nextState.state?.lastBattle) return false;
+
+    setHuntState(nextState.state);
+    onHuntStateChange(nextState.state);
+
+    const battle = nextState.state.lastBattle;
+    if (battle.startedAt !== startedAt) return false;
+
+    const restoredResult: HuntResult = { ok: true, character: null, huntState: nextState.state, ...battle, message: "" };
+    setFrozenPlaybackTenths(getElapsedTenths(battle.startedAt, battle.durationTicks));
+    setResult(restoredResult);
+    if (battle.status !== "in_progress" && battle.status !== "encountered") {
+      completedResultRef.current = restoredResult;
+      setLastResult(restoredResult);
+      void onCharacterRefresh();
+      return true;
+    }
+
+    settlementAttemptRef.current = null;
+    return true;
+  }
+
   useEffect(() => {
     if (!result || hasEncounteredMonster || isBattleInProgress || !isPlaybackComplete || completedResultRef.current === result) return;
 
@@ -240,10 +265,12 @@ function TrainingDummyGround({
     const timeoutId = window.setTimeout(() => {
       settlementAttemptRef.current = result.startedAt;
       setIsResolving(true);
-      void settleTrainingDummyHunt().then((nextResult) => {
+      void settleTrainingDummyHunt().then(async (nextResult) => {
         if (!isActive) return;
         setIsResolving(false);
         if (!nextResult.ok) {
+          const didSync = await syncLatestHuntAfterSettlementFailure(result.startedAt, () => isActive);
+          if (didSync || !isActive) return;
           showToast({ message: nextResult.message, tone: "error" });
           return;
         }
@@ -253,7 +280,7 @@ function TrainingDummyGround({
         setResult(nextResult);
         setLastResult(nextResult);
       });
-    }, 180);
+    }, 800);
 
     return () => {
       isActive = false;
