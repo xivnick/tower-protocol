@@ -900,26 +900,28 @@ function getRecoveredPlayerHp(huntState: HuntState | null, now: number) {
 }
 
 function getVisibleShield(logs: HuntLogEntry[], target: "player" | "enemy", playbackTenths: number) {
-  const reversedShieldLogIndex = [...logs].reverse().findIndex((entry) => entry.kind === "essence_shield" && entry.target === target);
-  const shieldLogIndex = reversedShieldLogIndex < 0 ? -1 : logs.length - 1 - reversedShieldLogIndex;
-  if (shieldLogIndex < 0) return 0;
-
-  const shieldLog = logs[shieldLogIndex];
-  const durationTenths = shieldLog.grade === 5 ? 50 : 40;
-  if (playbackTenths > shieldLog.timeTenths + durationTenths) return 0;
-
-  return logs.slice(shieldLogIndex + 1)
+  return logs
     .filter((entry) => entry.timeTenths <= playbackTenths && entry.target === target)
-    .reduce((remaining, entry) => {
-      if (remaining <= 0) return 0;
+    .reduce<{ amount: number; expiresAt: number }>((shield, entry) => {
+      const current = entry.timeTenths > shield.expiresAt ? { amount: 0, expiresAt: 0 } : shield;
+      if (entry.kind === "essence_shield") {
+        return {
+          amount: current.amount + entry.amount,
+          expiresAt: Math.max(current.expiresAt, entry.timeTenths + getShieldDurationTenths(entry)),
+        };
+      }
       if (entry.kind === "shield_absorb") {
-        return entry.shieldRemaining ?? Math.max(0, remaining - entry.amount);
+        return { ...current, amount: Math.max(0, current.amount - entry.amount) };
       }
       if (entry.shieldAbsorbed && entry.shieldAbsorbed > 0) {
-        return Math.max(0, remaining - entry.shieldAbsorbed);
+        return { ...current, amount: Math.max(0, current.amount - entry.shieldAbsorbed) };
       }
-      return remaining;
-    }, shieldLog.amount);
+      return current;
+    }, { amount: 0, expiresAt: 0 }).amount;
+}
+
+function getShieldDurationTenths(entry: HuntLogEntry) {
+  return entry.grade === 5 ? 50 : 40;
 }
 
 function getElapsedTenths(startedAt: string, durationTicks: number, now = Date.now()) {
