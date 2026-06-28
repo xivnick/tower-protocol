@@ -1325,6 +1325,7 @@ button:disabled {
 
 .hunt-screen {
   align-content: start;
+  overflow-anchor: none;
 }
 
 .hunt-location-picker {
@@ -1693,13 +1694,12 @@ button:disabled {
 }
 
 .combat-card-expansion {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 180ms ease;
+  display: none;
 }
 
 .combat-card-expansion.is-expanded {
-  max-height: 420px;
+  display: block;
+  contain: layout paint;
 }
 
 .combat-card-detail {
@@ -1798,6 +1798,8 @@ button:disabled {
   background: var(--bg-2);
   margin: 14px 0 0;
   padding: 12px;
+  contain: paint;
+  overflow-anchor: none;
 }
 
 .combat-log li {
