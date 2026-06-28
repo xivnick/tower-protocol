@@ -50,7 +50,8 @@ export function calculateEvasionRate(evasion: number, opponentAccuracy: number) 
 }
 
 export function calculateCombatStats(character: Character, weaponBonus: WeaponCombatBonus = {}, armorBonus: ArmorCombatBonus = {}) {
-  const maxHp = 100 + character.level * 20 + character.vitality * 10;
+  const baseAttack = combatBaseAttack(character.level);
+  const maxHp = 100 + character.level * 30 + character.vitality * 10;
   const attackSpeed = 100 + character.agility;
   const accuracy = (100 + character.dexterity) * (1 - (weaponBonus.accuracyPenaltyPct ?? 0) / 100);
   const evasion = (character.agility + (armorBonus.evasionFlat ?? 0)) * (1 + (armorBonus.evasionPct ?? 0) / 100);
@@ -65,8 +66,8 @@ export function calculateCombatStats(character: Character, weaponBonus: WeaponCo
   const regenerationRatePerSecond = (regeneration / 3000) * 100;
 
   return {
-    physicalAttack: (character.strength + (weaponBonus.physicalAttackFlat ?? 0)) * (1 + (weaponBonus.physicalAttackPct ?? 0) / 100),
-    magicAttack: (character.intelligence + (weaponBonus.magicAttackFlat ?? 0)) * (1 + (weaponBonus.magicAttackPct ?? 0) / 100),
+    physicalAttack: (baseAttack + character.strength + (weaponBonus.physicalAttackFlat ?? 0)) * (1 + (weaponBonus.physicalAttackPct ?? 0) / 100),
+    magicAttack: (baseAttack + character.intelligence + (weaponBonus.magicAttackFlat ?? 0)) * (1 + (weaponBonus.magicAttackPct ?? 0) / 100),
     physicalDefense,
     magicDefense,
     finalDefense,
@@ -86,4 +87,8 @@ export function calculateCombatStats(character: Character, weaponBonus: WeaponCo
     damageTakenReduction: armorBonus.damageTakenReductionPct ?? 0,
     reflectDamage: armorBonus.reflectDamageFlat ?? 0,
   };
+}
+
+export function combatBaseAttack(level: number) {
+  return Math.max(0, level);
 }

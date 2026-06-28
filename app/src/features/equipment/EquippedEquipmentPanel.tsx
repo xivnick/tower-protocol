@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import type { Armor, Weapon } from "../../api/equipmentApi";
 import { calculateArmorCombatBonus } from "../../shared/armorStats";
+import { combatBaseAttack } from "../../shared/stats";
+import { bowAccuracyPenalty, bowFixedDamage } from "../../shared/weaponStats";
 import type { Character } from "../../types/character";
 
 const weaponNames = {
@@ -12,7 +14,7 @@ const weaponNames = {
   staff: "지팡이",
 } as const;
 
-export function EquippedEquipmentPanel({ weapon, armor = null, character = null, weaponAction, armorAction, headerAction }: { weapon: Weapon | null; armor?: Armor | null; character?: Character | null; weaponAction?: ReactNode; armorAction?: ReactNode; headerAction?: ReactNode }) {
+export function EquippedEquipmentPanel({ weapon, armor = null, character = null, isLoading = false, weaponAction, armorAction, headerAction }: { weapon: Weapon | null; armor?: Armor | null; character?: Character | null; isLoading?: boolean; weaponAction?: ReactNode; armorAction?: ReactNode; headerAction?: ReactNode }) {
   return (
     <article className="panel">
       <div className="panel-head action-head">
@@ -20,8 +22,8 @@ export function EquippedEquipmentPanel({ weapon, armor = null, character = null,
         {headerAction}
       </div>
       <div className="equipped-summary">
-        <div className="equipped-summary-row"><span>WEAPON</span>{weapon ? <div className="equipped-summary-content"><strong><b>{weaponLabel(weapon)}</b><small>{weaponEffect(weapon, character)}</small></strong>{weaponAction}</div> : <strong>장착한 무기 없음</strong>}</div>
-        <div className="equipped-summary-row"><span>ARMOR</span>{armor ? <div className="equipped-summary-content"><strong><b>{armorLabel(armor)}</b><small>{armorEffect(armor, character)}</small></strong>{armorAction}</div> : <strong>장착한 방어구 없음</strong>}</div>
+        <div className="equipped-summary-row"><span>WEAPON</span>{weapon ? <div className="equipped-summary-content"><strong><span className="equipped-summary-title"><b>{weaponLabel(weapon)}</b>{weaponAction}</span><small>{weaponEffect(weapon, character)}</small></strong></div> : <strong>{isLoading ? "장비 불러오는 중..." : "장착한 무기 없음"}</strong>}</div>
+        <div className="equipped-summary-row"><span>ARMOR</span>{armor ? <div className="equipped-summary-content"><strong><span className="equipped-summary-title"><b>{armorLabel(armor)}</b>{armorAction}</span><small>{armorEffect(armor, character)}</small></strong></div> : <strong>{isLoading ? "장비 불러오는 중..." : "장착한 방어구 없음"}</strong>}</div>
       </div>
     </article>
   );
@@ -85,15 +87,15 @@ export function weaponEffect(weapon: Weapon, character: Character | null = null)
   const level = weapon.weaponLevel;
   const power = 3 + Math.floor(level * 1.5);
   if (weapon.weaponType === "longsword") return `물리 공격력 +${power}`;
-  if (weapon.weaponType === "greatsword") return formatPercentBonus("물리 공격력", percentWeaponBonus(level), character?.strength);
+  if (weapon.weaponType === "greatsword") return formatPercentBonus("물리 공격력", percentWeaponBonus(level), character ? combatBaseAttack(character.level) + character.strength : undefined);
   if (weapon.weaponType === "dagger") return <>{formatPercentBonus("명중", -Math.min(23, 15 + Math.floor((level - 1) / 12)), character ? 100 + character.dexterity : undefined)}{", "}{formatPercentBonus("전체 공속", 20 + Math.floor(level * 0.2), character ? 1 + character.agility / 100 : undefined)}</>;
-  if (weapon.weaponType === "bow") return <>{formatPercentBonus("명중", -Math.min(18, 10 + Math.floor((level - 1) / 12)), character ? 100 + character.dexterity : undefined)}{", "}+{2 + Math.floor(level * 1.1)} 고정 피해</>;
+  if (weapon.weaponType === "bow") return <>{formatPercentBonus("명중", -bowAccuracyPenalty(level), character ? 100 + character.dexterity : undefined)}{", "}+{bowFixedDamage(level)} 고정 피해</>;
   if (weapon.weaponType === "wand") return `마법 공격력 +${power}`;
-  return formatPercentBonus("마법 공격력", percentWeaponBonus(level), character?.intelligence);
+  return formatPercentBonus("마법 공격력", percentWeaponBonus(level), character ? combatBaseAttack(character.level) + character.intelligence : undefined);
 }
 
 function percentWeaponBonus(level: number) {
-  return Math.floor((20 + level * 0.5) * 10) / 10;
+  return Math.floor((15 + level * 0.4) * 10) / 10;
 }
 
 function formatPercent(value: number) {

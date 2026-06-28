@@ -10,6 +10,7 @@ import { configureAutoHunt, encounterHuntMonster, getMyHuntState, huntTrainingDu
 import type { HuntState } from "../../api/characterApi";
 import { CharacterScreen } from "../character/CharacterScreen";
 import { EquipmentScreen } from "../equipment/EquipmentScreen";
+import { EssenceScreen } from "../essence/EssenceScreen";
 import { DashboardScreen } from "../dashboard/DashboardScreen";
 import { HuntScreen } from "../hunt/HuntScreen";
 import { PatchNotesArchive } from "../patchNotes/PatchNotes";
@@ -22,6 +23,7 @@ const navItems = [
   { label: "탑", to: "/tower", enabled: false },
   { label: "캐릭터", to: "/character", enabled: true },
   { label: "장비", to: "/equipment", enabled: true },
+  { label: "정수", to: "/essences", enabled: true },
   { label: "랭킹", to: "/ranking", enabled: true },
   { label: "패치노트", to: "/patch-notes", enabled: true },
 ];
@@ -99,7 +101,7 @@ export function AppShell({
         } else if (nextResult.status === "timed_out") {
           showToast(toastMessages.hunt.timedOut());
         } else {
-          showToast(toastMessages.hunt.completed(nextResult.gainedExperience));
+          showToast(toastMessages.hunt.completed(nextResult.gainedExperience, nextResult.gainedCredits ?? nextResult.rewards?.credits ?? 0));
         }
         if (nextResult.status === "victory" && nextResult.levelAfter > nextResult.levelBefore) {
           showToast(toastMessages.character.levelUp(nextResult.levelAfter));
@@ -356,6 +358,7 @@ export function AppShell({
               <Route path="/" element={<DashboardScreen session={session} profile={profile} character={character} huntState={activeHuntState} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />} />
               <Route path="/character" element={<CharacterScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />} />
               <Route path="/equipment" element={<EquipmentScreen character={character} onCharacterChange={onCharacterChange} />} />
+              <Route path="/essences" element={<EssenceScreen character={character} />} />
               <Route path="/hunt" element={<HuntScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={handleHuntStateChange} />} />
               <Route path="/ranking" element={<RankingScreen />} />
               <Route path="/patch-notes" element={<PatchNotesArchive />} />
@@ -372,6 +375,7 @@ export function AppShell({
 function getCurrentNavLabel(pathname: string) {
   if (pathname.startsWith("/character")) return "캐릭터";
   if (pathname.startsWith("/equipment")) return "장비";
+  if (pathname.startsWith("/essences")) return "정수";
   if (pathname.startsWith("/hunt")) return "사냥";
   if (pathname.startsWith("/ranking")) return "랭킹";
   if (pathname.startsWith("/patch-notes")) return "패치노트";

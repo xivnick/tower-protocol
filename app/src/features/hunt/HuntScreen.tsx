@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { configureAutoHunt, encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
-import type { HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
+import { configureAutoHunt, encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getHuntGrounds, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
+import type { HuntGround, HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
+import { getEssenceEffect } from "../../shared/essenceDetails";
 import type { Character } from "../../types/character";
 import type { ToastInput } from "../../types/toast";
 import { toastMessages } from "../../shared/toastMessages";
@@ -13,13 +14,13 @@ import { useToast } from "../toast/ToastProvider";
 const trainingDummy = {
   maxHp(level: number) {
     const vitality = 10 + ((level - 1) * 5);
-    return 100 + (level * 20) + (vitality * 10);
+    return 100 + (level * 30) + (vitality * 10);
   },
 };
 
-const HUNT_GROUNDS = [
-  { id: "training-dummy", name: "허수아비 훈련장", recommendedLevel: "추천 LV.1–100" },
-  { id: "wooden-doll", name: "목각인형 훈련장", recommendedLevel: "추천 LV.1–100" },
+const DEFAULT_HUNT_GROUNDS: HuntGround[] = [
+  { id: "training-dummy", name: "허수아비 훈련장", recommendedMinLevel: 1, recommendedMaxLevel: 20 },
+  { id: "wooden-doll", name: "목각인형 훈련장", recommendedMinLevel: 1, recommendedMaxLevel: 20 },
 ];
 
 export function HuntScreen({
@@ -78,9 +79,11 @@ function TrainingDummyGround({
   const [isStartingBattle, setIsStartingBattle] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
+  const [huntGrounds, setHuntGrounds] = useState<HuntGround[]>(DEFAULT_HUNT_GROUNDS);
   const [now, setNow] = useState(Date.now());
   const [frozenPlaybackTenths, setFrozenPlaybackTenths] = useState(0);
   const logRef = useRef<HTMLOListElement>(null);
+  const isLogPinnedToBottomRef = useRef(true);
   const completedResultRef = useRef<HuntResult | null>(null);
   const settlementAttemptRef = useRef<string | null>(null);
   const autoActionRef = useRef<string | null>(null);
@@ -90,7 +93,7 @@ function TrainingDummyGround({
   const remainingTenths = Math.max(0, Math.ceil((availableAt - now) / 100));
   const combatStats = calculateCombatStats(character);
   const selectedGroundId = huntState?.selectedHuntGroundId ?? "training-dummy";
-  const selectedGround = HUNT_GROUNDS.find((ground) => ground.id === selectedGroundId) ?? HUNT_GROUNDS[0];
+  const selectedGround = huntGrounds.find((ground) => ground.id === selectedGroundId) ?? huntGrounds[0] ?? DEFAULT_HUNT_GROUNDS[0];
   const dummyMaxHp = result?.enemy.maxHp ?? trainingDummy.maxHp(character.level);
   const isBattleInProgress = result?.status === "in_progress";
   const combatNow = useCombatClock(isBattleInProgress);
@@ -98,10 +101,12 @@ function TrainingDummyGround({
     ? getElapsedTenths(result.startedAt, result.durationTicks, combatNow)
     : frozenPlaybackTenths;
   const visibleLogs = useMemo(() => result?.logs.filter((entry) => entry.timeTenths <= playbackTenths) ?? [], [playbackTenths, result]);
-  const displayedLogs = useMemo(() => groupCombatLogs(visibleLogs), [visibleLogs]);
+  const displayedLogs = useMemo(() => groupCombatLogs(withEssenceStatusLogs(visibleLogs)), [visibleLogs]);
   const enemyLogs = visibleLogs.filter((entry) => entry.target !== "player");
   const playerLogs = visibleLogs.filter((entry) => entry.target === "player");
   const targetHp = enemyLogs.length > 0 ? enemyLogs[enemyLogs.length - 1].targetHp : dummyMaxHp;
+  const playerShield = useMemo(() => isBattleInProgress ? getVisibleShield(visibleLogs, "player", playbackTenths) : 0, [isBattleInProgress, playbackTenths, visibleLogs]);
+  const enemyShield = useMemo(() => isBattleInProgress ? getVisibleShield(visibleLogs, "enemy", playbackTenths) : 0, [isBattleInProgress, playbackTenths, visibleLogs]);
   const hasEncounteredMonster = result?.status === "encountered";
   const recoveredPlayerHp = getRecoveredPlayerHp(huntState, now);
   const playerHp = isBattleInProgress
@@ -130,6 +135,11 @@ function TrainingDummyGround({
   useEffect(() => {
     let isActive = true;
 
+    void getHuntGrounds().then((result) => {
+      if (!isActive || !result.ok || result.grounds.length === 0) return;
+      setHuntGrounds(result.grounds);
+    });
+
     void getMyHuntState().then((nextState) => {
       if (!isActive || !nextState.ok || !nextState.state) return;
 
@@ -155,10 +165,20 @@ function TrainingDummyGround({
   }, [isRecovering, isRecoveryLocked, remainingTenths]);
 
   useEffect(() => {
-    if (visibleLogs.length > 0 && logRef.current) {
+    if (visibleLogs.length > 0 && logRef.current && isLogPinnedToBottomRef.current) {
       logRef.current.scrollTop = logRef.current.scrollHeight;
     }
   }, [visibleLogs.length]);
+
+  useEffect(() => {
+    isLogPinnedToBottomRef.current = true;
+  }, [result?.startedAt]);
+
+  function handleCombatLogScroll() {
+    const log = logRef.current;
+    if (!log) return;
+    isLogPinnedToBottomRef.current = log.scrollHeight - log.scrollTop - log.clientHeight <= 16;
+  }
 
   useEffect(() => {
     if (!result || hasEncounteredMonster || isBattleInProgress || !isPlaybackComplete || completedResultRef.current === result) return;
@@ -185,7 +205,7 @@ function TrainingDummyGround({
 
     completedResultRef.current = result;
     onCharacterChange(result.character);
-    showToast(toastMessages.hunt.completed(result.gainedExperience));
+    showToast(toastMessages.hunt.completed(result.gainedExperience, result.gainedCredits ?? result.rewards?.credits ?? 0));
 
     if (result.levelAfter > result.levelBefore) {
       showToast(toastMessages.character.levelUp(result.levelAfter));
@@ -377,14 +397,14 @@ function TrainingDummyGround({
         >
           <span>{isGoingToDifferentGround ? "GOING TO.." : "LOCATION"}</span>
           <strong>{selectedGround.name}</strong>
-          <small>{selectedGround.recommendedLevel}</small>
+          <small>{formatRecommendedLevel(selectedGround)}</small>
           <svg className="hunt-location-icon" aria-hidden="true" viewBox="0 0 16 16">
             <path d="m4 6 4 4 4-4" />
           </svg>
         </button>
         {isLocationMenuOpen && (
           <div className="hunt-location-menu" id="hunt-location-menu" role="menu" aria-label="사냥터 선택">
-            {HUNT_GROUNDS.map((ground) => (
+            {huntGrounds.map((ground) => (
               <button
                 className={ground.id === selectedGroundId ? "is-selected" : ""}
                 type="button"
@@ -394,7 +414,7 @@ function TrainingDummyGround({
                 onClick={() => void handleGroundChange(ground.id)}
               >
                 <strong>{ground.name}</strong>
-                <small>{ground.recommendedLevel}</small>
+                <small>{formatRecommendedLevel(ground)}</small>
               </button>
             ))}
           </div>
@@ -433,6 +453,7 @@ function TrainingDummyGround({
               name={result ? `LV.${result.player.level} ${result.player.name}` : `LV.${character.level} ${character.name}`}
               currentHp={playerHp}
               maxHp={result?.player.maxHp ?? huntState?.playerMaxHp ?? combatStats.maxHp}
+              shield={playerShield}
               detail={{ value: `EXP ${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()}`, percent: experiencePercent, isExperience: true }}
               linkToCharacter
             />
@@ -441,21 +462,26 @@ function TrainingDummyGround({
               name={result ? `LV.${result.enemy.level} ${result.enemy.name}` : "???"}
               currentHp={result ? targetHp : null}
               maxHp={result ? dummyMaxHp : null}
+              shield={enemyShield}
+              essence={result?.enemy.essence}
               onInfoClick={result?.enemy.info ? () => setIsMonsterInfoOpen((current) => !current) : undefined}
               isInfoOpen={isMonsterInfoOpen}
               isExpanded={isMonsterInfoOpen}
-              expandedContent={result?.enemy.info ? <MonsterInfoStats info={result.enemy.info} /> : null}
+              expandedContent={result?.enemy.info ? <MonsterInfoStats info={result.enemy.info} essence={result.enemy.essence} /> : null}
             />
           </div>
-          <ol className="combat-log" aria-label="전투 로그" ref={logRef}>
+          <ol className="combat-log" aria-label="전투 로그" ref={logRef} onScroll={handleCombatLogScroll}>
             {result ? (
               <>
-                {displayedLogs.map((log, index) => (
-                  <li className={`is-${log.kind}`} key={`${log.timeTenths}-${log.kind}-${index}`}>
-                    <time className={getLogTimeTone(log.entries[0])}>[{formatTime(log.timeTenths)}]</time>
-                    <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(log.entries[0], result.player.name, result.enemy.name, result.enemy.level, result.gainedExperience)}</span>
-                  </li>
-                ))}
+                {displayedLogs.map((log, index) => {
+                  const entry = log.entries[0];
+                  const previousEntry = index > 0 ? displayedLogs[index - 1].entries[0] : undefined;
+                  const isLinkedLog = isLinkedCombatLog(entry, previousEntry);
+                  return <li className={`is-${log.kind} ${isLinkedLog ? "is-linked" : ""}`} key={`${log.timeTenths}-${log.kind}-${index}`}>
+                    <time className={getLogTimeTone(entry)} aria-hidden={isLinkedLog}>{isLinkedLog ? "" : `[${formatTime(log.timeTenths)}]`}</time>
+                    <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(entry, result.player.name, result.enemy.name, result.enemy.level, result.gainedExperience, result.gainedCredits ?? result.rewards?.credits ?? 0)}</span>
+                  </li>;
+                })}
               </>
             ) : (
               <li className="is-empty">{hasEncounteredMonster ? "조우 완료. 전투를 시작하세요." : "몬스터 찾기를 기다리고 있습니다."}</li>
@@ -472,6 +498,8 @@ function CombatHpCard({
   name,
   currentHp,
   maxHp,
+  shield = 0,
+  essence,
   detail,
   linkToCharacter = false,
   onInfoClick,
@@ -483,6 +511,8 @@ function CombatHpCard({
   name: string;
   currentHp: number | null;
   maxHp: number | null;
+  shield?: number;
+  essence?: { code: string; name: string; grade: number };
   detail?: { value: string; percent: number; isUnknown?: boolean; isExperience?: boolean };
   linkToCharacter?: boolean;
   onInfoClick?: () => void;
@@ -491,7 +521,9 @@ function CombatHpCard({
   expandedContent?: ReactNode;
 }) {
   const isUnknown = currentHp === null || maxHp === null;
-  const hpPercent = isUnknown ? 0 : Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
+  const barMaximum = isUnknown ? 0 : Math.max(maxHp, currentHp + shield);
+  const hpPercent = isUnknown || barMaximum === 0 ? 0 : Math.max(0, Math.min(100, (currentHp / barMaximum) * 100));
+  const shieldPercent = isUnknown || barMaximum === 0 ? 0 : Math.max(0, Math.min(100 - hpPercent, (shield / barMaximum) * 100));
 
   return (
     <div className="combat-hp-card">
@@ -514,30 +546,37 @@ function CombatHpCard({
       )}
       <div className={`combat-hp ${isUnknown ? "is-unknown" : ""}`} role="progressbar" aria-label={`${name} 체력`} aria-valuemin={0} aria-valuemax={maxHp ?? undefined} aria-valuenow={currentHp ?? undefined}>
         {!isUnknown && <i style={{ width: `${hpPercent}%` }} />}
+        {!isUnknown && shieldPercent > 0 && <em style={{ left: `${hpPercent}%`, width: `${shieldPercent}%` }} />}
       </div>
-      <b>{isUnknown ? "HP ???" : `HP ${formatAmount(currentHp ?? 0)} / ${formatAmount(maxHp ?? 0)}`}</b>
+      <b>{isUnknown ? "HP ???" : <>HP {formatAmount(currentHp ?? 0)} / {formatAmount(maxHp ?? 0)}{shield > 0 && <span className="combat-hp-shield-value"> +{formatAmount(shield)} S</span>}</>}</b>
+      {essence && <b className="combat-essence">ESSENCE {essence.name} {formatEssenceGrade(essence.grade)}</b>}
       {detail && <CombatDetail {...detail} />}
       {expandedContent && <div className={`combat-card-expansion ${isExpanded ? "is-expanded" : ""}`}><div>{expandedContent}</div></div>}
     </div>
   );
 }
 
-function MonsterInfoStats({ info }: { info: MonsterInfo }) {
+function MonsterInfoStats({ info, essence }: { info: MonsterInfo; essence?: { code: string; name: string; grade: number } }) {
   return (
-    <div className="combat-stat-grid monster-info-stats">
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalAttack} value={info.physicalAttack} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.magicAttack} value={info.magicAttack} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalDefense} value={info.physicalDefense} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.magicDefense} value={info.magicDefense} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.maxHp} value={info.maxHp} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.regeneration} value={(info.regeneration / info.maxHp) * 100} suffix="%/초" digits={1} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.attackSpeed} value={info.attacksPerSecond} digits={2} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.cooldownReduction} value={info.cooldownReduction * 100} suffix="%" digits={1} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.accuracy} value={info.accuracy} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.evasionRate} value={info.evasionRate} suffix="%" digits={1} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.criticalChance} value={info.criticalChance} suffix="%" digits={1} />
-      <MonsterCombatStat {...COMBAT_STAT_LABELS.criticalDamage} value={info.criticalDamage} suffix="%" />
-    </div>
+    <>
+      {essence && (
+        <p className="monster-info-essence">{getEssenceEffect(essence)}</p>
+      )}
+      <div className="combat-stat-grid monster-info-stats">
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalAttack} value={info.physicalAttack} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.magicAttack} value={info.magicAttack} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.physicalDefense} value={info.physicalDefense} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.magicDefense} value={info.magicDefense} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.maxHp} value={info.maxHp} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.regeneration} value={(info.regeneration / info.maxHp) * 100} suffix="%/초" digits={1} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.attackSpeed} value={info.attacksPerSecond} digits={2} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.cooldownReduction} value={info.cooldownReduction * 100} suffix="%" digits={1} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.accuracy} value={info.accuracy} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.evasionRate} value={info.evasionRate} suffix="%" digits={1} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.criticalChance} value={info.criticalChance} suffix="%" digits={1} />
+        <MonsterCombatStat {...COMBAT_STAT_LABELS.criticalDamage} value={info.criticalDamage} suffix="%" />
+      </div>
+    </>
   );
 }
 
@@ -555,6 +594,33 @@ function MonsterCombatStat({ label, shortLabel, value, suffix = "", digits = 0 }
 
 function formatCombatStat(value: number, digits: number) {
   return digits > 0 ? value.toFixed(digits) : Math.round(value).toLocaleString();
+}
+
+function formatRecommendedLevel(ground: HuntGround) {
+  return `추천 LV.${ground.recommendedMinLevel}–${ground.recommendedMaxLevel}`;
+}
+
+function formatEquipmentReward(equipment: NonNullable<HuntResult["rewards"]>["equipment"]) {
+  if (!equipment) return "";
+  if (equipment.kind === "weapon") return `LV.${equipment.level} ${getWeaponLabel(equipment.type)}`;
+  return `LV.${equipment.level} ${getArmorLabel(equipment.type)}`;
+}
+
+function getWeaponLabel(weaponType: string) {
+  if (weaponType === "longsword") return "장검";
+  if (weaponType === "greatsword") return "대검";
+  if (weaponType === "dagger") return "단검";
+  if (weaponType === "bow") return "활";
+  if (weaponType === "wand") return "완드";
+  if (weaponType === "staff") return "스태프";
+  return weaponType;
+}
+
+function getArmorLabel(armorType: string) {
+  if (armorType === "plate") return "판금갑옷";
+  if (armorType === "leather") return "가죽갑옷";
+  if (armorType === "robe") return "로브";
+  return armorType;
 }
 
 function CombatDetail({ value, percent, isUnknown = false, isExperience = false }: { value: string; percent: number; isUnknown?: boolean; isExperience?: boolean }) {
@@ -579,6 +645,9 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
   const resultStatus = result.status === "fled" ? "도망침" : result.status === "timed_out" ? "시간 초과" : result.status === "defeated" ? "전투에서 패배했습니다." : null;
   const seconds = durationTicks / 10;
   const dps = seconds > 0 ? (totalDamage / seconds).toFixed(1) : "0.0";
+  const credits = result.gainedCredits ?? result.rewards?.credits ?? 0;
+  const equipmentReward = result.rewards?.equipment;
+  const essenceReward = result.rewards?.essence;
 
   return (
     <article className="panel last-battle-result-panel">
@@ -590,6 +659,9 @@ function HuntResultPanel({ result }: { result: HuntResult }) {
         <Kv label="전투 시간" value={formatTime(durationTicks)} />
         <Kv label="DPS" value={dps} />
         <Kv label={resultStatus ? "전투 결과" : "경험치"} value={resultStatus ?? `+${result.gainedExperience} EXP`} />
+        {!resultStatus && <Kv label="크레딧" value={`+${credits.toLocaleString()} CR`} />}
+        {!resultStatus && equipmentReward && <Kv label="장비" value={formatEquipmentReward(equipmentReward)} />}
+        {!resultStatus && essenceReward && <Kv label="정수" value={`${essenceReward.name} I`} />}
       </div>
     </article>
   );
@@ -599,33 +671,56 @@ function Kv({ label, value }: { label: string; value: string }) {
   return <div><span>{label}</span><strong>{value}</strong></div>;
 }
 
-function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: string, enemyLevel: number, gainedExperience: number): ReactNode {
-  const damage = <b className="combat-log-damage">-{formatAmount(entry.amount)} HP</b>;
+function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: string, enemyLevel: number, gainedExperience: number, gainedCredits: number): ReactNode {
+  const damage = entry.shieldAbsorbed && entry.shieldAbsorbed > 0
+    ? <>{<b className="combat-log-shield">-{formatAmount(entry.shieldAbsorbed)} S</b>}{entry.amount > 0 && <> <b className="combat-log-damage">-{formatAmount(entry.amount)} HP</b></>}</>
+    : <b className="combat-log-damage">-{formatAmount(entry.amount)} HP</b>;
   const recovery = <b className="combat-log-recovery">+{formatAmount(entry.amount)} HP</b>;
-  if (entry.kind === "encounter") return `LV.${enemyLevel} ${enemyName}과 조우했습니다.`;
-  if (entry.kind === "defeat") return `전투 승리 +${gainedExperience} EXP`;
+  const essenceUser = entry.source === "enemy" ? enemyName : playerName;
+  const essenceName = entry.name ?? "정수";
+  const essenceLabel = entry.grade ? `${essenceName} ${formatEssenceGrade(entry.grade)}` : essenceName;
+  const essenceSourceClass = entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player";
+  if (entry.kind === "encounter") return `LV.${enemyLevel} ${enemyName}${withAnd(enemyName)} 조우했습니다.`;
+  if (entry.kind === "defeat") return `전투 승리 · +${gainedExperience} EXP · +${gainedCredits} CR`;
   if (entry.kind === "player_defeat") return "전투에서 패배했습니다.";
   if (entry.kind === "fled") return "전투에서 도망쳤습니다.";
   if (entry.kind === "timeout") return "시간 초과 · 전투 종료";
+  if (entry.kind === "essence_cast") return <><b className={entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{essenceUser}</b> · <b className="combat-log-essence-cast">{essenceLabel}</b></>;
+  if (entry.kind === "essence_status") {
+    if (entry.timeTenths === 0 && entry.parentSequence === undefined) {
+      return <><b className={essenceSourceClass}>{essenceUser}</b> · <b className="combat-log-essence-cast">{essenceLabel}</b></>;
+    }
+    return <><b className={essenceSourceClass}>{essenceName}</b> {entry.effect ?? "효과 준비"}</>;
+  }
+  if (entry.kind === "essence_damage") return formatTargetedEssenceEffect(entry, essenceName, entry.effect ?? "피해", damage);
+  if (entry.kind === "essence_dot") return formatTargetedEssenceEffect(entry, essenceName, "독 피해", damage);
+  if (entry.kind === "essence_heal") return <><b className={essenceSourceClass}>{essenceName}</b> 회복 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {recovery}</>;
+  if (entry.kind === "essence_shield") return <><b className={essenceSourceClass}>{essenceName}</b> 방어막 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> <b className="combat-log-shield">+{formatAmount(entry.amount)} S</b></>;
+  if (entry.kind === "shield_absorb") return <><b className={entry.target === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{entry.target === "enemy" ? enemyName : playerName}</b> 방어막 흡수 <b className="combat-log-shield">-{formatAmount(entry.amount)} S</b></>;
+  if (entry.kind === "essence_extra_hit") return formatTargetedEssenceEffect(entry, essenceName, "추가타", damage);
+  if (entry.kind === "essence_reflect") return formatTargetedEssenceEffect(entry, essenceName, "반격", damage);
   if (entry.kind === "miss") return <><b className="combat-log-player">{playerName}</b> 공격이 빗나갔습니다.</>;
   if (entry.kind === "enemy_miss") return <><b className="combat-log-enemy">{enemyName}</b> 공격을 <b className="combat-log-evasion">회피</b>했습니다.</>;
   if (entry.kind === "regeneration") return <><b className="combat-log-enemy">{enemyName}</b> 재생 {recovery}</>;
   if (entry.kind === "player_regeneration") return <><b className="combat-log-player">{playerName}</b> 재생 {recovery}</>;
   if (entry.kind === "enemy_attack") return <><b className="combat-log-enemy">{enemyName}</b> 공격 <i className="combat-log-arrow is-enemy">≫</i> {damage}</>;
+  if (entry.kind === "enemy_critical") return <><b className="combat-log-enemy">{enemyName}</b> <b className="combat-log-critical">치명타</b> <i className="combat-log-arrow is-enemy">≫</i> {damage}</>;
   if (entry.kind === "reflect") return <><b className="combat-log-player">{playerName}</b> 반사 피해 <i className="combat-log-arrow is-player">≫</i> {damage}</>;
   if (entry.kind === "critical") return <><b className="combat-log-player">{playerName}</b> <b className="combat-log-critical">치명타</b> <i className="combat-log-arrow is-player">≫</i> {damage}</>;
   return <><b className="combat-log-player">{playerName}</b> 공격 <i className="combat-log-arrow is-player">≫</i> {damage}</>;
 }
 
 function getLogTimeTone(entry: HuntLogEntry) {
-  if (entry.kind === "enemy_attack" || entry.kind === "enemy_miss") return "is-enemy-action";
-  if (entry.kind === "attack" || entry.kind === "critical" || entry.kind === "miss" || entry.kind === "reflect") return "is-player-action";
+  if (entry.kind === "enemy_attack" || entry.kind === "enemy_critical" || entry.kind === "enemy_miss" || (entry.kind.startsWith("essence_") && entry.source === "enemy")) return "is-enemy-action";
+  if (entry.kind === "attack" || entry.kind === "critical" || entry.kind === "miss" || entry.kind === "reflect" || (entry.kind.startsWith("essence_") && entry.source === "player")) return "is-player-action";
   return "";
 }
 
 function groupCombatLogs(logs: HuntLogEntry[]) {
   const groups: Array<{ kind: HuntLogEntry["kind"] | "combined_regeneration"; timeTenths: number; entries: HuntLogEntry[] }> = [];
-  for (const entry of logs) {
+  const orderedLogs = orderCombatLogs(logs);
+
+  for (const entry of orderedLogs) {
     const previous = groups[groups.length - 1];
     const isRegeneration = entry.kind === "regeneration" || entry.kind === "player_regeneration";
     if (isRegeneration && previous?.kind === "combined_regeneration" && previous.timeTenths === entry.timeTenths) {
@@ -637,12 +732,108 @@ function groupCombatLogs(logs: HuntLogEntry[]) {
   return groups;
 }
 
+function withEssenceStatusLogs(logs: HuntLogEntry[]) {
+  const result: HuntLogEntry[] = [];
+  for (const entry of logs) {
+    result.push(entry);
+    if (entry.kind !== "essence_cast") continue;
+    const effect = getEssenceStatusEffect(entry.name);
+    if (!effect) continue;
+    result.push({
+      ...entry,
+      kind: "essence_status",
+      amount: 0,
+      effect,
+      sequence: entry.sequence === undefined ? undefined : entry.sequence + 0.001,
+      parentSequence: entry.sequence,
+    });
+  }
+  return result;
+}
+
+function getEssenceStatusEffect(name?: string) {
+  if (!name) return "";
+  if (name.includes("분노한 멧돼지")) return "일반공격 강화";
+  if (name.includes("숲 늑대")) return "일반공격 추가타";
+  if (name.includes("붉은가시 맹수")) return "가시 상태";
+  if (name.includes("칼날 딱정벌레")) return "출혈 준비";
+  if (name.includes("수정 도마뱀")) return "마법 추가피해";
+  return "";
+}
+
+function orderCombatLogs(logs: HuntLogEntry[]) {
+  if (logs.some((entry) => entry.sequence !== undefined)) {
+    return logs;
+  }
+
+  const ordered: HuntLogEntry[] = [];
+  let tickEntries: HuntLogEntry[] = [];
+
+  for (const entry of logs) {
+    if (tickEntries.length > 0 && tickEntries[0].timeTenths !== entry.timeTenths) {
+      ordered.push(...orderCombatLogTick(tickEntries));
+      tickEntries = [];
+    }
+    tickEntries.push(entry);
+  }
+
+  if (tickEntries.length > 0) ordered.push(...orderCombatLogTick(tickEntries));
+  return ordered;
+}
+
+function orderCombatLogTick(entries: HuntLogEntry[]) {
+  const ordered: HuntLogEntry[] = [];
+  const pendingShieldAbsorbs: HuntLogEntry[] = [];
+  const pendingEssenceHeals: HuntLogEntry[] = [];
+  const deferredDefeats: HuntLogEntry[] = [];
+
+  for (const entry of entries) {
+    if (entry.kind === "shield_absorb") {
+      pendingShieldAbsorbs.push(entry);
+      continue;
+    }
+    if (entry.kind === "essence_heal") {
+      pendingEssenceHeals.push(entry);
+      continue;
+    }
+    if (entry.kind === "defeat" || entry.kind === "player_defeat") {
+      deferredDefeats.push(entry);
+      continue;
+    }
+
+    ordered.push(entry);
+    if (entry.kind === "essence_damage") {
+      for (let index = pendingEssenceHeals.length - 1; index >= 0; index -= 1) {
+        const essenceHeal = pendingEssenceHeals[index];
+        if (essenceHeal.source !== entry.source) continue;
+        ordered.push(essenceHeal);
+        pendingEssenceHeals.splice(index, 1);
+      }
+    }
+    if (!isDamageLog(entry)) continue;
+
+    for (let index = pendingShieldAbsorbs.length - 1; index >= 0; index -= 1) {
+      const shieldAbsorb = pendingShieldAbsorbs[index];
+      if (shieldAbsorb.target !== entry.target) continue;
+      ordered.push(shieldAbsorb);
+      pendingShieldAbsorbs.splice(index, 1);
+    }
+  }
+
+  return [...ordered, ...pendingEssenceHeals, ...pendingShieldAbsorbs, ...deferredDefeats];
+}
+
+function isDamageLog(entry: HuntLogEntry) {
+  return entry.kind === "attack" || entry.kind === "critical" || entry.kind === "enemy_attack" || entry.kind === "enemy_critical"
+    || entry.kind === "essence_damage" || entry.kind === "essence_dot" || entry.kind === "essence_extra_hit" || entry.kind === "reflect" || entry.kind === "essence_reflect";
+}
+
 function formatCombinedRegeneration(entries: HuntLogEntry[]): ReactNode {
   const player = entries.find((entry) => entry.kind === "player_regeneration");
   const enemy = entries.find((entry) => entry.kind === "regeneration");
   return <>
-    재생
-    {player && <> <i className="combat-log-arrow is-player">≫</i> <b className="combat-log-recovery">+{formatAmount(player.amount)} HP</b></>}
+    재생 <i className="combat-log-arrow is-player">≫</i>
+    {player && <> <b className="combat-log-recovery">+{formatAmount(player.amount)} HP</b></>}
     {enemy && <> <i className="combat-log-arrow is-enemy">≫</i> <b className="combat-log-recovery">+{formatAmount(enemy.amount)} HP</b></>}
   </>;
 }
@@ -653,6 +844,39 @@ function formatTime(tenths: number) {
 
 function formatAmount(value: number) {
   return Number.isInteger(value) ? value.toLocaleString() : value.toFixed(1);
+}
+
+function withAnd(word: string) {
+  const finalCode = word.charCodeAt(word.length - 1);
+  const hasFinalConsonant = finalCode >= 0xac00 && finalCode <= 0xd7a3 && (finalCode - 0xac00) % 28 !== 0;
+  return hasFinalConsonant ? "과" : "와";
+}
+
+function formatEssenceGrade(grade: number) {
+  return ["", "I", "II", "III", "IV", "V"][grade] ?? `${grade}`;
+}
+
+function isLinkedCombatLog(entry: HuntLogEntry, previousEntry?: HuntLogEntry) {
+  if (entry.parentSequence !== undefined || entry.sequence !== undefined) {
+    if (entry.parentSequence !== undefined) {
+      return entry.parentSequence === previousEntry?.sequence || entry.parentSequence === previousEntry?.parentSequence;
+    }
+    return entry.kind !== "essence_status" && isEssenceFollowUp(entry) && (previousEntry?.kind === "essence_cast" || isEssenceFollowUp(previousEntry)) && entry.source === previousEntry?.source;
+  }
+
+  return isEssenceFollowUp(entry) || entry.kind === "reflect";
+}
+
+function isEssenceFollowUp(entry?: HuntLogEntry) {
+  if (!entry) return false;
+  return entry.kind === "essence_damage" || entry.kind === "essence_heal" || entry.kind === "essence_shield"
+    || entry.kind === "shield_absorb" || entry.kind === "essence_extra_hit" || entry.kind === "essence_reflect" || entry.kind === "essence_status";
+}
+
+function formatTargetedEssenceEffect(entry: HuntLogEntry, essenceName: string, action: string, result: ReactNode) {
+  const sourceClass = entry.source === "enemy" ? "combat-log-enemy" : "combat-log-player";
+  const arrowClass = entry.source === "enemy" ? "is-enemy" : "is-player";
+  return <><b className={sourceClass}>{essenceName}</b> {action} <i className={`combat-log-arrow ${arrowClass}`}>≫</i> {result}</>;
 }
 
 function getRecoveredPlayerHp(huntState: HuntState | null, now: number) {
@@ -673,6 +897,29 @@ function getRecoveredPlayerHp(huntState: HuntState | null, now: number) {
     return Math.min(maxHp, Math.floor(startHp + ((maxHp - startHp) * recoveredSteps / recoveryDurationSeconds)));
   }
   return Math.min(maxHp, Math.floor(startHp + (maxHp * 0.2 * recoveredSteps)));
+}
+
+function getVisibleShield(logs: HuntLogEntry[], target: "player" | "enemy", playbackTenths: number) {
+  const reversedShieldLogIndex = [...logs].reverse().findIndex((entry) => entry.kind === "essence_shield" && entry.target === target);
+  const shieldLogIndex = reversedShieldLogIndex < 0 ? -1 : logs.length - 1 - reversedShieldLogIndex;
+  if (shieldLogIndex < 0) return 0;
+
+  const shieldLog = logs[shieldLogIndex];
+  const durationTenths = shieldLog.grade === 5 ? 50 : 40;
+  if (playbackTenths > shieldLog.timeTenths + durationTenths) return 0;
+
+  return logs.slice(shieldLogIndex + 1)
+    .filter((entry) => entry.timeTenths <= playbackTenths && entry.target === target)
+    .reduce((remaining, entry) => {
+      if (remaining <= 0) return 0;
+      if (entry.kind === "shield_absorb") {
+        return entry.shieldRemaining ?? Math.max(0, remaining - entry.amount);
+      }
+      if (entry.shieldAbsorbed && entry.shieldAbsorbed > 0) {
+        return Math.max(0, remaining - entry.shieldAbsorbed);
+      }
+      return remaining;
+    }, shieldLog.amount);
 }
 
 function getElapsedTenths(startedAt: string, durationTicks: number, now = Date.now()) {

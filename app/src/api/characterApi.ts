@@ -33,10 +33,18 @@ export type TrainingState = {
 
 export type HuntLogEntry = {
   timeTenths: number;
-  kind: "encounter" | "attack" | "critical" | "miss" | "regeneration" | "player_regeneration" | "defeat" | "fled" | "timeout" | "enemy_attack" | "enemy_miss" | "player_defeat" | "reflect";
+  kind: "encounter" | "attack" | "critical" | "miss" | "regeneration" | "player_regeneration" | "defeat" | "fled" | "timeout" | "enemy_attack" | "enemy_critical" | "enemy_miss" | "player_defeat" | "reflect" | "essence_cast" | "essence_damage" | "essence_dot" | "essence_heal" | "essence_shield" | "shield_absorb" | "essence_extra_hit" | "essence_reflect" | "essence_status";
   amount: number;
   targetHp: number;
   target?: "enemy" | "player";
+  source?: "player" | "enemy";
+  name?: string;
+  effect?: string;
+  grade?: number;
+  shieldRemaining?: number;
+  shieldAbsorbed?: number;
+  sequence?: number;
+  parentSequence?: number;
 };
 
 export type HuntCombatant = {
@@ -45,6 +53,29 @@ export type HuntCombatant = {
   maxHp: number;
   experience?: number;
   info?: MonsterInfo;
+  essence?: { code: string; name: string; grade: number };
+};
+
+export type HuntRewardEquipment = {
+  kind: "weapon" | "armor";
+  id: string;
+  type: string;
+  variant?: string;
+  level: number;
+};
+
+export type HuntRewardEssence = {
+  id: string;
+  code: string;
+  name: string;
+  grade: number;
+  quantity: number;
+};
+
+export type HuntRewards = {
+  credits: number;
+  equipment: HuntRewardEquipment | null;
+  essence: HuntRewardEssence | null;
 };
 
 export type HuntBattle = {
@@ -63,7 +94,16 @@ export type HuntBattle = {
   attackCount: number;
   criticalCount: number;
   totalRegeneration: number;
+  gainedCredits?: number;
+  rewards?: HuntRewards;
   logs: HuntLogEntry[];
+};
+
+export type HuntGround = {
+  id: string;
+  name: string;
+  recommendedMinLevel: number;
+  recommendedMaxLevel: number;
 };
 
 export type HuntState = {
@@ -141,8 +181,10 @@ type HuntBattlePayload = {
   started_at?: string;
   ends_at?: string;
   player?: { name?: string; level?: number; max_hp?: number; experience?: number; start_hp?: number; current_hp?: number };
-  enemy?: { name?: string; level?: number; max_hp?: number; combat_stats?: MonsterInfoPayload };
+  enemy?: { name?: string; level?: number; max_hp?: number; combat_stats?: MonsterInfoPayload; essence?: { code?: string; name?: string; grade?: number } };
   gained_experience?: number;
+  gained_credits?: number;
+  rewards?: HuntRewardsPayload;
   level_before?: number;
   level_after?: number;
   experience_after?: number;
@@ -157,6 +199,13 @@ type HuntBattlePayload = {
     amount: number;
     target_hp: number;
     target?: HuntLogEntry["target"];
+    source?: HuntLogEntry["source"];
+    name?: string;
+    grade?: number;
+    shield_remaining?: number;
+    shield_absorbed?: number;
+    sequence?: number;
+    parent_sequence?: number;
   }>;
 };
 
@@ -178,6 +227,24 @@ type MonsterInfoPayload = {
   physical_attack?: number; magic_attack?: number; physical_defense?: number; magic_defense?: number; max_hp?: number;
   regeneration?: number; attacks_per_second?: number; cooldown_reduction?: number; accuracy?: number; evasion_rate?: number;
   critical_chance?: number; critical_damage?: number;
+};
+
+type HuntRewardsPayload = {
+  credits?: number;
+  equipment?: {
+    kind?: "weapon" | "armor";
+    id?: string;
+    type?: string;
+    variant?: string;
+    level?: number;
+  } | null;
+  essence?: {
+    id?: string;
+    code?: string;
+    name?: string;
+    grade?: number;
+    quantity?: number;
+  } | null;
 };
 
 const characterSelectFields = "id,user_id,name,level,experience,credits,strength,agility,dexterity,vitality,endurance,intelligence,wisdom,stat_points,bonus_stat_points,hunt_available_at,created_at,updated_at";
@@ -474,6 +541,25 @@ export async function selectHuntGround(huntGroundId: string): Promise<{ ok: bool
   return { ok: true, state: mapHuntState(data as HuntStatePayload), message: "" };
 }
 
+export async function getHuntGrounds(): Promise<{ ok: boolean; grounds: HuntGround[]; message: string }> {
+  if (!supabase) return { ok: false, grounds: [], message: "Supabase 설정을 확인해주세요." };
+
+  const { data, error } = await supabase.rpc("get_hunt_grounds");
+  if (error) return { ok: false, grounds: [], message: toKoreanAuthMessage(error.message, "사냥터를 불러오지 못했습니다.") };
+
+  const grounds = Array.isArray(data) ? data : [];
+  return {
+    ok: true,
+    grounds: grounds.map((ground) => ({
+      id: String(ground.id ?? "training-dummy"),
+      name: String(ground.name ?? "사냥터"),
+      recommendedMinLevel: Number(ground.recommended_min_level ?? 1),
+      recommendedMaxLevel: Number(ground.recommended_max_level ?? 100),
+    })),
+    message: "",
+  };
+}
+
 export async function getTrainingDummyInfo(): Promise<{ ok: boolean; info: MonsterInfo | null; message: string }> {
   if (!supabase) return { ok: false, info: null, message: "Supabase 설정을 확인해주세요." };
 
@@ -540,6 +626,9 @@ function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
     enemy: {
       name: payload.enemy?.name ?? "허수아비", level: payload.enemy?.level ?? 0, maxHp: payload.enemy?.max_hp ?? 0,
       info: payload.enemy?.combat_stats ? mapMonsterInfo(payload.enemy.combat_stats) : undefined,
+      essence: payload.enemy?.essence?.code && payload.enemy.essence.name
+        ? { code: payload.enemy.essence.code, name: payload.enemy.essence.name, grade: payload.enemy.essence.grade ?? 1 }
+        : undefined,
     },
     gainedExperience: payload.gained_experience ?? 0,
     levelBefore: payload.level_before ?? 0,
@@ -550,7 +639,43 @@ function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
     attackCount: payload.attack_count ?? 0,
     criticalCount: payload.critical_count ?? 0,
     totalRegeneration: payload.total_regeneration ?? 0,
-    logs: (payload.logs ?? []).map((log) => ({ timeTenths: log.time_tenths, kind: log.kind, amount: log.amount, targetHp: log.target_hp, target: log.target })),
+    gainedCredits: payload.gained_credits,
+    rewards: mapHuntRewards(payload.rewards),
+    logs: (payload.logs ?? []).map((log) => ({
+      timeTenths: log.time_tenths,
+      kind: log.kind,
+      amount: log.amount,
+      targetHp: log.target_hp,
+      target: log.target,
+      source: log.source,
+      name: log.name,
+      grade: log.grade,
+      shieldRemaining: log.shield_remaining,
+      shieldAbsorbed: log.shield_absorbed,
+      sequence: log.sequence,
+      parentSequence: log.parent_sequence,
+    })),
+  };
+}
+
+function mapHuntRewards(payload: HuntRewardsPayload | undefined): HuntRewards | undefined {
+  if (!payload) return undefined;
+  return {
+    credits: payload.credits ?? 0,
+    equipment: payload.equipment?.kind && payload.equipment.id && payload.equipment.type ? {
+      kind: payload.equipment.kind,
+      id: payload.equipment.id,
+      type: payload.equipment.type,
+      variant: payload.equipment.variant,
+      level: payload.equipment.level ?? 1,
+    } : null,
+    essence: payload.essence?.id && payload.essence.code && payload.essence.name ? {
+      id: payload.essence.id,
+      code: payload.essence.code,
+      name: payload.essence.name,
+      grade: payload.essence.grade ?? 1,
+      quantity: payload.essence.quantity ?? 1,
+    } : null,
   };
 }
 

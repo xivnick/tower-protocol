@@ -855,7 +855,7 @@ button:disabled {
 
 .equipped-summary-row {
   display: grid;
-  grid-template-columns: 86px minmax(0, 1fr);
+  grid-template-columns: 68px minmax(0, 1fr);
   gap: 12px;
   padding: 11px 10px;
 }
@@ -879,20 +879,27 @@ button:disabled {
 }
 
 .equipped-summary-content {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 6px 12px;
   min-width: 0;
 }
 
-.equipped-summary-content .text-button {
-  align-self: start;
+.equipped-summary-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.equipped-summary-title .text-button {
+  flex: 0 0 auto;
   padding: 0;
   font-size: 12px;
 }
 
 .equipped-summary-row b {
+  min-width: 0;
   color: var(--txt-bright);
+  overflow-wrap: anywhere;
 }
 
 .equipped-summary-row small {
@@ -1498,6 +1505,7 @@ button:disabled {
 }
 
 .combat-hp {
+  position: relative;
   height: 8px;
   overflow: hidden;
   background: var(--surf-3);
@@ -1505,10 +1513,23 @@ button:disabled {
 }
 
 .combat-hp i {
+  position: absolute;
+  left: 0;
+  top: 0;
   display: block;
   height: 100%;
   background: var(--acc-dim);
   transition: width 90ms linear;
+}
+
+.combat-hp em {
+  position: absolute;
+  top: 0;
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(78, 188, 255, 0.92), rgba(132, 220, 255, 0.78));
+  box-shadow: inset 0 0 0 1px rgba(205, 245, 255, 0.24), 0 0 8px rgba(78, 188, 255, 0.32);
+  transition: left 90ms linear, width 90ms linear;
 }
 
 .combat-hp.is-unknown {
@@ -1520,6 +1541,17 @@ button:disabled {
   margin-top: 5px;
   color: var(--txt-bright);
   font-size: 12px;
+}
+
+.combat-hp-shield-value {
+  color: #84dcff;
+}
+
+.combat-essence {
+  margin: 5px 0 0;
+  color: var(--txt-bright);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .combat-character-link {
@@ -1573,6 +1605,13 @@ button:disabled {
   color: var(--acc-2);
 }
 
+.monster-info-essence {
+  margin: 6px 0 0;
+  color: var(--mut);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .monster-info-stats {
   margin-top: 12px;
 }
@@ -1596,7 +1635,7 @@ button:disabled {
 }
 
 .combat-card-expansion.is-expanded {
-  max-height: 320px;
+  max-height: 420px;
 }
 
 .combat-card-detail {
@@ -1701,7 +1740,7 @@ button:disabled {
   display: grid;
   grid-template-columns: 58px minmax(0, 1fr);
   gap: 10px;
-  color: var(--txt);
+  color: var(--txt-bright);
   font-size: 12px;
   animation: combat-log-in 160ms ease-out both;
 }
@@ -1715,8 +1754,14 @@ button:disabled {
   color: var(--mut-2);
 }
 
+.combat-log li.is-linked span {
+  padding-left: 10px;
+}
+
 .combat-log-damage { color: var(--neg); }
-.combat-log-recovery { color: var(--txt); }
+.combat-log-recovery { color: var(--neg); }
+.combat-log-shield { color: #84dcff; }
+.combat-log-essence-cast { color: #ffd479; }
 
 .combat-log-player { color: var(--acc); }
 .combat-log-critical { color: var(--acc-2); }
@@ -1727,21 +1772,21 @@ button:disabled {
 .combat-log-arrow.is-enemy { color: var(--neg); }
 
 .combat-log .is-regeneration span {
-  color: var(--txt);
+  color: var(--neg);
 }
 
 .combat-log .is-player_regeneration span {
-  color: var(--txt);
+  color: var(--neg);
 }
 
 .combat-log .is-regeneration .combat-log-recovery,
 .combat-log .is-player_regeneration .combat-log-recovery {
-  color: var(--txt);
+  color: var(--neg);
   font-weight: 400;
 }
 
 .combat-log .is-combined_regeneration .combat-log-recovery {
-  color: var(--txt);
+  color: var(--neg);
   font-weight: 400;
 }
 
@@ -1755,12 +1800,13 @@ button:disabled {
   font-weight: 900;
 }
 
-.combat-log .is-enemy_attack span {
+.combat-log .is-enemy_attack span,
+.combat-log .is-enemy_critical span {
   color: var(--txt-bright);
 }
 
 .combat-log .is-timeout span {
-  color: var(--mut);
+  color: var(--txt-bright);
   font-weight: 800;
 }
 

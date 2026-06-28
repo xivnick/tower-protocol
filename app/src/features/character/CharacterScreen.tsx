@@ -16,6 +16,10 @@ import { useToast } from "../toast/ToastProvider";
 import { getMyArmors, getMyWeapons } from "../../api/equipmentApi";
 import type { Armor, Weapon } from "../../api/equipmentApi";
 import { EquippedEquipmentPanel } from "../equipment/EquippedEquipmentPanel";
+import { getMyEssences } from "../../api/essenceApi";
+import type { Essence } from "../../api/essenceApi";
+import { getEssenceEffect } from "../../shared/essenceDetails";
+import { formatGrade, getSlotUnlockLevel, getUnlockedSlotCount } from "../essence/EssenceScreen";
 
 export function CharacterScreen({
   character,
@@ -50,6 +54,7 @@ export function CharacterScreen({
 
         <CharacterStatsPanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
         <CharacterEquippedEquipmentPanel character={character} />
+        <CharacterEquippedEssencePanel character={character} />
         <CharacterDeletePanel character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />
       </section>
     );
@@ -507,21 +512,71 @@ function CharacterStatsPanel({
 function CharacterEquippedEquipmentPanel({ character }: { character: Character }) {
   const [equippedWeapon, setEquippedWeapon] = useState<Weapon | null>(null);
   const [equippedArmor, setEquippedArmor] = useState<Armor | null>(null);
+  const [isEquipmentLoading, setIsEquipmentLoading] = useState(true);
 
   useEffect(() => {
     let isActive = true;
-    void getMyWeapons().then((result) => {
-      if (!isActive || !result.ok) return;
-      setEquippedWeapon(result.inventory.weapons.find((weapon) => weapon.id === result.inventory.equippedWeaponId) ?? null);
-    });
-    void getMyArmors().then((result) => {
-      if (!isActive || !result.ok) return;
-      setEquippedArmor(result.inventory.armors.find((armor) => armor.id === result.inventory.equippedArmorId) ?? null);
+    setEquippedWeapon(null);
+    setEquippedArmor(null);
+    setIsEquipmentLoading(true);
+
+    void Promise.all([getMyWeapons(), getMyArmors()]).then(([weaponResult, armorResult]) => {
+      if (!isActive) return;
+      if (weaponResult.ok) {
+        setEquippedWeapon(weaponResult.inventory.weapons.find((weapon) => weapon.id === weaponResult.inventory.equippedWeaponId) ?? null);
+      }
+      if (armorResult.ok) {
+        setEquippedArmor(armorResult.inventory.armors.find((armor) => armor.id === armorResult.inventory.equippedArmorId) ?? null);
+      }
+      setIsEquipmentLoading(false);
     });
     return () => { isActive = false; };
   }, [character.id]);
 
-  return <EquippedEquipmentPanel weapon={equippedWeapon} armor={equippedArmor} character={character} headerAction={<Link className="text-button" to="/equipment">장비 관리</Link>} />;
+  return <EquippedEquipmentPanel weapon={equippedWeapon} armor={equippedArmor} character={character} isLoading={isEquipmentLoading} headerAction={<Link className="text-button" to="/equipment">장비 관리</Link>} />;
+}
+
+function CharacterEquippedEssencePanel({ character }: { character: Character }) {
+  const [essences, setEssences] = useState<Essence[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isActive = true;
+    setEssences([]);
+    setIsLoading(true);
+
+    void getMyEssences().then((result) => {
+      if (!isActive) return;
+      if (result.ok) setEssences(result.inventory.essences);
+      setIsLoading(false);
+    });
+    return () => { isActive = false; };
+  }, [character.id]);
+
+  const unlockedSlotCount = getUnlockedSlotCount(character.level);
+
+  return (
+    <article className="panel">
+      <div className="panel-head action-head">
+        <div><span>EQUIPPED</span><h2>장착 중인 정수</h2></div>
+        <Link className="text-button" to="/essences">정수 관리</Link>
+      </div>
+      <div className="equipped-summary">
+        {[1, 2, 3].map((slotIndex) => {
+          const essence = essences.find((item) => item.equippedSlotIndex === slotIndex) ?? null;
+          const isLocked = slotIndex > unlockedSlotCount;
+          return <div className="equipped-summary-row" key={slotIndex}>
+            <span>SLOT {slotIndex}</span>
+            {isLocked ? <strong>{getSlotUnlockLevel(slotIndex)} 해금</strong> : essence ? (
+              <div className="equipped-summary-content">
+                <strong><span className="equipped-summary-title"><b>{essence.name} {formatGrade(essence.grade)}</b></span><small>{getEssenceEffect(essence)}</small></strong>
+              </div>
+            ) : <strong>{isLoading ? "정수 불러오는 중..." : "장착한 정수 없음"}</strong>}
+          </div>;
+        })}
+      </div>
+    </article>
+  );
 }
 
 function createEmptyStatAllocation(): CharacterStatAllocation {
