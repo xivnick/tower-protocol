@@ -594,17 +594,11 @@ function CombatHpCard({
       {essenceSlots && essenceSlots.length > 0 && (
         <div className="combat-essence-slots" aria-label="장착 중인 정수">
           {essenceSlots.map(({ slotIndex, essence }) => (
-            <b className={`combat-essence-slot ${activeEssenceCastNames?.has(essence.name) ? "is-triggered" : ""}`} key={slotIndex}>SLOT{slotIndex} {essence.name} {formatEssenceGrade(essence.grade)}</b>
+            <div className="combat-essence-slot-row" key={slotIndex}>
+              <b className={`combat-essence-slot ${activeEssenceCastNames?.has(essence.name) ? "is-triggered" : ""}`}>SLOT{slotIndex} {essence.name} {formatEssenceGrade(essence.grade)}</b>
+              {isEssenceInfoOpen && <small>{getEssenceEffect(essence)}</small>}
+            </div>
           ))}
-        </div>
-      )}
-      {hasEssenceSlots && (
-        <div className={`combat-card-expansion ${isEssenceInfoOpen ? "is-expanded" : ""}`}>
-          <div className="combat-essence-info-list">
-            {essenceSlots!.map(({ slotIndex, essence }) => (
-              <p key={slotIndex}><b>SLOT{slotIndex}</b> {getEssenceEffect(essence)}</p>
-            ))}
-          </div>
         </div>
       )}
       {expandedContent && <div className={`combat-card-expansion ${isExpanded ? "is-expanded" : ""}`}><div>{expandedContent}</div></div>}

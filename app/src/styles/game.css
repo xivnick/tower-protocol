@@ -1592,6 +1592,17 @@ button:disabled {
   line-height: 1.35;
 }
 
+.combat-essence-slot-row {
+  display: grid;
+  gap: 3px;
+}
+
+.combat-essence-slot-row small {
+  color: var(--mut);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .combat-essence.is-triggered,
 .combat-essence-slot.is-triggered {
   animation: essence-trigger-flash 760ms ease-out;
@@ -1607,24 +1618,6 @@ button:disabled {
     color: inherit;
     text-shadow: none;
   }
-}
-
-.combat-essence-info-list {
-  display: grid;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.combat-essence-info-list p {
-  margin: 0;
-  color: var(--mut);
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.combat-essence-info-list b {
-  color: var(--txt);
-  font-weight: 700;
 }
 
 .combat-character-link {
