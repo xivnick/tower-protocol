@@ -1693,38 +1693,14 @@ button:disabled {
   min-width: 0;
 }
 
-.combat-info-tray {
-  grid-area: 1 / 1;
-  align-self: start;
-  z-index: 2;
-  max-height: 136px;
-  overflow: auto;
-  border: 1px solid var(--line-3);
-  background: color-mix(in srgb, var(--bg-2) 94%, black);
-  margin: 12px;
-  padding: 10px 12px;
-  box-shadow: 0 12px 22px rgb(0 0 0 / 34%);
+.combat-card-expansion {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 180ms ease;
 }
 
-.player-essence-info {
-  display: grid;
-  gap: 8px;
-}
-
-.player-essence-info-row {
-  display: grid;
-  gap: 3px;
-}
-
-.player-essence-info-row b {
-  color: var(--txt-bright);
-  font-size: 12px;
-}
-
-.player-essence-info-row small {
-  color: var(--mut);
-  font-size: 11px;
-  line-height: 1.4;
+.combat-card-expansion.is-expanded {
+  max-height: 420px;
 }
 
 .combat-card-detail {
@@ -1812,13 +1788,7 @@ button:disabled {
   font-size: 13px;
 }
 
-.combat-log-layer {
-  display: grid;
-  margin-top: 14px;
-}
-
 .combat-log {
-  grid-area: 1 / 1;
   list-style: none;
   display: flex;
   flex-direction: column;
@@ -1827,13 +1797,9 @@ button:disabled {
   overflow: auto;
   border: 1px solid var(--line);
   background: var(--bg-2);
-  margin: 0;
+  margin: 14px 0 0;
   padding: 12px;
   overflow-anchor: none;
-}
-
-.combat-record-panel.has-info-tray .combat-log {
-  padding-top: 158px;
 }
 
 .combat-log li {
@@ -2347,25 +2313,6 @@ button:disabled {
 
   .combat-card-detail.is-empty {
     display: none;
-  }
-
-  .combat-info-tray {
-    grid-area: auto;
-    max-height: none;
-    margin: 0 0 14px;
-    box-shadow: none;
-  }
-
-  .combat-log-layer {
-    display: block;
-  }
-
-  .combat-log {
-    grid-area: auto;
-  }
-
-  .combat-record-panel.has-info-tray .combat-log {
-    padding-top: 12px;
   }
 
 
