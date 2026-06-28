@@ -538,6 +538,7 @@ function CombatHpCard({
   isExpanded?: boolean;
   expandedContent?: ReactNode;
 }) {
+  const [expandedEssenceSlotIndex, setExpandedEssenceSlotIndex] = useState<number | null>(null);
   const isUnknown = currentHp === null || maxHp === null;
   const barMaximum = isUnknown ? 0 : Math.max(maxHp, currentHp + shield);
   const hpPercent = isUnknown || barMaximum === 0 ? 0 : Math.max(0, Math.min(100, (currentHp / barMaximum) * 100));
@@ -568,14 +569,23 @@ function CombatHpCard({
       </div>
       <b>{isUnknown ? "HP ???" : <>HP {formatAmount(currentHp ?? 0)} / {formatAmount(maxHp ?? 0)}{shield > 0 && <span className="combat-hp-shield-value"> +{formatAmount(shield)} S</span>}</>}</b>
       {essence && <b className="combat-essence">ESSENCE {essence.name} {formatEssenceGrade(essence.grade)}</b>}
+      {detail && <CombatDetail {...detail} />}
       {essenceSlots && essenceSlots.length > 0 && (
         <div className="combat-essence-slots" aria-label="장착 중인 정수">
           {essenceSlots.map(({ slotIndex, essence }) => (
-            <b className="combat-essence-slot" key={slotIndex}>SLOT {slotIndex} {essence.name} {formatEssenceGrade(essence.grade)}</b>
+            <div className="combat-essence-slot" key={slotIndex}>
+              <button
+                type="button"
+                onClick={() => setExpandedEssenceSlotIndex((current) => current === slotIndex ? null : slotIndex)}
+                aria-expanded={expandedEssenceSlotIndex === slotIndex}
+              >
+                SLOT{slotIndex} {essence.name} {formatEssenceGrade(essence.grade)}
+              </button>
+              {expandedEssenceSlotIndex === slotIndex && <small>{getEssenceEffect(essence)}</small>}
+            </div>
           ))}
         </div>
       )}
-      {detail && <CombatDetail {...detail} />}
       {expandedContent && <div className={`combat-card-expansion ${isExpanded ? "is-expanded" : ""}`}><div>{expandedContent}</div></div>}
     </div>
   );

@@ -1556,15 +1556,35 @@ button:disabled {
 
 .combat-essence-slots {
   display: grid;
-  gap: 3px;
-  margin-top: 6px;
+  gap: 4px;
+  margin-top: 8px;
 }
 
 .combat-essence-slot {
-  display: block;
+  display: grid;
+  gap: 3px;
+}
+
+.combat-essence-slot button {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--txt-bright);
   font-size: 12px;
   font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.combat-essence-slot button:hover,
+.combat-essence-slot button[aria-expanded="true"] {
+  color: var(--acc-2);
+}
+
+.combat-essence-slot small {
+  color: var(--mut);
+  font-size: 11px;
   line-height: 1.35;
 }
 
