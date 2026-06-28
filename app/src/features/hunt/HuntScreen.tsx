@@ -793,6 +793,7 @@ function formatLogEntry(entry: HuntLogEntry, playerName: string, enemyName: stri
   if (entry.kind === "essence_heal") return <><b className={essenceSourceClass}>{essenceName}</b> 회복 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> {recovery}</>;
   if (entry.kind === "essence_shield") return <><b className={essenceSourceClass}>{essenceName}</b> 방어막 <i className={`combat-log-arrow ${entry.source === "enemy" ? "is-enemy" : "is-player"}`}>≫</i> <b className="combat-log-shield">+{formatAmount(entry.amount)} S</b></>;
   if (entry.kind === "shield_absorb") return <><b className={entry.target === "enemy" ? "combat-log-enemy" : "combat-log-player"}>{entry.target === "enemy" ? enemyName : playerName}</b> 방어막 흡수 <b className="combat-log-shield">-{formatAmount(entry.amount)} S</b></>;
+  if (entry.kind === "weapon_fixed_damage") return <><b className="combat-log-player">활</b> 추가피해 <i className="combat-log-arrow is-player">≫</i> 고정 {damage}</>;
   if (entry.kind === "essence_extra_hit") return formatTargetedEssenceEffect(entry, essenceName, "추가타", damage);
   if (entry.kind === "essence_reflect") return formatTargetedEssenceEffect(entry, essenceName, "반격", damage);
   if (entry.kind === "miss") return <><b className="combat-log-player">{playerName}</b> 공격이 빗나갔습니다.</>;
@@ -921,7 +922,7 @@ function orderCombatLogTick(entries: HuntLogEntry[]) {
 
 function isDamageLog(entry: HuntLogEntry) {
   return entry.kind === "attack" || entry.kind === "critical" || entry.kind === "enemy_attack" || entry.kind === "enemy_critical"
-    || entry.kind === "essence_damage" || entry.kind === "essence_dot" || entry.kind === "essence_extra_hit" || entry.kind === "reflect" || entry.kind === "essence_reflect";
+    || entry.kind === "essence_damage" || entry.kind === "essence_dot" || entry.kind === "weapon_fixed_damage" || entry.kind === "essence_extra_hit" || entry.kind === "reflect" || entry.kind === "essence_reflect";
 }
 
 function formatCombinedRegeneration(entries: HuntLogEntry[]): ReactNode {
@@ -966,7 +967,7 @@ function isLinkedCombatLog(entry: HuntLogEntry, previousEntry?: HuntLogEntry) {
 function isEssenceFollowUp(entry?: HuntLogEntry) {
   if (!entry) return false;
   return entry.kind === "essence_damage" || entry.kind === "essence_heal" || entry.kind === "essence_shield"
-    || entry.kind === "shield_absorb" || entry.kind === "essence_extra_hit" || entry.kind === "essence_reflect" || entry.kind === "essence_status";
+    || entry.kind === "shield_absorb" || entry.kind === "weapon_fixed_damage" || entry.kind === "essence_extra_hit" || entry.kind === "essence_reflect" || entry.kind === "essence_status";
 }
 
 function formatTargetedEssenceEffect(entry: HuntLogEntry, essenceName: string, action: string, result: ReactNode) {

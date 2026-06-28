@@ -33,7 +33,7 @@ export type TrainingState = {
 
 export type HuntLogEntry = {
   timeTenths: number;
-  kind: "encounter" | "attack" | "critical" | "miss" | "regeneration" | "player_regeneration" | "defeat" | "fled" | "timeout" | "enemy_attack" | "enemy_critical" | "enemy_miss" | "player_defeat" | "reflect" | "essence_cast" | "essence_damage" | "essence_dot" | "essence_heal" | "essence_shield" | "shield_absorb" | "essence_extra_hit" | "essence_reflect" | "essence_status";
+  kind: "encounter" | "attack" | "critical" | "miss" | "regeneration" | "player_regeneration" | "defeat" | "fled" | "timeout" | "enemy_attack" | "enemy_critical" | "enemy_miss" | "player_defeat" | "reflect" | "essence_cast" | "essence_damage" | "essence_dot" | "essence_heal" | "essence_shield" | "shield_absorb" | "weapon_fixed_damage" | "essence_extra_hit" | "essence_reflect" | "essence_status";
   amount: number;
   targetHp: number;
   target?: "enemy" | "player";
@@ -201,6 +201,7 @@ type HuntBattlePayload = {
     target?: HuntLogEntry["target"];
     source?: HuntLogEntry["source"];
     name?: string;
+    effect?: string;
     grade?: number;
     shield_remaining?: number;
     shield_absorbed?: number;
@@ -649,6 +650,7 @@ function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
       target: log.target,
       source: log.source,
       name: log.name,
+      effect: log.effect,
       grade: log.grade,
       shieldRemaining: log.shield_remaining,
       shieldAbsorbed: log.shield_absorbed,
