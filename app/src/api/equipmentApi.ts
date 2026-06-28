@@ -10,6 +10,7 @@ export type Weapon = {
   weaponType: WeaponType;
   weaponLevel: number;
   createdAt: string;
+  seenAt: string | null;
 };
 
 export type WeaponInventory = {
@@ -23,6 +24,7 @@ export type Armor = {
   armorVariant: ArmorVariant;
   armorLevel: number;
   createdAt: string;
+  seenAt: string | null;
 };
 
 export type ArmorInventory = {
@@ -35,6 +37,7 @@ type WeaponPayload = {
   weapon_type?: WeaponType;
   weapon_level?: number;
   created_at?: string;
+  seen_at?: string | null;
 };
 
 type InventoryPayload = {
@@ -48,6 +51,7 @@ type ArmorPayload = {
   armor_variant?: ArmorVariant;
   armor_level?: number;
   created_at?: string;
+  seen_at?: string | null;
 };
 
 type ArmorInventoryPayload = {
@@ -57,7 +61,7 @@ type ArmorInventoryPayload = {
 
 function mapWeapon(payload: WeaponPayload): Weapon | null {
   if (!payload.id || !payload.weapon_type || !payload.weapon_level || !payload.created_at) return null;
-  return { id: payload.id, weaponType: payload.weapon_type, weaponLevel: payload.weapon_level, createdAt: payload.created_at };
+  return { id: payload.id, weaponType: payload.weapon_type, weaponLevel: payload.weapon_level, createdAt: payload.created_at, seenAt: payload.seen_at ?? null };
 }
 
 function mapInventory(payload: InventoryPayload | null): WeaponInventory {
@@ -69,7 +73,7 @@ function mapInventory(payload: InventoryPayload | null): WeaponInventory {
 
 function mapArmor(payload: ArmorPayload): Armor | null {
   if (!payload.id || !payload.armor_type || !payload.armor_variant || !payload.armor_level || !payload.created_at) return null;
-  return { id: payload.id, armorType: payload.armor_type, armorVariant: payload.armor_variant, armorLevel: payload.armor_level, createdAt: payload.created_at };
+  return { id: payload.id, armorType: payload.armor_type, armorVariant: payload.armor_variant, armorLevel: payload.armor_level, createdAt: payload.created_at, seenAt: payload.seen_at ?? null };
 }
 
 function mapArmorInventory(payload: ArmorInventoryPayload | null): ArmorInventory {

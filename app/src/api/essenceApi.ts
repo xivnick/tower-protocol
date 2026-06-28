@@ -10,6 +10,7 @@ export type Essence = {
   quantity: number;
   equippedSlotIndex: number | null;
   createdAt: string;
+  seenAt: string | null;
 };
 
 export type EssenceSlot = {
@@ -31,6 +32,7 @@ type EssencePayload = {
   quantity?: number;
   equipped_slot_index?: number | null;
   created_at?: string;
+  seen_at?: string | null;
 };
 
 type EssenceSlotPayload = {
@@ -54,6 +56,7 @@ function mapEssence(payload: EssencePayload): Essence | null {
     quantity: payload.quantity,
     equippedSlotIndex: payload.equipped_slot_index ?? null,
     createdAt: payload.created_at,
+    seenAt: payload.seen_at ?? null,
   };
 }
 

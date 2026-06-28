@@ -1078,6 +1078,21 @@ button:disabled {
   color: var(--txt-bright);
 }
 
+.inventory-item-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inventory-new-dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--neg);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--neg) 70%, transparent);
+}
+
 .weapon-row-title {
   display: flex;
   flex-wrap: wrap;
