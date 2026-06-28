@@ -1554,6 +1554,20 @@ button:disabled {
   font-weight: 700;
 }
 
+.combat-essence-slots {
+  display: grid;
+  gap: 3px;
+  margin-top: 6px;
+}
+
+.combat-essence-slot {
+  display: block;
+  color: var(--txt-bright);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .combat-character-link {
   position: absolute;
   top: 12px;

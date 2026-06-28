@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { configureAutoHunt, encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getHuntGrounds, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntGround, HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
+import { getMyEssences } from "../../api/essenceApi";
+import type { Essence } from "../../api/essenceApi";
 import { formatCharacterLevel, getRequiredExperienceForLevel } from "../../shared/progression";
 import { calculateCombatStats, COMBAT_STAT_LABELS } from "../../shared/stats";
 import { getEssenceEffect } from "../../shared/essenceDetails";
@@ -80,6 +82,7 @@ function TrainingDummyGround({
   const [isResolving, setIsResolving] = useState(false);
   const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
   const [huntGrounds, setHuntGrounds] = useState<HuntGround[]>(DEFAULT_HUNT_GROUNDS);
+  const [essences, setEssences] = useState<Essence[]>([]);
   const [now, setNow] = useState(Date.now());
   const [frozenPlaybackTenths, setFrozenPlaybackTenths] = useState(0);
   const logRef = useRef<HTMLOListElement>(null);
@@ -131,9 +134,21 @@ function TrainingDummyGround({
   const displayExperience = result ? (isPlaybackComplete ? result.experienceAfter : result.player.experience ?? 0) : character.experience;
   const requiredExperience = getRequiredExperienceForLevel(displayLevel + 1) ?? 1;
   const experiencePercent = displayLevel >= 100 ? 100 : (displayExperience / requiredExperience) * 100;
+  const equippedEssenceSlots = useMemo(() => essences
+    .filter((essence) => essence.equippedSlotIndex !== null)
+    .sort((left, right) => (left.equippedSlotIndex ?? 0) - (right.equippedSlotIndex ?? 0))
+    .map((essence) => ({
+      slotIndex: essence.equippedSlotIndex ?? 0,
+      essence: { code: essence.code, name: essence.name, grade: essence.grade },
+    })), [essences]);
 
   useEffect(() => {
     let isActive = true;
+
+    void getMyEssences().then((result) => {
+      if (!isActive || !result.ok) return;
+      setEssences(result.inventory.essences);
+    });
 
     void getHuntGrounds().then((result) => {
       if (!isActive || !result.ok || result.grounds.length === 0) return;
@@ -454,6 +469,7 @@ function TrainingDummyGround({
               currentHp={playerHp}
               maxHp={result?.player.maxHp ?? huntState?.playerMaxHp ?? combatStats.maxHp}
               shield={playerShield}
+              essenceSlots={equippedEssenceSlots}
               detail={{ value: `EXP ${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()}`, percent: experiencePercent, isExperience: true }}
               linkToCharacter
             />
@@ -500,6 +516,7 @@ function CombatHpCard({
   maxHp,
   shield = 0,
   essence,
+  essenceSlots,
   detail,
   linkToCharacter = false,
   onInfoClick,
@@ -513,6 +530,7 @@ function CombatHpCard({
   maxHp: number | null;
   shield?: number;
   essence?: { code: string; name: string; grade: number };
+  essenceSlots?: Array<{ slotIndex: number; essence: { code: string; name: string; grade: number } }>;
   detail?: { value: string; percent: number; isUnknown?: boolean; isExperience?: boolean };
   linkToCharacter?: boolean;
   onInfoClick?: () => void;
@@ -550,6 +568,13 @@ function CombatHpCard({
       </div>
       <b>{isUnknown ? "HP ???" : <>HP {formatAmount(currentHp ?? 0)} / {formatAmount(maxHp ?? 0)}{shield > 0 && <span className="combat-hp-shield-value"> +{formatAmount(shield)} S</span>}</>}</b>
       {essence && <b className="combat-essence">ESSENCE {essence.name} {formatEssenceGrade(essence.grade)}</b>}
+      {essenceSlots && essenceSlots.length > 0 && (
+        <div className="combat-essence-slots" aria-label="장착 중인 정수">
+          {essenceSlots.map(({ slotIndex, essence }) => (
+            <b className="combat-essence-slot" key={slotIndex}>SLOT {slotIndex} {essence.name} {formatEssenceGrade(essence.grade)}</b>
+          ))}
+        </div>
+      )}
       {detail && <CombatDetail {...detail} />}
       {expandedContent && <div className={`combat-card-expansion ${isExpanded ? "is-expanded" : ""}`}><div>{expandedContent}</div></div>}
     </div>
