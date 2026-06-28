@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { configureAutoHunt, encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getHuntGrounds, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntGround, HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
@@ -90,6 +90,8 @@ function TrainingDummyGround({
   const [essences, setEssences] = useState<Essence[]>([]);
   const [now, setNow] = useState(Date.now());
   const [frozenPlaybackTenths, setFrozenPlaybackTenths] = useState(0);
+  const screenPanelRef = useRef<HTMLElement>(null);
+  const combatGridRef = useRef<HTMLDivElement>(null);
   const logRef = useRef<HTMLOListElement>(null);
   const isLogPinnedToBottomRef = useRef(true);
   const completedResultRef = useRef<HuntResult | null>(null);
@@ -185,18 +187,38 @@ function TrainingDummyGround({
     return () => window.clearInterval(intervalId);
   }, [isRecovering, isRecoveryLocked, remainingTenths]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (visibleLogs.length === 0 || !logRef.current || !isLogPinnedToBottomRef.current) return;
 
     const scrollLogToBottom = () => {
-      if (logRef.current && isLogPinnedToBottomRef.current) {
-        logRef.current.scrollTop = logRef.current.scrollHeight;
+      const log = logRef.current;
+      if (!log || !isLogPinnedToBottomRef.current) return;
+
+      log.scrollTop = log.scrollHeight;
+
+      const panel = screenPanelRef.current;
+      if (panel) {
+        const logRect = log.getBoundingClientRect();
+        const panelRect = panel.getBoundingClientRect();
+        const hiddenBottom = logRect.bottom - panelRect.bottom;
+        if (hiddenBottom > 0) panel.scrollTop += hiddenBottom;
       }
     };
-    const animationFrameId = window.requestAnimationFrame(scrollLogToBottom);
+    const animationFrameIds = [
+      window.requestAnimationFrame(scrollLogToBottom),
+      window.requestAnimationFrame(() => window.requestAnimationFrame(scrollLogToBottom)),
+    ];
+    const timeoutIds = [80, 180, 240].map((delay) => window.setTimeout(scrollLogToBottom, delay));
+    const resizeObserver = new ResizeObserver(scrollLogToBottom);
 
     scrollLogToBottom();
-    return () => window.cancelAnimationFrame(animationFrameId);
+    if (combatGridRef.current) resizeObserver.observe(combatGridRef.current);
+
+    return () => {
+      animationFrameIds.forEach((id) => window.cancelAnimationFrame(id));
+      timeoutIds.forEach((id) => window.clearTimeout(id));
+      resizeObserver.disconnect();
+    };
   }, [isMonsterInfoOpen, isPlayerEssenceInfoOpen, visibleLogs.length]);
 
   useEffect(() => {
@@ -443,7 +465,7 @@ function TrainingDummyGround({
   }
 
   return (
-    <section className="screen-panel hunt-screen">
+    <section className="screen-panel hunt-screen" ref={screenPanelRef}>
       <div className="hunt-location-picker">
         <button
           className="hunt-location-strip"
@@ -504,7 +526,7 @@ function TrainingDummyGround({
               </button>}
             </div>
           </div>
-          <div className="combat-hp-grid">
+          <div className="combat-hp-grid" ref={combatGridRef}>
             <CombatHpCard
               label="PLAYER"
               name={result ? `LV.${result.player.level} ${result.player.name}` : `LV.${character.level} ${character.name}`}

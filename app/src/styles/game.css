@@ -1325,6 +1325,7 @@ button:disabled {
 
 .hunt-screen {
   align-content: start;
+  overflow-anchor: none;
 }
 
 .hunt-location-picker {
@@ -1798,6 +1799,7 @@ button:disabled {
   background: var(--bg-2);
   margin: 14px 0 0;
   padding: 12px;
+  overflow-anchor: none;
 }
 
 .combat-log li {
