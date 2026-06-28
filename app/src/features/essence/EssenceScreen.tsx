@@ -110,7 +110,7 @@ export function EssenceScreen({ character }: { character: Character | null }) {
                       <strong>{essence.name} {formatGrade(essence.grade)}</strong>
                       <small>{getEssenceSummary(essence)}</small>
                     </div>
-                    <span>{essence.equippedSlotIndex ? `SLOT ${essence.equippedSlotIndex}` : `x${essence.quantity}`}</span>
+                    <span>x{essence.quantity}</span>
                   </button>
                   {isSelected && <div className="weapon-detail">
                     <div className="weapon-detail-info"><span>효과</span><strong>{getEssenceEffect(essence)}</strong></div>
