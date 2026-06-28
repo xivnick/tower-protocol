@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { configureAutoHunt, encounterHuntMonster, fleeHuntEncounter, fleeTrainingDummyHunt, getHuntGrounds, getMyHuntState, huntTrainingDummy, selectHuntGround, settleTrainingDummyHunt } from "../../api/characterApi";
 import type { HuntGround, HuntLogEntry, HuntResult, HuntState, MonsterInfo } from "../../api/characterApi";
@@ -90,8 +90,6 @@ function TrainingDummyGround({
   const [essences, setEssences] = useState<Essence[]>([]);
   const [now, setNow] = useState(Date.now());
   const [frozenPlaybackTenths, setFrozenPlaybackTenths] = useState(0);
-  const screenPanelRef = useRef<HTMLElement>(null);
-  const combatGridRef = useRef<HTMLDivElement>(null);
   const logRef = useRef<HTMLOListElement>(null);
   const isLogPinnedToBottomRef = useRef(true);
   const completedResultRef = useRef<HuntResult | null>(null);
@@ -187,38 +185,10 @@ function TrainingDummyGround({
     return () => window.clearInterval(intervalId);
   }, [isRecovering, isRecoveryLocked, remainingTenths]);
 
-  useLayoutEffect(() => {
-    if (visibleLogs.length === 0 || !logRef.current || !isLogPinnedToBottomRef.current) return;
-
-    const scrollLogToBottom = () => {
-      const log = logRef.current;
-      if (!log || !isLogPinnedToBottomRef.current) return;
-
-      log.scrollTop = log.scrollHeight;
-
-      const panel = screenPanelRef.current;
-      if (panel) {
-        const logRect = log.getBoundingClientRect();
-        const panelRect = panel.getBoundingClientRect();
-        const hiddenBottom = logRect.bottom - panelRect.bottom;
-        if (hiddenBottom > 0) panel.scrollTop += hiddenBottom;
-      }
-    };
-    const animationFrameIds = [
-      window.requestAnimationFrame(scrollLogToBottom),
-      window.requestAnimationFrame(() => window.requestAnimationFrame(scrollLogToBottom)),
-    ];
-    const timeoutIds = [80, 180, 240].map((delay) => window.setTimeout(scrollLogToBottom, delay));
-    const resizeObserver = new ResizeObserver(scrollLogToBottom);
-
-    scrollLogToBottom();
-    if (combatGridRef.current) resizeObserver.observe(combatGridRef.current);
-
-    return () => {
-      animationFrameIds.forEach((id) => window.cancelAnimationFrame(id));
-      timeoutIds.forEach((id) => window.clearTimeout(id));
-      resizeObserver.disconnect();
-    };
+  useEffect(() => {
+    if (visibleLogs.length > 0 && logRef.current && isLogPinnedToBottomRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
   }, [isMonsterInfoOpen, isPlayerEssenceInfoOpen, visibleLogs.length]);
 
   useEffect(() => {
@@ -465,7 +435,7 @@ function TrainingDummyGround({
   }
 
   return (
-    <section className="screen-panel hunt-screen" ref={screenPanelRef}>
+    <section className="screen-panel hunt-screen">
       <div className="hunt-location-picker">
         <button
           className="hunt-location-strip"
@@ -507,7 +477,7 @@ function TrainingDummyGround({
           <button className="btn primary" type="button" onClick={() => void handleAutoHunt(true)}>{autoHuntEnabled ? "갱신" : "시작"}</button>
         </div>
       </article>
-      <article className="panel combat-record-panel">
+      <article className={`panel combat-record-panel ${isMonsterInfoOpen || isPlayerEssenceInfoOpen ? "has-info-tray" : ""}`}>
           <div className="panel-head compact action-head">
             <div>
               <span>COMBAT</span>
@@ -526,7 +496,7 @@ function TrainingDummyGround({
               </button>}
             </div>
           </div>
-          <div className="combat-hp-grid" ref={combatGridRef}>
+          <div className="combat-hp-grid">
             <CombatHpCard
               label="PLAYER"
               name={result ? `LV.${result.player.level} ${result.player.name}` : `LV.${character.level} ${character.name}`}
@@ -538,7 +508,10 @@ function TrainingDummyGround({
               detail={{ value: `EXP ${displayExperience.toLocaleString()} / ${requiredExperience.toLocaleString()}`, percent: experiencePercent, isExperience: true }}
               linkToCharacter
               isEssenceInfoOpen={isPlayerEssenceInfoOpen}
-              onEssenceInfoToggle={() => setIsPlayerEssenceInfoOpen((current) => !current)}
+              onEssenceInfoToggle={() => {
+                setIsPlayerEssenceInfoOpen((current) => !current);
+                setIsMonsterInfoOpen(false);
+              }}
             />
             <CombatHpCard
               label="ENEMY"
@@ -548,29 +521,37 @@ function TrainingDummyGround({
               shield={enemyShield}
               essence={result?.enemy.essence}
               activeEssenceCastNames={activeEssenceCastNames.enemy}
-              onInfoClick={result?.enemy.info ? () => setIsMonsterInfoOpen((current) => !current) : undefined}
+              onInfoClick={result?.enemy.info ? () => {
+                setIsMonsterInfoOpen((current) => !current);
+                setIsPlayerEssenceInfoOpen(false);
+              } : undefined}
               isInfoOpen={isMonsterInfoOpen}
-              isExpanded={isMonsterInfoOpen}
-              expandedContent={result?.enemy.info ? <MonsterInfoStats info={result.enemy.info} essence={result.enemy.essence} /> : null}
             />
           </div>
-          <ol className="combat-log" aria-label="전투 로그" ref={logRef} onScroll={handleCombatLogScroll}>
-            {result ? (
-              <>
-                {displayedLogs.map((log, index) => {
-                  const entry = log.entries[0];
-                  const previousEntry = index > 0 ? displayedLogs[index - 1].entries[0] : undefined;
-                  const isLinkedLog = isLinkedCombatLog(entry, previousEntry);
-                  return <li className={`is-${log.kind} ${isLinkedLog ? "is-linked" : ""}`} key={`${log.timeTenths}-${log.kind}-${index}`}>
-                    <time className={getLogTimeTone(entry)} aria-hidden={isLinkedLog}>{isLinkedLog ? "" : `[${formatTime(log.timeTenths)}]`}</time>
-                    <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(entry, result.player.name, result.enemy.name, result.enemy.level, result.gainedExperience, result.gainedCredits ?? result.rewards?.credits ?? 0)}</span>
-                  </li>;
-                })}
-              </>
-            ) : (
-              <li className="is-empty">{hasEncounteredMonster ? "조우 완료. 전투를 시작하세요." : "몬스터 찾기를 기다리고 있습니다."}</li>
+          <div className="combat-log-layer">
+            {(isPlayerEssenceInfoOpen || (isMonsterInfoOpen && result?.enemy.info)) && (
+              <div className="combat-info-tray" role="region" aria-label="전투 정보">
+                {isPlayerEssenceInfoOpen ? <PlayerEssenceInfo essences={equippedEssenceSlots} /> : result?.enemy.info ? <MonsterInfoStats info={result.enemy.info} essence={result.enemy.essence} /> : null}
+              </div>
             )}
-          </ol>
+            <ol className="combat-log" aria-label="전투 로그" ref={logRef} onScroll={handleCombatLogScroll}>
+              {result ? (
+                <>
+                  {displayedLogs.map((log, index) => {
+                    const entry = log.entries[0];
+                    const previousEntry = index > 0 ? displayedLogs[index - 1].entries[0] : undefined;
+                    const isLinkedLog = isLinkedCombatLog(entry, previousEntry);
+                    return <li className={`is-${log.kind} ${isLinkedLog ? "is-linked" : ""}`} key={`${log.timeTenths}-${log.kind}-${index}`}>
+                      <time className={getLogTimeTone(entry)} aria-hidden={isLinkedLog}>{isLinkedLog ? "" : `[${formatTime(log.timeTenths)}]`}</time>
+                      <span>{log.kind === "combined_regeneration" ? formatCombinedRegeneration(log.entries) : formatLogEntry(entry, result.player.name, result.enemy.name, result.enemy.level, result.gainedExperience, result.gainedCredits ?? result.rewards?.credits ?? 0)}</span>
+                    </li>;
+                  })}
+                </>
+              ) : (
+                <li className="is-empty">{hasEncounteredMonster ? "조우 완료. 전투를 시작하세요." : "몬스터 찾기를 기다리고 있습니다."}</li>
+              )}
+            </ol>
+          </div>
       </article>
       {lastResult && <HuntResultPanel result={lastResult} />}
     </section>
@@ -590,10 +571,8 @@ function CombatHpCard({
   linkToCharacter = false,
   onInfoClick,
   isInfoOpen = false,
-  isExpanded = false,
   isEssenceInfoOpen = false,
   onEssenceInfoToggle,
-  expandedContent,
 }: {
   label: string;
   name: string;
@@ -607,10 +586,8 @@ function CombatHpCard({
   linkToCharacter?: boolean;
   onInfoClick?: () => void;
   isInfoOpen?: boolean;
-  isExpanded?: boolean;
   isEssenceInfoOpen?: boolean;
   onEssenceInfoToggle?: () => void;
-  expandedContent?: ReactNode;
 }) {
   const isUnknown = currentHp === null || maxHp === null;
   const barMaximum = isUnknown ? 0 : Math.max(maxHp, currentHp + shield);
@@ -659,12 +636,25 @@ function CombatHpCard({
           {essenceSlots.map(({ slotIndex, essence }) => (
             <div className="combat-essence-slot-row" key={slotIndex}>
               <b className={`combat-essence-slot ${activeEssenceCastNames?.has(essence.name) ? "is-triggered" : ""}`}>SLOT{slotIndex} {essence.name} {formatEssenceGrade(essence.grade)}</b>
-              {isEssenceInfoOpen && <small>{getEssenceEffect(essence)}</small>}
             </div>
           ))}
         </div>
       )}
-      {expandedContent && <div className={`combat-card-expansion ${isExpanded ? "is-expanded" : ""}`}><div>{expandedContent}</div></div>}
+    </div>
+  );
+}
+
+function PlayerEssenceInfo({ essences }: { essences: Array<{ slotIndex: number; essence: { code: string; name: string; grade: number } }> }) {
+  if (essences.length === 0) return null;
+
+  return (
+    <div className="player-essence-info">
+      {essences.map(({ slotIndex, essence }) => (
+        <div className="player-essence-info-row" key={slotIndex}>
+          <b>SLOT{slotIndex} {essence.name} {formatEssenceGrade(essence.grade)}</b>
+          <small>{getEssenceEffect(essence)}</small>
+        </div>
+      ))}
     </div>
   );
 }
