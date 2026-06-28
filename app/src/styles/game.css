@@ -1561,31 +1561,29 @@ button:disabled {
 }
 
 .combat-essence-slot {
-  display: grid;
-  gap: 3px;
-}
-
-.combat-essence-slot button {
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--txt-bright);
+  display: block;
+  color: var(--txt);
   font-size: 12px;
   font-weight: 700;
   line-height: 1.35;
-  text-align: left;
 }
 
-.combat-essence-slot button:hover,
-.combat-essence-slot button[aria-expanded="true"] {
-  color: var(--acc-2);
+.combat-essence-info-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
 }
 
-.combat-essence-slot small {
+.combat-essence-info-list p {
+  margin: 0;
   color: var(--mut);
   font-size: 11px;
-  line-height: 1.35;
+  line-height: 1.4;
+}
+
+.combat-essence-info-list b {
+  color: var(--txt);
+  font-weight: 700;
 }
 
 .combat-character-link {
@@ -1637,6 +1635,10 @@ button:disabled {
 
 .combat-info-button:hover {
   color: var(--acc-2);
+}
+
+.combat-essence-info-button {
+  right: 36px;
 }
 
 .monster-info-essence {
