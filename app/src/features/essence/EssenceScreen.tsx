@@ -149,6 +149,8 @@ export function getSlotUnlockLevel(slotIndex: number) {
 
 function getEssenceMonsterOrder(code: string) {
   const order = [
+    "artificial-strike", "artificial-might", "artificial-bolt", "artificial-knowledge", "artificial-armor",
+    "artificial-guard", "artificial-life", "artificial-focus", "artificial-critical", "artificial-pierce",
     "angry-boar-might", "forest-wolf-flurry", "firefly-spirit-ember", "stone-beetle-stonehide",
     "forest-warden-stag-charge", "green-viper-fang", "vine-hunter-bind", "moss-slime-regeneration",
     "leafshade-panther-counter", "redthorn-beast-spines", "blackneedle-bat-leech", "bigeye-bat-night-sight",
