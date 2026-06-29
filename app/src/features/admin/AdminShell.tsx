@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { Link } from "react-router-dom";
+import { Link, Navigate, Route, Routes } from "react-router-dom";
 import { checkMyAdminAccess } from "../../api/adminApi";
 import type { Profile } from "../../api/profileApi";
 import { AdminScreen, type AdminAccessState } from "./AdminScreen";
@@ -56,7 +56,10 @@ export function AdminShell({
             </button>
           </div>
         </header>
-        <AdminScreen session={session} adminAccess={adminAccess} onRefresh={refreshAdminAccess} />
+        <Routes>
+          <Route path="/admin" element={<AdminScreen session={session} adminAccess={adminAccess} onRefresh={refreshAdminAccess} />} />
+          <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
+        </Routes>
       </main>
     </>
   );

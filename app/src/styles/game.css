@@ -2092,6 +2092,10 @@ button:disabled {
   padding: 12px 16px;
 }
 
+.admin-topbar .btn {
+  color: var(--txt);
+}
+
 .admin-brand {
   display: inline-flex;
   align-items: center;
@@ -2133,9 +2137,28 @@ button:disabled {
 }
 
 .admin-view {
+  width: min(1120px, 100%);
   display: grid;
   align-content: start;
   gap: 14px;
+  margin: 0 auto;
+  padding: 20px 16px var(--auto-battle-hud-clearance);
+  overflow: auto;
+}
+
+.admin-page-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+}
+
+.admin-page-head h1 {
+  margin: 4px 0 0;
+  color: var(--txt-bright);
+  font-size: 28px;
 }
 
 .admin-grid {
@@ -2144,29 +2167,66 @@ button:disabled {
   gap: 14px;
 }
 
-.admin-terminal {
+.admin-status-panel {
   display: grid;
-  gap: 8px;
+  align-content: end;
+  min-height: 180px;
   border: 1px solid var(--line);
-  background: var(--bg-2);
-  padding: 12px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--acc-deep) 70%, transparent), transparent 62%),
+    var(--surf);
+  padding: 16px;
 }
 
-.admin-terminal span {
+.admin-status-panel span {
   color: var(--mut);
   font-size: 12px;
   font-weight: 800;
 }
 
-.admin-terminal strong {
+.admin-status-panel strong {
   color: var(--acc);
-  font-size: 24px;
+  font-size: 32px;
 }
 
-.admin-terminal small {
+.admin-status-panel small {
+  min-width: 0;
   color: var(--txt);
   font-size: 13px;
   font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.admin-console-panel {
+  min-height: 180px;
+}
+
+.admin-tool-list {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-tool-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 10px;
+}
+
+.admin-tool-list strong {
+  color: var(--txt-bright);
+}
+
+.admin-tool-list span {
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .archive-view {
@@ -2419,6 +2479,15 @@ button:disabled {
 
   .archive-view {
     overflow: visible;
+  }
+
+  .admin-view {
+    overflow: visible;
+  }
+
+  .admin-page-head {
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 
   .admin-topbar {
