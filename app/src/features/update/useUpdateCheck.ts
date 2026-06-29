@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabase";
 import { CLIENT_VERSION } from "../../version";
 
 type VersionManifest = {
@@ -46,19 +47,7 @@ export function useUpdateCheck() {
 
 async function getUpdateState(): Promise<UpdateState> {
   try {
-    const response = await fetch(`/version.json?t=${Date.now()}`, {
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      return {
-        status: "unknown",
-        latest: CLIENT_VERSION,
-        minimum: CLIENT_VERSION,
-      };
-    }
-
-    const manifest = await response.json() as VersionManifest;
+    const manifest = await loadVersionManifest();
 
     if (compareVersions(CLIENT_VERSION, manifest.minimum) < 0) {
       return {
@@ -88,6 +77,38 @@ async function getUpdateState(): Promise<UpdateState> {
       minimum: CLIENT_VERSION,
     };
   }
+}
+
+async function loadVersionManifest(): Promise<VersionManifest> {
+  if (supabase) {
+    const { data, error } = await supabase.rpc("get_app_version");
+
+    if (!error && isVersionManifest(data)) {
+      return data;
+    }
+  }
+
+  const response = await fetch(`/version.json?t=${Date.now()}`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("version_manifest_unavailable");
+  }
+
+  const manifest = await response.json() as unknown;
+  if (!isVersionManifest(manifest)) {
+    throw new Error("version_manifest_invalid");
+  }
+
+  return manifest;
+}
+
+function isVersionManifest(value: unknown): value is VersionManifest {
+  if (!value || typeof value !== "object") return false;
+
+  const manifest = value as Partial<VersionManifest>;
+  return typeof manifest.latest === "string" && typeof manifest.minimum === "string";
 }
 
 function compareVersions(left: string, right: string) {
