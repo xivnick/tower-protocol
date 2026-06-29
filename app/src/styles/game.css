@@ -2068,6 +2068,43 @@ button:disabled {
   text-align: right;
 }
 
+.admin-view {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-terminal {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 12px;
+}
+
+.admin-terminal span {
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-terminal strong {
+  color: var(--acc);
+  font-size: 24px;
+}
+
+.admin-terminal small {
+  color: var(--txt);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .archive-view {
   min-height: 0;
   overflow: auto;
@@ -2318,6 +2355,10 @@ button:disabled {
 
   .archive-view {
     overflow: visible;
+  }
+
+  .admin-grid {
+    grid-template-columns: 1fr;
   }
 
   .ranking-row {
