@@ -266,9 +266,13 @@ button:disabled {
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 42px;
   padding: 0 14px;
   font-weight: 800;
+  text-decoration: none;
 }
 
 .btn.primary {
@@ -640,7 +644,13 @@ button:disabled {
 .mobile-session-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
+}
+
+.topbar-actions .btn,
+.mobile-account-actions .btn {
+  min-width: 82px;
 }
 
 .auto-battle-hud {
@@ -2363,6 +2373,13 @@ button:disabled {
   .mobile-account-menu .btn {
     flex: 0 0 auto;
     min-height: 34px;
+  }
+
+  .mobile-account-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-left: auto;
   }
 
   .mobile-nav-panel {

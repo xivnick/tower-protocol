@@ -333,14 +333,16 @@ export function AppShell({
                   <span>SESSION</span>
                   <strong>{nickname}</strong>
                 </div>
-                <button className="btn ghost" type="button" onClick={onSignOut}>
-                  로그아웃
-                </button>
-                {isAdmin && (
-                  <Link className="btn ghost" to="/admin" onClick={() => closeAccountMenu()}>
-                    어드민
-                  </Link>
-                )}
+                <div className="mobile-account-actions">
+                  {isAdmin && (
+                    <Link className="btn ghost" to="/admin" onClick={() => closeAccountMenu()}>
+                      어드민
+                    </Link>
+                  )}
+                  <button className="btn ghost" type="button" onClick={onSignOut}>
+                    로그아웃
+                  </button>
+                </div>
               </div>
             )}
           </header>
