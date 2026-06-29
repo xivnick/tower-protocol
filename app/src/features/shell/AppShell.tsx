@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { checkMyAdminAccess } from "../../api/adminApi";
 import type { Profile } from "../../api/profileApi";
 import type { Character } from "../../types/character";
 import { toastMessages } from "../../shared/toastMessages";
@@ -18,10 +17,9 @@ import { DashboardScreen } from "../dashboard/DashboardScreen";
 import { HuntScreen } from "../hunt/HuntScreen";
 import { PatchNotesArchive } from "../patchNotes/PatchNotes";
 import { RankingScreen } from "../ranking/Ranking";
-import { AdminScreen, type AdminAccessState } from "../admin/AdminScreen";
 import { useToast } from "../toast/ToastProvider";
 
-const baseNavItems = [
+const navItems = [
   { label: "대시보드", to: "/", end: true, enabled: true },
   { label: "사냥", to: "/hunt", enabled: true },
   { label: "탑", to: "/tower", enabled: false },
@@ -56,7 +54,6 @@ export function AppShell({
   const [routeRefreshKey, setRouteRefreshKey] = useState(0);
   const [activeHuntState, setActiveHuntState] = useState<HuntState | null>(null);
   const [inventoryNotice, setInventoryNotice] = useState<InventoryNoticeStatus>({ equipment: false, essence: false });
-  const [adminAccess, setAdminAccess] = useState<AdminAccessState>({ status: "checking", isAdmin: false, message: "" });
   const settlementAttemptRef = useRef<string | null>(null);
   const recoveryToastRef = useRef<string | null>(null);
   const autoHuntActionRef = useRef<string | null>(null);
@@ -68,9 +65,6 @@ export function AppShell({
   const currentNavLabel = getCurrentNavLabel(location.pathname);
   const hasUnspentStatPoints = Boolean(character && character.stat_points > 0);
   const currentNavHasNotice = hasNavNotice(location.pathname, hasUnspentStatPoints, inventoryNotice);
-  const navItems = adminAccess.isAdmin
-    ? [...baseNavItems, { label: "어드민", to: "/admin", enabled: true }]
-    : baseNavItems;
 
   useEffect(() => {
     if (!character) {
@@ -89,10 +83,6 @@ export function AppShell({
 
     return () => { isActive = false; };
   }, [character?.id]);
-
-  useEffect(() => {
-    refreshAdminAccess();
-  }, [session?.user.id]);
 
   useEffect(() => {
     const battle = activeHuntState?.lastBattle;
@@ -255,23 +245,6 @@ export function AppShell({
     setInventoryNotice(status);
   }
 
-  function refreshAdminAccess() {
-    if (!session?.user.id) {
-      setAdminAccess({ status: "ready", isAdmin: false, message: "" });
-      return;
-    }
-
-    setAdminAccess({ status: "checking", isAdmin: false, message: "" });
-    void checkMyAdminAccess().then((result) => {
-      if (!result.ok) {
-        setAdminAccess({ status: "error", isAdmin: false, message: result.message });
-        return;
-      }
-
-      setAdminAccess({ status: "ready", isAdmin: result.isAdmin, message: "" });
-    });
-  }
-
   function toggleAccountMenu() {
     if (isAccountOpen) {
       closeAccountMenu();
@@ -429,7 +402,6 @@ export function AppShell({
               <Route path="/hunt" element={<HuntScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={handleHuntStateChange} onInventoryReward={handleInventoryReward} />} />
               <Route path="/ranking" element={<RankingScreen />} />
               <Route path="/patch-notes" element={<PatchNotesArchive />} />
-              <Route path="/admin" element={<AdminScreen session={session} adminAccess={adminAccess} onRefresh={refreshAdminAccess} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
@@ -447,7 +419,6 @@ function getCurrentNavLabel(pathname: string) {
   if (pathname.startsWith("/hunt")) return "사냥";
   if (pathname.startsWith("/ranking")) return "랭킹";
   if (pathname.startsWith("/patch-notes")) return "패치노트";
-  if (pathname.startsWith("/admin")) return "어드민";
   return "대시보드";
 }
 

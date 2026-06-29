@@ -2068,6 +2068,70 @@ button:disabled {
   text-align: right;
 }
 
+.admin-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background:
+    linear-gradient(180deg, rgba(57, 255, 122, 0.06), transparent 260px),
+    var(--bg);
+}
+
+.has-environment-banner .admin-shell {
+  min-height: calc(100vh - var(--environment-banner));
+}
+
+.admin-topbar {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 12px 16px;
+}
+
+.admin-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--acc);
+  font-family: var(--disp);
+  font-size: 18px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.admin-brand i {
+  width: 9px;
+  height: 18px;
+  background: var(--acc);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--acc) 60%, transparent);
+}
+
+.admin-session {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  gap: 8px;
+}
+
+.admin-session span {
+  min-width: 0;
+  color: var(--txt-bright);
+  font-size: 13px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.admin-session .btn {
+  min-height: 34px;
+  padding: 6px 10px;
+  text-decoration: none;
+}
+
 .admin-view {
   display: grid;
   align-content: start;
@@ -2355,6 +2419,16 @@ button:disabled {
 
   .archive-view {
     overflow: visible;
+  }
+
+  .admin-topbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-session {
+    justify-content: start;
+    flex-wrap: wrap;
   }
 
   .admin-grid {
