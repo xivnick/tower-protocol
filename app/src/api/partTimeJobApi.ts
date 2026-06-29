@@ -1,5 +1,4 @@
-import { supabase } from "../lib/supabase";
-import { toKoreanAuthMessage } from "../shared/authMessages";
+import { callRpc } from "./rpcClient";
 import type { Character } from "../types/character";
 
 export type PartTimeJobState = {
@@ -19,21 +18,17 @@ type PartTimeJobPayload = {
 };
 
 export async function getMyPartTimeJobState(): Promise<{ ok: boolean; state: PartTimeJobState | null; message: string }> {
-  if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
+  const result = await callRpc<PartTimeJobPayload["job_state"]>("get_my_part_time_job_state", "알바 상태를 불러오지 못했습니다.");
+  if (!result.ok) return { ok: false, state: null, message: result.message };
 
-  const { data, error } = await supabase.rpc("get_my_part_time_job_state");
-  if (error) return { ok: false, state: null, message: toKoreanAuthMessage(error.message, "알바 상태를 불러오지 못했습니다.") };
-
-  return { ok: true, state: mapPartTimeJobState(data as PartTimeJobPayload["job_state"]), message: "" };
+  return { ok: true, state: mapPartTimeJobState(result.data), message: "" };
 }
 
 export async function workPartTime(): Promise<{ ok: boolean; character: Character | null; gainedCredits: number; state: PartTimeJobState | null; message: string }> {
-  if (!supabase) return { ok: false, character: null, gainedCredits: 0, state: null, message: "Supabase 설정을 확인해주세요." };
+  const result = await callRpc<PartTimeJobPayload>("work_part_time", "알바를 완료하지 못했습니다.");
+  if (!result.ok) return { ok: false, character: null, gainedCredits: 0, state: null, message: result.message };
 
-  const { data, error } = await supabase.rpc("work_part_time");
-  if (error) return { ok: false, character: null, gainedCredits: 0, state: null, message: toKoreanAuthMessage(error.message, "알바를 완료하지 못했습니다.") };
-
-  const payload = (data ?? {}) as PartTimeJobPayload;
+  const payload = result.data ?? {};
 
   return {
     ok: Boolean(payload.character),

@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabase";
 import { toKoreanAuthMessage } from "../shared/authMessages";
 import { getCharacterNameValidationMessage } from "../shared/validation";
+import { callRpc } from "./rpcClient";
 import type { Character } from "../types/character";
 
 export type CharacterStatKey = "strength" | "agility" | "dexterity" | "vitality" | "endurance" | "intelligence" | "wisdom";
@@ -312,9 +313,7 @@ export async function createMyCharacter(name: string): Promise<CharacterResult> 
 }
 
 export async function allocateCharacterStats(allocation: CharacterStatAllocation): Promise<CharacterResult> {
-  if (!supabase) return { ok: false, character: null, message: "Supabase 설정을 확인해주세요." };
-
-  const { data, error } = await supabase.rpc("allocate_character_stats", {
+  const result = await callRpc<Character>("allocate_character_stats", "스탯을 적용하지 못했습니다.", {
     strength_delta: allocation.strength,
     agility_delta: allocation.agility,
     dexterity_delta: allocation.dexterity,
@@ -324,28 +323,24 @@ export async function allocateCharacterStats(allocation: CharacterStatAllocation
     wisdom_delta: allocation.wisdom,
   });
 
-  if (error) {
-    return { ok: false, character: null, message: toKoreanAuthMessage(error.message, "스탯을 적용하지 못했습니다.") };
+  if (!result.ok) {
+    return { ok: false, character: null, message: result.message };
   }
 
-  return { ok: true, character: data as Character, message: "스탯을 적용했습니다." };
+  return { ok: true, character: result.data, message: "스탯을 적용했습니다." };
 }
 
 export async function resetCharacterStats(): Promise<CharacterResult> {
-  if (!supabase) return { ok: false, character: null, message: "Supabase 설정을 확인해주세요." };
+  const result = await callRpc<Character>("reset_character_stats", "스탯을 초기화하지 못했습니다.");
 
-  const { data, error } = await supabase.rpc("reset_character_stats");
-
-  if (error) {
-    return { ok: false, character: null, message: toKoreanAuthMessage(error.message, "스탯을 초기화하지 못했습니다.") };
+  if (!result.ok) {
+    return { ok: false, character: null, message: result.message };
   }
 
-  return { ok: true, character: data as Character, message: "스탯을 초기화했습니다." };
+  return { ok: true, character: result.data, message: "스탯을 초기화했습니다." };
 }
 
 export async function checkCharacterNameAvailability(name: string): Promise<CharacterNameAvailabilityResult> {
-  if (!supabase) return { ok: false, available: false, message: "Supabase 설정을 확인해주세요." };
-
   const candidate = name.trim();
   const validationMessage = getCharacterNameValidationMessage(candidate);
 
@@ -353,25 +348,26 @@ export async function checkCharacterNameAvailability(name: string): Promise<Char
     return { ok: true, available: false, message: validationMessage };
   }
 
-  const { data, error } = await supabase.rpc("is_character_name_available", { candidate });
+  const result = await callRpc<boolean>("is_character_name_available", "캐릭터 이름 확인에 실패했습니다.", { candidate });
 
-  if (error) {
+  if (!result.ok) {
     return {
       ok: false,
       available: false,
-      message: toKoreanAuthMessage(error.message, "캐릭터 이름 확인에 실패했습니다."),
+      message: result.message,
     };
   }
 
   return {
     ok: true,
-    available: Boolean(data),
-    message: data ? "사용 가능한 캐릭터 이름입니다." : "이미 사용 중인 이름입니다.",
+    available: Boolean(result.data),
+    message: result.data ? "사용 가능한 캐릭터 이름입니다." : "이미 사용 중인 이름입니다.",
   };
 }
 
 export async function trainMyCharacter(): Promise<TrainingResult> {
-  if (!supabase) {
+  const result = await callRpc<TrainingPayload>("train_my_character", "훈련을 완료하지 못했습니다.");
+  if (!result.ok) {
     return {
       ok: false,
       character: null,
@@ -380,26 +376,11 @@ export async function trainMyCharacter(): Promise<TrainingResult> {
       levelBefore: 0,
       levelAfter: 0,
       trainingState: null,
-      message: "Supabase 설정을 확인해주세요.",
+      message: result.message,
     };
   }
 
-  const { data, error } = await supabase.rpc("train_my_character");
-
-  if (error) {
-    return {
-      ok: false,
-      character: null,
-      gainedExperience: 0,
-      rewardTier: "normal",
-      levelBefore: 0,
-      levelAfter: 0,
-      trainingState: null,
-      message: toKoreanAuthMessage(error.message, "훈련을 완료하지 못했습니다."),
-    };
-  }
-
-  const payload = data as TrainingPayload;
+  const payload = result.data;
 
   return {
     ok: Boolean(payload.character),
@@ -414,12 +395,10 @@ export async function trainMyCharacter(): Promise<TrainingResult> {
 }
 
 export async function getMyTrainingState(): Promise<{ ok: boolean; state: TrainingState | null; message: string }> {
-  if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
+  const result = await callRpc<TrainingStatePayload>("get_my_training_state", "훈련 상태를 불러오지 못했습니다.");
+  if (!result.ok) return { ok: false, state: null, message: result.message };
 
-  const { data, error } = await supabase.rpc("get_my_training_state");
-  if (error) return { ok: false, state: null, message: toKoreanAuthMessage(error.message, "훈련 상태를 불러오지 못했습니다.") };
-
-  return { ok: true, state: mapTrainingState(data as TrainingStatePayload), message: "" };
+  return { ok: true, state: mapTrainingState(result.data), message: "" };
 }
 
 function mapTrainingState(payload: TrainingStatePayload | undefined): TrainingState {
@@ -453,15 +432,12 @@ export async function huntTrainingDummy(): Promise<HuntResult> {
     message: "사냥을 완료하지 못했습니다.",
   };
 
-  if (!supabase) return { ...emptyResult, message: "Supabase 설정을 확인해주세요." };
-
-  const { data, error } = await supabase.rpc("hunt_training_dummy");
-
-  if (error) {
-    return { ...emptyResult, message: toKoreanAuthMessage(error.message, "사냥을 완료하지 못했습니다.") };
+  const result = await callRpc<HuntPayload>("hunt_training_dummy", "사냥을 완료하지 못했습니다.");
+  if (!result.ok) {
+    return { ...emptyResult, message: result.message };
   }
 
-  const payload = data as HuntPayload;
+  const payload = result.data;
   const huntState = mapHuntState(payload.hunt_state);
   const battle = huntState.lastBattle;
 
@@ -485,12 +461,10 @@ export async function encounterHuntMonster(): Promise<HuntResult> {
     levelBefore: 0, levelAfter: 0, experienceAfter: 0, durationTicks: 0, totalDamage: 0,
     attackCount: 0, criticalCount: 0, totalRegeneration: 0, logs: [], message: "몬스터를 찾지 못했습니다.",
   };
-  if (!supabase) return { ...emptyResult, message: "Supabase 설정을 확인해주세요." };
+  const result = await callRpc<HuntPayload>("encounter_hunt_monster", "몬스터를 찾지 못했습니다.");
+  if (!result.ok) return { ...emptyResult, message: result.message };
 
-  const { data, error } = await supabase.rpc("encounter_hunt_monster");
-  if (error) return { ...emptyResult, message: toKoreanAuthMessage(error.message, "몬스터를 찾지 못했습니다.") };
-
-  const payload = data as HuntPayload;
+  const payload = result.data;
   const huntState = mapHuntState(payload.hunt_state);
   const battle = huntState.lastBattle;
   if (!battle) return { ...emptyResult, huntState, message: "조우 정보를 불러오지 못했습니다." };
@@ -509,45 +483,37 @@ export async function fleeTrainingDummyHunt(): Promise<HuntResult> {
 }
 
 export async function fleeHuntEncounter(): Promise<{ ok: boolean; state: HuntState | null; message: string }> {
-  if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
+  const result = await callRpc<HuntPayload>("flee_hunt_encounter", "조우에서 벗어나지 못했습니다.");
+  if (!result.ok) return { ok: false, state: null, message: result.message };
 
-  const { data, error } = await supabase.rpc("flee_hunt_encounter");
-  if (error) return { ok: false, state: null, message: toKoreanAuthMessage(error.message, "조우에서 벗어나지 못했습니다.") };
-
-  const payload = data as HuntPayload;
+  const payload = result.data;
   return { ok: true, state: mapHuntState(payload.hunt_state), message: "조우에서 벗어났습니다." };
 }
 
 export async function getMyHuntState(): Promise<{ ok: boolean; state: HuntState | null; message: string }> {
-  if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
+  const result = await callRpc<HuntStatePayload>("get_my_hunt_state", "사냥 기록을 불러오지 못했습니다.");
+  if (!result.ok) return { ok: false, state: null, message: result.message };
 
-  const { data, error } = await supabase.rpc("get_my_hunt_state");
-  if (error) return { ok: false, state: null, message: toKoreanAuthMessage(error.message, "사냥 기록을 불러오지 못했습니다.") };
-
-  return { ok: true, state: mapHuntState(data as HuntStatePayload), message: "" };
+  return { ok: true, state: mapHuntState(result.data), message: "" };
 }
 
 export async function configureAutoHunt(enabled: boolean): Promise<{ ok: boolean; state: HuntState | null; message: string }> {
-  if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("configure_auto_hunt", { enabled });
-  if (error) return { ok: false, state: null, message: toKoreanAuthMessage(error.message, "자동사냥을 변경하지 못했습니다.") };
-  return { ok: true, state: mapHuntState(data as HuntStatePayload), message: "" };
+  const result = await callRpc<HuntStatePayload>("configure_auto_hunt", "자동사냥을 변경하지 못했습니다.", { enabled });
+  if (!result.ok) return { ok: false, state: null, message: result.message };
+  return { ok: true, state: mapHuntState(result.data), message: "" };
 }
 
 export async function selectHuntGround(huntGroundId: string): Promise<{ ok: boolean; state: HuntState | null; message: string }> {
-  if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("select_hunt_ground", { target_hunt_ground_id: huntGroundId });
-  if (error) return { ok: false, state: null, message: toKoreanAuthMessage(error.message, "사냥터를 변경하지 못했습니다.") };
-  return { ok: true, state: mapHuntState(data as HuntStatePayload), message: "" };
+  const result = await callRpc<HuntStatePayload>("select_hunt_ground", "사냥터를 변경하지 못했습니다.", { target_hunt_ground_id: huntGroundId });
+  if (!result.ok) return { ok: false, state: null, message: result.message };
+  return { ok: true, state: mapHuntState(result.data), message: "" };
 }
 
 export async function getHuntGrounds(): Promise<{ ok: boolean; grounds: HuntGround[]; message: string }> {
-  if (!supabase) return { ok: false, grounds: [], message: "Supabase 설정을 확인해주세요." };
+  const result = await callRpc<Array<{ id?: unknown; name?: unknown; recommended_min_level?: unknown; recommended_max_level?: unknown }>>("get_hunt_grounds", "사냥터를 불러오지 못했습니다.");
+  if (!result.ok) return { ok: false, grounds: [], message: result.message };
 
-  const { data, error } = await supabase.rpc("get_hunt_grounds");
-  if (error) return { ok: false, grounds: [], message: toKoreanAuthMessage(error.message, "사냥터를 불러오지 못했습니다.") };
-
-  const grounds = Array.isArray(data) ? data : [];
+  const grounds = Array.isArray(result.data) ? result.data : [];
   return {
     ok: true,
     grounds: grounds.map((ground) => ({
@@ -561,16 +527,14 @@ export async function getHuntGrounds(): Promise<{ ok: boolean; grounds: HuntGrou
 }
 
 export async function getTrainingDummyInfo(): Promise<{ ok: boolean; info: MonsterInfo | null; message: string }> {
-  if (!supabase) return { ok: false, info: null, message: "Supabase 설정을 확인해주세요." };
-
-  const { data, error } = await supabase.rpc("get_training_dummy_info");
-  if (error) return { ok: false, info: null, message: toKoreanAuthMessage(error.message, "몬스터 정보를 불러오지 못했습니다.") };
-
-  const payload = data as {
+  const result = await callRpc<{
     name?: string; level?: number; physical_attack?: number; magic_attack?: number; physical_defense?: number;
     magic_defense?: number; max_hp?: number; regeneration?: number; attacks_per_second?: number;
     cooldown_reduction?: number; accuracy?: number; evasion_rate?: number; critical_chance?: number; critical_damage?: number;
-  };
+  }>("get_training_dummy_info", "몬스터 정보를 불러오지 못했습니다.");
+  if (!result.ok) return { ok: false, info: null, message: result.message };
+
+  const payload = result.data;
   return {
     ok: true,
     info: {
@@ -696,12 +660,10 @@ async function resolveHuntAction(rpc: "settle_training_dummy_hunt" | "flee_train
     levelBefore: 0, levelAfter: 0, experienceAfter: 0, durationTicks: 0, totalDamage: 0,
     attackCount: 0, criticalCount: 0, totalRegeneration: 0, logs: [], message: fallbackMessage,
   };
-  if (!supabase) return { ...emptyResult, message: "Supabase 설정을 확인해주세요." };
+  const result = await callRpc<HuntPayload>(rpc, fallbackMessage);
+  if (!result.ok) return { ...emptyResult, message: result.message };
 
-  const { data, error } = await supabase.rpc(rpc);
-  if (error) return { ...emptyResult, message: toKoreanAuthMessage(error.message, fallbackMessage) };
-
-  const payload = data as HuntPayload;
+  const payload = result.data;
   const huntState = mapHuntState(payload.hunt_state);
   const battle = huntState.lastBattle;
   if (!battle) return { ...emptyResult, huntState, message: fallbackMessage };

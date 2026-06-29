@@ -1,5 +1,4 @@
-import { supabase } from "../lib/supabase";
-import { toKoreanAuthMessage } from "../shared/authMessages";
+import { callRpc } from "./rpcClient";
 import type { CharacterRanking } from "../types/ranking";
 
 type RankingRow = {
@@ -17,23 +16,18 @@ type RankingResult = {
 };
 
 export async function loadCharacterRankings(limitCount = 50): Promise<RankingResult> {
-  if (!supabase) {
-    return { ok: false, rankings: [], message: "Supabase 설정을 확인해주세요." };
-  }
-
-  const { data, error } = await supabase.rpc("get_character_rankings", { limit_count: limitCount });
-
-  if (error) {
+  const result = await callRpc<RankingRow[]>("get_character_rankings", "랭킹을 불러오지 못했습니다.", { limit_count: limitCount });
+  if (!result.ok) {
     return {
       ok: false,
       rankings: [],
-      message: toKoreanAuthMessage(error.message, "랭킹을 불러오지 못했습니다."),
+      message: result.message,
     };
   }
 
   return {
     ok: true,
-    rankings: ((data ?? []) as RankingRow[]).map((row) => ({
+    rankings: (result.data ?? []).map((row) => ({
       rank: row.rank,
       characterId: row.character_id,
       name: row.name,

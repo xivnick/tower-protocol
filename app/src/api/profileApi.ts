@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabase";
 import { toKoreanAuthMessage } from "../shared/authMessages";
 import { getNicknameValidationMessage } from "../shared/validation";
+import { callRpc } from "./rpcClient";
 
 export type Profile = {
   user_id: string;
@@ -83,8 +84,6 @@ export async function createMyProfile(nickname: string): Promise<ProfileResult> 
 }
 
 export async function checkNicknameAvailability(nickname: string): Promise<NicknameAvailabilityResult> {
-  if (!supabase) return { ok: false, available: false, message: "Supabase 설정을 확인해주세요." };
-
   const candidate = nickname.trim();
   const validationMessage = getNicknameValidationMessage(candidate);
 
@@ -92,19 +91,19 @@ export async function checkNicknameAvailability(nickname: string): Promise<Nickn
     return { ok: true, available: false, message: validationMessage };
   }
 
-  const { data, error } = await supabase.rpc("is_profile_name_available", { candidate });
+  const result = await callRpc<boolean>("is_profile_name_available", "닉네임 확인에 실패했습니다.", { candidate });
 
-  if (error) {
+  if (!result.ok) {
     return {
       ok: false,
       available: false,
-      message: toKoreanAuthMessage(error.message, "닉네임 확인에 실패했습니다."),
+      message: result.message,
     };
   }
 
   return {
     ok: true,
-    available: Boolean(data),
-    message: data ? "사용 가능한 닉네임입니다." : "이미 사용 중인 이름입니다.",
+    available: Boolean(result.data),
+    message: result.data ? "사용 가능한 닉네임입니다." : "이미 사용 중인 이름입니다.",
   };
 }
