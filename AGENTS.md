@@ -13,6 +13,10 @@
 - 머지 단계에서는 사용자 확인 후 PR을 생성하고, 머지와 원격·로컬 브랜치 삭제까지 처리한다.
 - 구현 단계에서는 앱 버전, `version.json`, 패치노트 migration을 변경하지 않는다.
 - 버전 변경과 패치노트 작성·적용은 머지 단계에서 사용자 확인 후 처리한다.
+- DB 변경은 `schema`, `reference data`, `content data`로 분류한다. 테이블·컬럼·RLS·함수·트리거는 schema migration으로 관리하고, 정수·몬스터·장비·드랍처럼 서버 로직이 의존하는 기준 데이터는 reference data로 관리한다. 패치노트·공지·릴리스 문구는 content data로 취급한다.
+- schema 변경은 `supabase/schemas`의 현재 상태 원본을 먼저 갱신하고, `supabase db diff -f <name>`로 migration을 생성한 뒤 검토한다. `supabase/migrations`는 배포 이력으로만 보고 현재 구현 원본으로 삼지 않는다.
+- 패치노트 row 생성은 migration으로 처리하지 않는다. Codex는 `supabase/content/patch-notes`의 재실행 가능한 draft 생성 스크립트로 최초 초안만 넣고, 기존 패치노트 row와 사용자가 수정한 원격 데이터는 덮어쓰지 않는다.
+- feature branch에서 시행착오로 생긴 migration은 머지 전 하나의 의미 있는 migration으로 정리한다. 이미 원격 DB에 적용된 migration은 임의 수정하지 않는다.
 
 - 기능은 작고 검증 가능한 단위로 구현하고, 현재 기능이 요구하지 않는 시스템은 미리 설계하지 않는다.
 - 기존 프로젝트 패턴을 우선하고, 아키텍처 경계를 깨지 않는다.

@@ -1,5 +1,4 @@
-import { supabase } from "../lib/supabase";
-import { toKoreanAuthMessage } from "../shared/authMessages";
+import { callRpc } from "./rpcClient";
 
 export type Essence = {
   id: string;
@@ -68,22 +67,22 @@ function mapInventory(payload: EssenceInventoryPayload | null): EssenceInventory
 }
 
 export async function getMyEssences(): Promise<{ ok: boolean; inventory: EssenceInventory; message: string }> {
-  if (!supabase) return { ok: false, inventory: mapInventory(null), message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("get_my_essences");
-  if (error) return { ok: false, inventory: mapInventory(null), message: toKoreanAuthMessage(error.message, "정수를 불러오지 못했습니다.") };
-  return { ok: true, inventory: mapInventory(data as EssenceInventoryPayload), message: "" };
+  const result = await callRpc<EssenceInventoryPayload>("get_my_essences", "정수를 불러오지 못했습니다.");
+  if (!result.ok) return { ok: false, inventory: mapInventory(null), message: result.message };
+  return { ok: true, inventory: mapInventory(result.data), message: "" };
 }
 
 export async function equipEssence(essenceId: string, slotIndex: number): Promise<{ ok: boolean; inventory: EssenceInventory; message: string }> {
-  if (!supabase) return { ok: false, inventory: mapInventory(null), message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("equip_essence", { target_character_essence_id: essenceId, target_slot_index: slotIndex });
-  if (error) return { ok: false, inventory: mapInventory(null), message: toKoreanAuthMessage(error.message, "정수를 장착하지 못했습니다.") };
-  return { ok: true, inventory: mapInventory(data as EssenceInventoryPayload), message: "" };
+  const result = await callRpc<EssenceInventoryPayload>("equip_essence", "정수를 장착하지 못했습니다.", {
+    target_character_essence_id: essenceId,
+    target_slot_index: slotIndex,
+  });
+  if (!result.ok) return { ok: false, inventory: mapInventory(null), message: result.message };
+  return { ok: true, inventory: mapInventory(result.data), message: "" };
 }
 
 export async function unequipEssence(slotIndex: number): Promise<{ ok: boolean; inventory: EssenceInventory; message: string }> {
-  if (!supabase) return { ok: false, inventory: mapInventory(null), message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("unequip_essence", { target_slot_index: slotIndex });
-  if (error) return { ok: false, inventory: mapInventory(null), message: toKoreanAuthMessage(error.message, "정수를 해제하지 못했습니다.") };
-  return { ok: true, inventory: mapInventory(data as EssenceInventoryPayload), message: "" };
+  const result = await callRpc<EssenceInventoryPayload>("unequip_essence", "정수를 해제하지 못했습니다.", { target_slot_index: slotIndex });
+  if (!result.ok) return { ok: false, inventory: mapInventory(null), message: result.message };
+  return { ok: true, inventory: mapInventory(result.data), message: "" };
 }

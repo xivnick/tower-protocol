@@ -1,5 +1,4 @@
-import { supabase } from "../lib/supabase";
-import { toKoreanAuthMessage } from "../shared/authMessages";
+import { callRpc } from "./rpcClient";
 import type { Character } from "../types/character";
 import type { ArmorType, ArmorVariant } from "../shared/armorStats";
 
@@ -84,75 +83,65 @@ function mapArmorInventory(payload: ArmorInventoryPayload | null): ArmorInventor
 }
 
 export async function getMyWeapons(): Promise<{ ok: boolean; inventory: WeaponInventory; message: string }> {
-  if (!supabase) return { ok: false, inventory: mapInventory(null), message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("get_my_weapons");
-  if (error) return { ok: false, inventory: mapInventory(null), message: toKoreanAuthMessage(error.message, "무기를 불러오지 못했습니다.") };
-  return { ok: true, inventory: mapInventory(data as InventoryPayload), message: "" };
+  const result = await callRpc<InventoryPayload>("get_my_weapons", "무기를 불러오지 못했습니다.");
+  if (!result.ok) return { ok: false, inventory: mapInventory(null), message: result.message };
+  return { ok: true, inventory: mapInventory(result.data), message: "" };
 }
 
 export async function openWeaponBox(): Promise<{ ok: boolean; character: Character | null; weapon: Weapon | null; message: string }> {
-  if (!supabase) return { ok: false, character: null, weapon: null, message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("open_weapon_box");
-  if (error) return { ok: false, character: null, weapon: null, message: toKoreanAuthMessage(error.message, "무기 상자를 열지 못했습니다.") };
-  const payload = data as { character?: Character; weapon?: WeaponPayload };
+  const result = await callRpc<{ character?: Character; weapon?: WeaponPayload }>("open_weapon_box", "무기 상자를 열지 못했습니다.");
+  if (!result.ok) return { ok: false, character: null, weapon: null, message: result.message };
+  const payload = result.data;
   return { ok: true, character: payload.character ?? null, weapon: mapWeapon(payload.weapon ?? {}), message: "" };
 }
 
 export async function equipWeapon(weaponId: string): Promise<{ ok: boolean; inventory: WeaponInventory; message: string }> {
-  if (!supabase) return { ok: false, inventory: mapInventory(null), message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("equip_weapon", { target_weapon_id: weaponId });
-  if (error) return { ok: false, inventory: mapInventory(null), message: toKoreanAuthMessage(error.message, "무기를 장착하지 못했습니다.") };
-  return { ok: true, inventory: mapInventory(data as InventoryPayload), message: "" };
+  const result = await callRpc<InventoryPayload>("equip_weapon", "무기를 장착하지 못했습니다.", { target_weapon_id: weaponId });
+  if (!result.ok) return { ok: false, inventory: mapInventory(null), message: result.message };
+  return { ok: true, inventory: mapInventory(result.data), message: "" };
 }
 
 export async function unequipWeapon(): Promise<{ ok: boolean; inventory: WeaponInventory; message: string }> {
-  if (!supabase) return { ok: false, inventory: mapInventory(null), message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("unequip_weapon");
-  if (error) return { ok: false, inventory: mapInventory(null), message: toKoreanAuthMessage(error.message, "무기를 해제하지 못했습니다.") };
-  return { ok: true, inventory: mapInventory(data as InventoryPayload), message: "" };
+  const result = await callRpc<InventoryPayload>("unequip_weapon", "무기를 해제하지 못했습니다.");
+  if (!result.ok) return { ok: false, inventory: mapInventory(null), message: result.message };
+  return { ok: true, inventory: mapInventory(result.data), message: "" };
 }
 
 export async function sellWeapon(weaponId: string): Promise<{ ok: boolean; character: Character | null; gainedCredits: number; message: string }> {
-  if (!supabase) return { ok: false, character: null, gainedCredits: 0, message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("sell_weapon", { target_weapon_id: weaponId });
-  if (error) return { ok: false, character: null, gainedCredits: 0, message: toKoreanAuthMessage(error.message, "무기를 판매하지 못했습니다.") };
-  const payload = data as { character?: Character; gained_credits?: number };
+  const result = await callRpc<{ character?: Character; gained_credits?: number }>("sell_weapon", "무기를 판매하지 못했습니다.", { target_weapon_id: weaponId });
+  if (!result.ok) return { ok: false, character: null, gainedCredits: 0, message: result.message };
+  const payload = result.data;
   return { ok: true, character: payload.character ?? null, gainedCredits: payload.gained_credits ?? 0, message: "" };
 }
 
 export async function getMyArmors(): Promise<{ ok: boolean; inventory: ArmorInventory; message: string }> {
-  if (!supabase) return { ok: false, inventory: mapArmorInventory(null), message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("get_my_armors");
-  if (error) return { ok: false, inventory: mapArmorInventory(null), message: toKoreanAuthMessage(error.message, "방어구를 불러오지 못했습니다.") };
-  return { ok: true, inventory: mapArmorInventory(data as ArmorInventoryPayload), message: "" };
+  const result = await callRpc<ArmorInventoryPayload>("get_my_armors", "방어구를 불러오지 못했습니다.");
+  if (!result.ok) return { ok: false, inventory: mapArmorInventory(null), message: result.message };
+  return { ok: true, inventory: mapArmorInventory(result.data), message: "" };
 }
 
 export async function openArmorBox(): Promise<{ ok: boolean; character: Character | null; armor: Armor | null; message: string }> {
-  if (!supabase) return { ok: false, character: null, armor: null, message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("open_armor_box");
-  if (error) return { ok: false, character: null, armor: null, message: toKoreanAuthMessage(error.message, "방어구 상자를 열지 못했습니다.") };
-  const payload = data as { character?: Character; armor?: ArmorPayload };
+  const result = await callRpc<{ character?: Character; armor?: ArmorPayload }>("open_armor_box", "방어구 상자를 열지 못했습니다.");
+  if (!result.ok) return { ok: false, character: null, armor: null, message: result.message };
+  const payload = result.data;
   return { ok: true, character: payload.character ?? null, armor: mapArmor(payload.armor ?? {}), message: "" };
 }
 
 export async function equipArmor(armorId: string): Promise<{ ok: boolean; inventory: ArmorInventory; message: string }> {
-  if (!supabase) return { ok: false, inventory: mapArmorInventory(null), message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("equip_armor", { target_armor_id: armorId });
-  if (error) return { ok: false, inventory: mapArmorInventory(null), message: toKoreanAuthMessage(error.message, "방어구를 장착하지 못했습니다.") };
-  return { ok: true, inventory: mapArmorInventory(data as ArmorInventoryPayload), message: "" };
+  const result = await callRpc<ArmorInventoryPayload>("equip_armor", "방어구를 장착하지 못했습니다.", { target_armor_id: armorId });
+  if (!result.ok) return { ok: false, inventory: mapArmorInventory(null), message: result.message };
+  return { ok: true, inventory: mapArmorInventory(result.data), message: "" };
 }
 
 export async function unequipArmor(): Promise<{ ok: boolean; inventory: ArmorInventory; message: string }> {
-  if (!supabase) return { ok: false, inventory: mapArmorInventory(null), message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("unequip_armor");
-  if (error) return { ok: false, inventory: mapArmorInventory(null), message: "방어구를 해제하지 못했습니다." };
-  return { ok: true, inventory: mapArmorInventory(data as ArmorInventoryPayload), message: "" };
+  const result = await callRpc<ArmorInventoryPayload>("unequip_armor", "방어구를 해제하지 못했습니다.");
+  if (!result.ok) return { ok: false, inventory: mapArmorInventory(null), message: result.message };
+  return { ok: true, inventory: mapArmorInventory(result.data), message: "" };
 }
 
 export async function sellArmor(armorId: string): Promise<{ ok: boolean; character: Character | null; gainedCredits: number; message: string }> {
-  if (!supabase) return { ok: false, character: null, gainedCredits: 0, message: "Supabase 설정을 확인해주세요." };
-  const { data, error } = await supabase.rpc("sell_armor", { target_armor_id: armorId });
-  if (error) return { ok: false, character: null, gainedCredits: 0, message: toKoreanAuthMessage(error.message, "방어구를 판매하지 못했습니다.") };
-  const payload = data as { character?: Character; gained_credits?: number };
+  const result = await callRpc<{ character?: Character; gained_credits?: number }>("sell_armor", "방어구를 판매하지 못했습니다.", { target_armor_id: armorId });
+  if (!result.ok) return { ok: false, character: null, gainedCredits: 0, message: result.message };
+  const payload = result.data;
   return { ok: true, character: payload.character ?? null, gainedCredits: payload.gained_credits ?? 0, message: "" };
 }
