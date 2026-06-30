@@ -19,6 +19,7 @@ import type { Profile } from "../../api/profileApi";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import { getNicknameValidationMessage, validateEmail, validateNickname, validatePassword } from "../../shared/validation";
 import type { AuthMode, AuthState } from "../../types/auth";
+import { AdminShell } from "../admin/AdminShell";
 import { AppShell } from "../shell/AppShell";
 
 const initialState: AuthState = {
@@ -243,6 +244,16 @@ export function AuthGate() {
   }
 
   if (state.status === "signed-in") {
+    if (location.pathname.startsWith("/admin")) {
+      return (
+        <AdminShell
+          session={state.session}
+          profile={state.profile}
+          onSignOut={handleSignOut}
+        />
+      );
+    }
+
     return (
       <AppShell
         session={state.session}

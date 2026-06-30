@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { checkMyAdminAccess } from "../../api/adminApi";
 import type { Profile } from "../../api/profileApi";
 import type { Character } from "../../types/character";
 import { toastMessages } from "../../shared/toastMessages";
@@ -54,6 +55,7 @@ export function AppShell({
   const [routeRefreshKey, setRouteRefreshKey] = useState(0);
   const [activeHuntState, setActiveHuntState] = useState<HuntState | null>(null);
   const [inventoryNotice, setInventoryNotice] = useState<InventoryNoticeStatus>({ equipment: false, essence: false });
+  const [isAdmin, setIsAdmin] = useState(false);
   const settlementAttemptRef = useRef<string | null>(null);
   const recoveryToastRef = useRef<string | null>(null);
   const autoHuntActionRef = useRef<string | null>(null);
@@ -83,6 +85,22 @@ export function AppShell({
 
     return () => { isActive = false; };
   }, [character?.id]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (!session?.user.id) {
+      setIsAdmin(false);
+      return;
+    }
+
+    void checkMyAdminAccess().then((result) => {
+      if (!isActive) return;
+      setIsAdmin(result.ok && result.isAdmin);
+    });
+
+    return () => { isActive = false; };
+  }, [session?.user.id]);
 
   useEffect(() => {
     const battle = activeHuntState?.lastBattle;
@@ -315,9 +333,16 @@ export function AppShell({
                   <span>SESSION</span>
                   <strong>{nickname}</strong>
                 </div>
-                <button className="btn ghost" type="button" onClick={onSignOut}>
-                  로그아웃
-                </button>
+                <div className="mobile-account-actions">
+                  {isAdmin && (
+                    <Link className="btn ghost" to="/admin" onClick={() => closeAccountMenu()}>
+                      어드민
+                    </Link>
+                  )}
+                  <button className="btn ghost" type="button" onClick={onSignOut}>
+                    로그아웃
+                  </button>
+                </div>
               </div>
             )}
           </header>
@@ -387,6 +412,11 @@ export function AppShell({
             </div>
             <div className="topbar-actions">
               <span className="credit-chip">{(character?.credits ?? 0).toLocaleString()} CR</span>
+              {isAdmin && (
+                <Link className="btn ghost" to="/admin">
+                  어드민
+                </Link>
+              )}
               <button className="btn ghost" type="button" onClick={onSignOut}>
                 로그아웃
               </button>
