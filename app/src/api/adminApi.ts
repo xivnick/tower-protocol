@@ -162,6 +162,22 @@ export async function resetAdminPlayerHuntState(characterId: string, reason: str
   });
 }
 
+export async function grantAdminCharacterCredits(characterId: string, amount: number, reason: string): Promise<AdminDataResult<unknown>> {
+  return callAdminRpc<unknown>("admin_grant_character_credits", "크레딧을 지급하지 못했습니다.", {
+    target_character_id: characterId,
+    credit_amount: amount,
+    reason,
+  });
+}
+
+export async function grantAdminCharacterExperience(characterId: string, amount: number, reason: string): Promise<AdminDataResult<unknown>> {
+  return callAdminRpc<unknown>("admin_grant_character_experience", "경험치를 지급하지 못했습니다.", {
+    target_character_id: characterId,
+    experience_amount: amount,
+    reason,
+  });
+}
+
 export async function loadAdminBalanceCatalog(): Promise<AdminDataResult<AdminBalanceCatalog>> {
   return callAdminRpc<AdminBalanceCatalog>("admin_get_balance_catalog", "밸런스 데이터를 불러오지 못했습니다.");
 }

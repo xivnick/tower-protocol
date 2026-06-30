@@ -1,5 +1,8 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
+  grantAdminCharacterCredits,
+  grantAdminCharacterExperience,
   loadAdminAuditLogs,
   loadAdminBalanceCatalog,
   loadAdminContentStatus,
@@ -77,16 +80,7 @@ export function AdminPlayersScreen() {
           {rows.status !== "ready" ? (
             <p className={`panel-message ${rows.status === "error" ? "is-error" : ""}`}>{rows.message}</p>
           ) : (
-            <ul className="admin-row-list" aria-label="플레이어 검색 결과">
-              {rows.data.length === 0 ? <li><strong>결과 없음</strong><span>-</span></li> : rows.data.map((row) => (
-                <li key={row.user_id}>
-                  <button className={row.user_id === selectedUserId ? "is-active" : ""} type="button" onClick={() => setSelectedUserId(row.user_id)}>
-                    <strong>{row.character_name ?? row.nickname ?? row.email ?? row.user_id}</strong>
-                    <span>{row.level ? `LV.${row.level}` : "캐릭터 없음"}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <PlayerResultTable rows={rows.data} selectedUserId={selectedUserId} onSelect={setSelectedUserId} />
           )}
         </article>
 
@@ -99,14 +93,24 @@ export function AdminPlayersScreen() {
 export function AdminSupportScreen() {
   useDocumentTitle("TOWER://ADMIN_SUPPORT");
 
+  const [searchParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [players, setPlayers] = useState<AdminPlayerSearchRow[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(searchParams.get("user"));
   const [reason, setReason] = useState("");
+  const [creditsAmount, setCreditsAmount] = useState("100");
+  const [experienceAmount, setExperienceAmount] = useState("100");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const detail = useAdminPlayerDetail(selectedUserId);
+  const [detailRefreshKey, setDetailRefreshKey] = useState(0);
+  const detail = useAdminPlayerDetail(selectedUserId, detailRefreshKey);
   const selectedCharacterId = detail.status === "ready" ? detail.data.character?.id ?? null : null;
+
+  useEffect(() => {
+    const userId = searchParams.get("user");
+    if (!userId) return;
+    setSelectedUserId(userId);
+  }, [searchParams]);
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -136,6 +140,30 @@ export function AdminSupportScreen() {
     });
   }
 
+  function handleGrantCredits() {
+    if (!selectedCharacterId) return;
+    handleGrant(() => grantAdminCharacterCredits(selectedCharacterId, toPositiveInteger(creditsAmount), reason), "크레딧을 지급했습니다.");
+  }
+
+  function handleGrantExperience() {
+    if (!selectedCharacterId) return;
+    handleGrant(() => grantAdminCharacterExperience(selectedCharacterId, toPositiveInteger(experienceAmount), reason), "경험치를 지급했습니다.");
+  }
+
+  function handleGrant(action: () => ReturnType<typeof grantAdminCharacterCredits>, successMessage: string) {
+    setIsSubmitting(true);
+    setMessage("");
+    void action().then((result) => {
+      setIsSubmitting(false);
+      if (!result.ok) {
+        setMessage(result.message);
+        return;
+      }
+      setMessage(successMessage);
+      setDetailRefreshKey((current) => current + 1);
+    });
+  }
+
   return (
     <section className="admin-view">
       <div className="admin-page-head">
@@ -155,33 +183,88 @@ export function AdminSupportScreen() {
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="플레이어 검색" />
             <button className="btn primary" type="submit">검색</button>
           </form>
-          <ul className="admin-row-list" aria-label="지원 대상">
-            {players.map((player) => (
-              <li key={player.user_id}>
-                <button className={player.user_id === selectedUserId ? "is-active" : ""} type="button" onClick={() => setSelectedUserId(player.user_id)}>
-                  <strong>{player.character_name ?? player.nickname ?? player.email ?? player.user_id}</strong>
-                  <span>{player.level ? `LV.${player.level}` : "캐릭터 없음"}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <PlayerResultTable rows={players} selectedUserId={selectedUserId} onSelect={setSelectedUserId} compact />
         </article>
 
         <article className="panel">
           <div className="panel-head">
             <span>ACTION</span>
-            <h2>사냥 상태 초기화</h2>
+            <h2>지원 작업</h2>
           </div>
           <textarea className="admin-reason" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="처리 사유" rows={4} />
-          <button className="btn danger" type="button" disabled={!selectedCharacterId || isSubmitting} onClick={handleResetHunt}>
-            {isSubmitting ? "처리 중..." : "상태 초기화"}
-          </button>
+          <div className="admin-grant-grid">
+            <label>
+              <span>크레딧</span>
+              <input value={creditsAmount} onChange={(event) => setCreditsAmount(event.target.value)} inputMode="numeric" />
+            </label>
+            <button className="btn ghost" type="button" disabled={!selectedCharacterId || isSubmitting} onClick={handleGrantCredits}>
+              크레딧 지급
+            </button>
+            <label>
+              <span>경험치</span>
+              <input value={experienceAmount} onChange={(event) => setExperienceAmount(event.target.value)} inputMode="numeric" />
+            </label>
+            <button className="btn ghost" type="button" disabled={!selectedCharacterId || isSubmitting} onClick={handleGrantExperience}>
+              경험치 지급
+            </button>
+            <button className="btn danger admin-wide-action" type="button" disabled={!selectedCharacterId || isSubmitting} onClick={handleResetHunt}>
+              {isSubmitting ? "처리 중..." : "사냥 상태 초기화"}
+            </button>
+          </div>
           {message && <p className={`panel-message ${message.includes("했습니다") ? "" : "is-error"}`}>{message}</p>}
         </article>
       </div>
 
       <PlayerDetailPanel detail={detail} />
     </section>
+  );
+}
+
+function PlayerResultTable({
+  rows,
+  selectedUserId,
+  onSelect,
+  compact = false,
+}: {
+  rows: AdminPlayerSearchRow[];
+  selectedUserId: string | null;
+  onSelect: (userId: string) => void;
+  compact?: boolean;
+}) {
+  if (rows.length === 0) {
+    return <p className="panel-message">결과가 없습니다.</p>;
+  }
+
+  return (
+    <div className={`admin-player-table ${compact ? "is-compact" : ""}`} role="table" aria-label="플레이어 검색 결과">
+      <div className="admin-player-table-head" role="row">
+        <span>플레이어</span>
+        <span>캐릭터</span>
+        {!compact && <span>재화</span>}
+        <span>작업</span>
+      </div>
+      {rows.map((row) => (
+        <div className={`admin-player-row ${row.user_id === selectedUserId ? "is-active" : ""}`} role="row" key={row.user_id}>
+          <button type="button" onClick={() => onSelect(row.user_id)}>
+            <strong>{row.nickname ?? row.email ?? "UNKNOWN"}</strong>
+            <small>{row.email ?? row.user_id}</small>
+          </button>
+          <button type="button" onClick={() => onSelect(row.user_id)}>
+            <strong>{row.character_name ?? "없음"}</strong>
+            <small>{row.level ? `LV.${row.level} / EXP ${row.experience?.toLocaleString() ?? 0}` : "-"}</small>
+          </button>
+          {!compact && (
+            <button type="button" onClick={() => onSelect(row.user_id)}>
+              <strong>{row.credits?.toLocaleString() ?? "-"}</strong>
+              <small>CR</small>
+            </button>
+          )}
+          <Link className="btn ghost" to={`/admin/support?user=${row.user_id}`}>
+            지원
+          </Link>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -358,7 +441,7 @@ function CatalogPanel({ title, label, rows }: { title: string; label: string; ro
   );
 }
 
-function useAdminPlayerDetail(userId: string | null): LoadState<AdminPlayerDetail> {
+function useAdminPlayerDetail(userId: string | null, refreshKey = 0): LoadState<AdminPlayerDetail> {
   const [state, setState] = useState<LoadState<AdminPlayerDetail>>({ status: "loading", data: null, message: "플레이어를 선택해주세요." });
 
   useEffect(() => {
@@ -379,7 +462,7 @@ function useAdminPlayerDetail(userId: string | null): LoadState<AdminPlayerDetai
     });
 
     return () => { isActive = false; };
-  }, [userId]);
+  }, [userId, refreshKey]);
 
   return state;
 }
@@ -414,4 +497,9 @@ function Kv({ label, value }: { label: string; value: string }) {
 
 function formatDateTime(value: string) {
   return new Date(value).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" });
+}
+
+function toPositiveInteger(value: string) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : 0;
 }

@@ -2188,6 +2188,36 @@ button:disabled {
   margin-bottom: 10px;
 }
 
+.admin-grant-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.admin-grant-grid label {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.admin-grant-grid label span {
+  color: var(--mut);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.admin-grant-grid input {
+  width: 100%;
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
+  color: var(--txt-bright);
+  padding: 8px 10px;
+}
+
+.admin-wide-action {
+  grid-column: 1 / -1;
+}
+
 .admin-status-panel {
   display: grid;
   align-content: end;
@@ -2302,6 +2332,77 @@ button:disabled {
   font-size: 12px;
   font-style: normal;
   font-weight: 800;
+}
+
+.admin-player-table {
+  display: grid;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+}
+
+.admin-player-table-head,
+.admin-player-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.2fr) minmax(130px, 1fr) minmax(96px, 0.5fr) 82px;
+  align-items: stretch;
+}
+
+.admin-player-table.is-compact .admin-player-table-head,
+.admin-player-table.is-compact .admin-player-row {
+  grid-template-columns: minmax(150px, 1.1fr) minmax(120px, 1fr) 82px;
+}
+
+.admin-player-table-head {
+  border-bottom: 1px solid var(--line);
+  background: var(--surf-2);
+}
+
+.admin-player-table-head span {
+  color: var(--mut);
+  font-size: 11px;
+  font-weight: 900;
+  padding: 8px 10px;
+}
+
+.admin-player-row + .admin-player-row {
+  border-top: 1px solid var(--line);
+}
+
+.admin-player-row.is-active {
+  background: color-mix(in srgb, var(--acc-deep) 34%, transparent);
+}
+
+.admin-player-row button {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  padding: 9px 10px;
+  text-align: left;
+}
+
+.admin-player-row .btn {
+  min-height: auto;
+  border: 0;
+  border-left: 1px solid var(--line);
+  padding: 0 10px;
+}
+
+.admin-player-row strong {
+  min-width: 0;
+  color: var(--txt-bright);
+  overflow-wrap: anywhere;
+}
+
+.admin-player-row small {
+  min-width: 0;
+  color: var(--mut);
+  font-size: 11px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .archive-view {
@@ -2580,6 +2681,27 @@ button:disabled {
   .admin-split,
   .admin-search {
     grid-template-columns: 1fr;
+  }
+
+  .admin-player-table,
+  .admin-player-table-head,
+  .admin-player-row,
+  .admin-player-table.is-compact .admin-player-table-head,
+  .admin-player-table.is-compact .admin-player-row,
+  .admin-grant-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-player-table-head {
+    display: none;
+  }
+
+  .admin-player-row .btn,
+  .admin-player-row button {
+    border-right: 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    min-height: 38px;
   }
 
   .ranking-row {
