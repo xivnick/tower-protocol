@@ -3,13 +3,16 @@ import type { Session } from "@supabase/supabase-js";
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { checkMyAdminAccess } from "../../api/adminApi";
 import type { Profile } from "../../api/profileApi";
+import { AdminAuditScreen, AdminBalanceScreen, AdminContentScreen, AdminPlayersScreen, AdminSupportScreen } from "./AdminPages";
 import { AdminScreen, type AdminAccessState } from "./AdminScreen";
 
 const adminNavItems = [
   { label: "대시보드", to: "/admin", end: true },
   { label: "플레이어", to: "/admin/players" },
+  { label: "지원", to: "/admin/support" },
   { label: "밸런스", to: "/admin/balance" },
-  { label: "로그", to: "/admin/logs" },
+  { label: "콘텐츠", to: "/admin/content" },
+  { label: "감사", to: "/admin/audit" },
 ];
 
 export function AdminShell({
@@ -191,9 +194,12 @@ export function AdminShell({
           <div className="workspace-body route-frame">
             <Routes>
               <Route path="/admin" element={<AdminScreen session={session} adminAccess={adminAccess} onRefresh={refreshAdminAccess} />} />
-              <Route path="/admin/players" element={<AdminPlaceholder title="플레이어" label="PLAYERS" />} />
-              <Route path="/admin/balance" element={<AdminPlaceholder title="밸런스" label="BALANCE" />} />
-              <Route path="/admin/logs" element={<AdminPlaceholder title="로그" label="LOGS" />} />
+              <Route path="/admin/players" element={<AdminPlayersScreen />} />
+              <Route path="/admin/support" element={<AdminSupportScreen />} />
+              <Route path="/admin/balance" element={<AdminBalanceScreen />} />
+              <Route path="/admin/content" element={<AdminContentScreen />} />
+              <Route path="/admin/audit" element={<AdminAuditScreen />} />
+              <Route path="/admin/logs" element={<Navigate to="/admin/audit" replace />} />
               <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
             </Routes>
           </div>
@@ -205,32 +211,14 @@ export function AdminShell({
 
 function getCurrentAdminNavLabel(pathname: string) {
   if (pathname.startsWith("/admin/players")) return "플레이어";
+  if (pathname.startsWith("/admin/support")) return "지원";
   if (pathname.startsWith("/admin/balance")) return "밸런스";
-  if (pathname.startsWith("/admin/logs")) return "로그";
+  if (pathname.startsWith("/admin/content")) return "콘텐츠";
+  if (pathname.startsWith("/admin/audit") || pathname.startsWith("/admin/logs")) return "감사";
   return "대시보드";
 }
 
 function isAdminPathActive(pathname: string, itemPath: string, exact?: boolean) {
   if (exact) return pathname === itemPath;
   return pathname.startsWith(itemPath);
-}
-
-function AdminPlaceholder({ title, label }: { title: string; label: string }) {
-  return (
-    <section className="admin-view">
-      <div className="admin-page-head">
-        <div>
-          <span className="eyebrow">{label}</span>
-          <h1>{title}</h1>
-        </div>
-      </div>
-      <article className="panel admin-console-panel">
-        <div className="panel-head">
-          <span>STATUS</span>
-          <h2>준비 중</h2>
-        </div>
-        <p className="panel-message">이 작업대는 아직 연결되지 않았습니다.</p>
-      </article>
-    </section>
-  );
 }

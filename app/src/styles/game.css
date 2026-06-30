@@ -2134,6 +2134,60 @@ button:disabled {
   gap: 14px;
 }
 
+.admin-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-metric {
+  display: grid;
+  align-content: end;
+  min-height: 110px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 14px;
+}
+
+.admin-metric span {
+  color: var(--mut);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.admin-metric strong {
+  color: var(--txt-bright);
+  font-size: 28px;
+}
+
+.admin-split {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+  gap: 14px;
+}
+
+.admin-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.admin-search input,
+.admin-reason {
+  width: 100%;
+  border: 1px solid var(--line-2);
+  border-radius: 0;
+  background: var(--bg-2);
+  color: var(--txt-bright);
+  padding: 10px 12px;
+}
+
+.admin-reason {
+  resize: vertical;
+  margin-bottom: 10px;
+}
+
 .admin-status-panel {
   display: grid;
   align-content: end;
@@ -2168,6 +2222,12 @@ button:disabled {
   min-height: 180px;
 }
 
+.admin-action-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .admin-tool-list {
   list-style: none;
   display: grid;
@@ -2193,6 +2253,54 @@ button:disabled {
 .admin-tool-list span {
   color: var(--mut);
   font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-row-list {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-row-list li,
+.admin-row-list button {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: inherit;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.admin-row-list button.is-active {
+  border-color: var(--acc-dim);
+  background: var(--acc-deep);
+}
+
+.admin-row-list div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.admin-row-list strong {
+  min-width: 0;
+  color: var(--txt-bright);
+  overflow-wrap: anywhere;
+}
+
+.admin-row-list span,
+.admin-row-list em {
+  color: var(--mut);
+  font-size: 12px;
+  font-style: normal;
   font-weight: 800;
 }
 
@@ -2465,6 +2573,12 @@ button:disabled {
   }
 
   .admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-metric-grid,
+  .admin-split,
+  .admin-search {
     grid-template-columns: 1fr;
   }
 
