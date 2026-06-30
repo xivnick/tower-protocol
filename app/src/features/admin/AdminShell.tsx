@@ -22,6 +22,8 @@ export function AdminShell({
   onSignOut: () => void;
 }) {
   const [adminAccess, setAdminAccess] = useState<AdminAccessState>({ status: "checking", isAdmin: false, message: "" });
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isAccountClosing, setIsAccountClosing] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavClosing, setIsNavClosing] = useState(false);
   const location = useLocation();
@@ -48,6 +50,24 @@ export function AdminShell({
 
       setAdminAccess({ status: "ready", isAdmin: result.isAdmin, message: "" });
     });
+  }
+
+  function toggleAccountMenu() {
+    if (isAccountOpen) {
+      closeAccountMenu();
+      return;
+    }
+
+    setIsAccountClosing(false);
+    setIsAccountOpen(true);
+  }
+
+  function closeAccountMenu() {
+    setIsAccountClosing(true);
+    window.setTimeout(() => {
+      setIsAccountOpen(false);
+      setIsAccountClosing(false);
+    }, 100);
   }
 
   function toggleNavMenu() {
@@ -84,15 +104,27 @@ export function AdminShell({
                 <i aria-hidden="true" />
               </NavLink>
               <div className="mobile-session-actions">
-                <span className="credit-chip">{nickname}</span>
-                <Link className="btn ghost" to="/">
-                  게임
-                </Link>
-                <button className="btn ghost" type="button" onClick={onSignOut}>
-                  로그아웃
+                <button className="account-chip" type="button" onClick={toggleAccountMenu} aria-expanded={isAccountOpen}>
+                  {nickname}
                 </button>
               </div>
             </div>
+            {isAccountOpen && (
+              <div className={`mobile-account-menu ${isAccountClosing ? "is-closing" : ""}`}>
+                <div>
+                  <span>ADMIN</span>
+                  <strong>{nickname}</strong>
+                </div>
+                <div className="mobile-account-actions">
+                  <Link className="btn ghost" to="/" onClick={() => closeAccountMenu()}>
+                    게임
+                  </Link>
+                  <button className="btn ghost" type="button" onClick={onSignOut}>
+                    로그아웃
+                  </button>
+                </div>
+              </div>
+            )}
           </header>
 
           <section className="mobile-nav-panel" aria-label="어드민 모바일 메뉴">
@@ -140,12 +172,19 @@ export function AdminShell({
               <strong>{nickname}</strong>
             </div>
             <div className="topbar-actions">
-              <Link className="btn ghost" to="/">
-                게임
-              </Link>
-              <button className="btn ghost" type="button" onClick={onSignOut}>
-                로그아웃
+              <button className="account-chip admin-account-chip" type="button" onClick={toggleAccountMenu} aria-expanded={isAccountOpen}>
+                {nickname}
               </button>
+              {isAccountOpen && (
+                <div className={`account-menu ${isAccountClosing ? "is-closing" : ""}`}>
+                  <Link className="btn ghost" to="/" onClick={() => closeAccountMenu()}>
+                    게임
+                  </Link>
+                  <button className="btn ghost" type="button" onClick={onSignOut}>
+                    로그아웃
+                  </button>
+                </div>
+              )}
             </div>
           </header>
 

@@ -648,9 +648,36 @@ button:disabled {
   gap: 12px;
 }
 
+.topbar-actions {
+  position: relative;
+}
+
 .topbar-actions .btn,
 .mobile-account-actions .btn {
   min-width: 82px;
+}
+
+.admin-account-chip {
+  min-height: 34px;
+}
+
+.account-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 8;
+  display: flex;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: var(--surf);
+  padding: 10px;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.3);
+  animation: dropdown-in 120ms ease-out;
+}
+
+.account-menu.is-closing {
+  pointer-events: none;
+  animation: dropdown-out 100ms ease-in forwards;
 }
 
 .auto-battle-hud {
