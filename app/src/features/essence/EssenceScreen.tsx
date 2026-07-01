@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { equipEssence, getMyEssences, unequipEssence } from "../../api/essenceApi";
+import { equipEssence, getMyEssences, unequipEssence, upgradeEssence } from "../../api/essenceApi";
 import type { Essence } from "../../api/essenceApi";
 import { toastMessages } from "../../shared/toastMessages";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
@@ -70,6 +70,21 @@ export function EssenceScreen({ character, onNoticeChange }: { character: Charac
     showToast(toastMessages.essence.unequipped(slotIndex));
   }
 
+  async function handleUpgrade(essence: Essence) {
+    setPendingAction(`upgrade:${essence.id}`);
+    setMessage("");
+    const result = await upgradeEssence(essence.id);
+    setPendingAction(null);
+    if (!result.ok) {
+      setMessage(result.message);
+      return;
+    }
+    setEssences(result.result.inventory.essences);
+    const upgradedEssence = result.result.inventory.essences.find((candidate) => candidate.id === result.result.upgradedEssenceId) ?? null;
+    setSelectedEssenceId(result.result.upgradedEssenceId ?? essence.id);
+    showToast(toastMessages.essence.upgraded(upgradedEssence?.name ?? essence.name, upgradedEssence?.grade ?? essence.grade + 1));
+  }
+
   async function handleEssenceSelect(essence: Essence, isSelected: boolean) {
     setSelectedEssenceId(isSelected ? null : essence.id);
     if (isSelected || essence.seenAt) return;
@@ -124,7 +139,11 @@ export function EssenceScreen({ character, onNoticeChange }: { character: Charac
                   </button>
                   {isSelected && <div className="weapon-detail">
                     <div className="weapon-detail-info"><span>효과</span><strong>{getEssenceEffect(essence)}</strong></div>
+                    <div className="weapon-detail-info"><span>강화</span><strong>{getUpgradeHint(essence)}</strong></div>
                     <div className="button-row">
+                      <button className="btn" type="button" disabled={isBusy || !canUpgradeEssence(essence)} onClick={() => void handleUpgrade(essence)}>
+                        {pendingAction === `upgrade:${essence.id}` ? "강화 중..." : "정수 강화"}
+                      </button>
                       {slotIndexes.filter((slotIndex) => slotIndex <= unlockedSlotCount).map((slotIndex) => (
                         <button className="btn primary" type="button" disabled={isBusy} onClick={() => void handleEquip(essence, slotIndex)} key={slotIndex}>
                           {pendingAction === `${essence.id}:${slotIndex}` ? "장착 중..." : `SLOT ${slotIndex}`}
@@ -155,6 +174,16 @@ export function getUnlockedSlotCount(level: number) {
 
 export function getSlotUnlockLevel(slotIndex: number) {
   return slotIndex === 2 ? "LV.10" : "LV.30";
+}
+
+function canUpgradeEssence(essence: Essence) {
+  return essence.grade < 5 && essence.quantity >= 3;
+}
+
+function getUpgradeHint(essence: Essence) {
+  if (essence.grade >= 5) return "최대 등급";
+  if (essence.quantity < 3) return `재료 부족 · ${essence.quantity}/3`;
+  return `동일 정수 x3 -> ${formatGrade(essence.grade + 1)}`;
 }
 
 function getEssenceMonsterOrder(code: string) {

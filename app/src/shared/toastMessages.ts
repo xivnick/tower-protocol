@@ -31,6 +31,7 @@ export const toastMessages = {
   essence: {
     equipped: (name: string, slotIndex: number): ToastInput => ({ message: `정수 장착 · ${name} / SLOT ${slotIndex}`, tone: "system" }),
     unequipped: (slotIndex: number): ToastInput => ({ message: `정수 해제 · SLOT ${slotIndex}`, tone: "system" }),
+    upgraded: (name: string, grade: number): ToastInput => ({ message: `정수 강화 · ${name} ${formatEssenceGrade(grade)}`, tone: "rare" }),
   },
   hunt: {
     defeated: (): ToastInput => ({ message: "전투 패배 · 10초간 회복", tone: "error" }),
@@ -60,4 +61,8 @@ function getTrainingRewardTone(rewardTier: TrainingRewardTier): ToastTone {
   if (rewardTier === "great") return "rare";
   if (rewardTier === "good") return "uncommon";
   return "common";
+}
+
+function formatEssenceGrade(grade: number) {
+  return ["", "I", "II", "III", "IV", "V"][grade] ?? `${grade}`;
 }
