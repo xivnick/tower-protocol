@@ -132,24 +132,39 @@ export function EssenceScreen({ character, onNoticeChange }: { character: Charac
                 <article className={`weapon-entry ${isSelected ? "is-open" : ""} ${essence.equippedSlotIndex ? "is-equipped" : ""}`} key={essence.id}>
                   <button className="weapon-row" type="button" onClick={() => void handleEssenceSelect(essence, isSelected)} aria-expanded={isSelected}>
                     <div className="weapon-row-title">
-                      <strong className="inventory-item-title">{essence.name} {formatGrade(essence.grade)}{!essence.seenAt && <span className="inventory-new-dot" aria-label="새 정수" />}</strong>
+                      <strong className="inventory-item-title">
+                        {essence.name} {formatGrade(essence.grade)}
+                        {canUpgradeEssence(essence) && <span className="inventory-upgrade-tag">UP</span>}
+                        {!essence.seenAt && <span className="inventory-new-dot" aria-label="새 정수" />}
+                      </strong>
                       <small>{getEssenceSummary(essence)}</small>
                     </div>
                     <span>x{essence.quantity}</span>
                   </button>
                   {isSelected && <div className="weapon-detail">
-                    <div className="weapon-detail-info"><span>효과</span><strong>{getEssenceEffect(essence)}</strong></div>
-                    <div className="weapon-detail-info"><span>강화</span><strong>{getUpgradeHint(essence)}</strong></div>
-                    <div className="button-row">
+                    <section className="essence-detail-section">
+                      <span>효과</span>
+                      <strong>{getEssenceEffect(essence)}</strong>
+                    </section>
+                    <section className="essence-upgrade-panel">
+                      <div className="essence-upgrade-info">
+                        <span>강화</span>
+                        <strong>{getUpgradeHint(essence)}</strong>
+                      </div>
                       <button className="btn" type="button" disabled={isBusy || !canUpgradeEssence(essence)} onClick={() => void handleUpgrade(essence)}>
-                        {pendingAction === `upgrade:${essence.id}` ? "강화 중..." : "정수 강화"}
+                        {getUpgradeButtonLabel(essence, pendingAction === `upgrade:${essence.id}`)}
                       </button>
-                      {slotIndexes.filter((slotIndex) => slotIndex <= unlockedSlotCount).map((slotIndex) => (
-                        <button className="btn primary" type="button" disabled={isBusy} onClick={() => void handleEquip(essence, slotIndex)} key={slotIndex}>
-                          {pendingAction === `${essence.id}:${slotIndex}` ? "장착 중..." : `SLOT ${slotIndex}`}
-                        </button>
-                      ))}
-                    </div>
+                    </section>
+                    <section className="essence-detail-section">
+                      <span>장착</span>
+                      <div className="button-row">
+                        {slotIndexes.filter((slotIndex) => slotIndex <= unlockedSlotCount).map((slotIndex) => (
+                          <button className="btn primary" type="button" disabled={isBusy} onClick={() => void handleEquip(essence, slotIndex)} key={slotIndex}>
+                            {pendingAction === `${essence.id}:${slotIndex}` ? "장착 중..." : `SLOT ${slotIndex}`}
+                          </button>
+                        ))}
+                      </div>
+                    </section>
                   </div>}
                 </article>
               );
@@ -184,6 +199,13 @@ function getUpgradeHint(essence: Essence) {
   if (essence.grade >= 5) return "최대 등급";
   if (essence.quantity < 3) return `재료 부족 · ${essence.quantity}/3`;
   return `동일 정수 x3 -> ${formatGrade(essence.grade + 1)}`;
+}
+
+function getUpgradeButtonLabel(essence: Essence, isPending: boolean) {
+  if (isPending) return "강화 중...";
+  if (essence.grade >= 5) return "최대 등급";
+  if (essence.quantity < 3) return "재료 부족";
+  return "강화";
 }
 
 function getEssenceMonsterOrder(code: string) {

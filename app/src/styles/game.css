@@ -1130,6 +1130,15 @@ button:disabled {
   box-shadow: 0 0 8px color-mix(in srgb, var(--neg) 70%, transparent);
 }
 
+.inventory-upgrade-tag {
+  border: 1px solid color-mix(in srgb, var(--acc-2) 58%, var(--line));
+  color: var(--acc-2);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 3px 4px;
+}
+
 .weapon-row-title {
   display: flex;
   flex-wrap: wrap;
@@ -1172,6 +1181,42 @@ button:disabled {
 .weapon-detail-info > strong {
   color: var(--txt-bright);
   font-size: 13px;
+}
+
+.essence-detail-section,
+.essence-upgrade-panel {
+  display: grid;
+  gap: 7px;
+}
+
+.essence-detail-section + .essence-detail-section,
+.essence-detail-section + .essence-upgrade-panel,
+.essence-upgrade-panel + .essence-detail-section {
+  border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  padding-top: 10px;
+}
+
+.essence-detail-section > span,
+.essence-upgrade-info > span {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.essence-detail-section > strong,
+.essence-upgrade-info > strong {
+  color: var(--txt-bright);
+  font-size: 13px;
+}
+
+.essence-upgrade-panel {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.essence-upgrade-info {
+  display: grid;
+  gap: 3px;
 }
 
 .weapon-sale-action {
@@ -2795,6 +2840,14 @@ button:disabled {
 
   .combat-stat strong {
     min-width: 96px;
+  }
+
+  .essence-upgrade-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .essence-upgrade-panel .btn {
+    justify-self: start;
   }
 }
 
