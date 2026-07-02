@@ -23,7 +23,7 @@ export function EssenceScreen({
   useDocumentTitle("TOWER://ESSENCE");
   const { showToast } = useToast();
   const [essences, setEssences] = useState<Essence[]>([]);
-  const [selectedEssenceId, setSelectedEssenceId] = useState<string | null>(null);
+  const [expandedEssenceId, setExpandedEssenceId] = useState<string | null>(null);
   const [upgradeEssenceId, setUpgradeEssenceId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -57,6 +57,11 @@ export function EssenceScreen({
     if (!essences.some((essence) => essence.id === upgradeEssenceId)) setUpgradeEssenceId(null);
   }, [essences, upgradeEssenceId]);
 
+  useEffect(() => {
+    if (!expandedEssenceId) return;
+    if (!essences.some((essence) => essence.id === expandedEssenceId)) setExpandedEssenceId(null);
+  }, [essences, expandedEssenceId]);
+
   async function handleEquip(essence: Essence, slotIndex: number) {
     setPendingAction(`${essence.id}:${slotIndex}`);
     setMessage("");
@@ -67,7 +72,6 @@ export function EssenceScreen({
       return;
     }
     setEssences(result.inventory.essences);
-    setSelectedEssenceId(essence.id);
     showToast(toastMessages.essence.equipped(essence.name, slotIndex));
   }
 
@@ -101,7 +105,7 @@ export function EssenceScreen({
   }
 
   async function handleEssenceSelect(essence: Essence, isSelected: boolean) {
-    setSelectedEssenceId(isSelected ? null : essence.id);
+    setExpandedEssenceId(isSelected ? null : essence.id);
     if (isSelected || essence.seenAt) return;
     setEssences((current) => current.map((candidate) => candidate.id === essence.id ? { ...candidate, seenAt: new Date().toISOString() } : candidate));
     const result = await markInventoryItemSeen("essence", essence.id);
@@ -154,7 +158,7 @@ export function EssenceScreen({
         {isLoading ? <p className="panel-message">정수를 불러오는 중...</p> : essences.length === 0 ? <p className="panel-message">보유한 정수가 없습니다.</p> : (
           <div className="weapon-list">
             {sortedEssences.map((essence) => {
-              const isSelected = essence.id === selectedEssenceId;
+              const isSelected = essence.id === expandedEssenceId;
               return (
                 <article className={`weapon-entry ${isSelected ? "is-open" : ""} ${essence.equippedSlotIndex ? "is-equipped" : ""}`} key={essence.id}>
                   <button className="weapon-row" type="button" onClick={() => void handleEssenceSelect(essence, isSelected)} aria-expanded={isSelected}>
@@ -166,7 +170,7 @@ export function EssenceScreen({
                       </strong>
                       <small>{getEssenceSummary(essence)}</small>
                     </div>
-                    <span>x{essence.quantity}</span>
+                    <span className="inventory-row-meta"><b>x{essence.quantity}</b><small>{isSelected ? "닫기" : "상세"}</small></span>
                   </button>
                   {isSelected && <div className="weapon-detail">
                     <section className="essence-detail-section">
