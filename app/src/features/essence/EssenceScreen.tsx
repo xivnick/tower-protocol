@@ -11,7 +11,15 @@ import type { InventoryNoticeStatus } from "../../api/inventoryNoticeApi";
 
 const slotIndexes = [1, 2, 3];
 
-export function EssenceScreen({ character, onNoticeChange }: { character: Character | null; onNoticeChange?: (status: InventoryNoticeStatus) => void }) {
+export function EssenceScreen({
+  character,
+  onCharacterChange,
+  onNoticeChange,
+}: {
+  character: Character | null;
+  onCharacterChange: (character: Character | null) => void;
+  onNoticeChange?: (status: InventoryNoticeStatus) => void;
+}) {
   useDocumentTitle("TOWER://ESSENCE");
   const { showToast } = useToast();
   const [essences, setEssences] = useState<Essence[]>([]);
@@ -80,9 +88,10 @@ export function EssenceScreen({ character, onNoticeChange }: { character: Charac
       return;
     }
     setEssences(result.result.inventory.essences);
+    if (result.result.character) onCharacterChange(result.result.character);
     const upgradedEssence = result.result.inventory.essences.find((candidate) => candidate.id === result.result.upgradedEssenceId) ?? null;
     setSelectedEssenceId(result.result.upgradedEssenceId ?? essence.id);
-    showToast(toastMessages.essence.upgraded(upgradedEssence?.name ?? essence.name, upgradedEssence?.grade ?? essence.grade + 1));
+    showToast(toastMessages.essence.upgraded(upgradedEssence?.name ?? essence.name, upgradedEssence?.grade ?? essence.grade + 1, result.result.spentCredits));
   }
 
   async function handleEssenceSelect(essence: Essence, isSelected: boolean) {
@@ -119,6 +128,14 @@ export function EssenceScreen({ character, onNoticeChange }: { character: Charac
         </div>
       </article>
 
+      <EssenceUpgradePanel
+        essence={selectedEssence}
+        credits={character.credits}
+        isBusy={isBusy}
+        isPending={Boolean(selectedEssence && pendingAction === `upgrade:${selectedEssence.id}`)}
+        onUpgrade={handleUpgrade}
+      />
+
       <article className="panel">
         <div className="panel-head">
           <span>INVENTORY</span>
@@ -134,7 +151,7 @@ export function EssenceScreen({ character, onNoticeChange }: { character: Charac
                     <div className="weapon-row-title">
                       <strong className="inventory-item-title">
                         {essence.name} {formatGrade(essence.grade)}
-                        {canUpgradeEssence(essence) && <span className="inventory-upgrade-tag">UP</span>}
+                        {canUpgradeEssence(essence, character.credits) && <span className="inventory-upgrade-tag">UP</span>}
                         {!essence.seenAt && <span className="inventory-new-dot" aria-label="새 정수" />}
                       </strong>
                       <small>{getEssenceSummary(essence)}</small>
@@ -145,15 +162,6 @@ export function EssenceScreen({ character, onNoticeChange }: { character: Charac
                     <section className="essence-detail-section">
                       <span>효과</span>
                       <strong>{getEssenceEffect(essence)}</strong>
-                    </section>
-                    <section className="essence-upgrade-panel">
-                      <div className="essence-upgrade-info">
-                        <span>강화</span>
-                        <strong>{getUpgradeHint(essence)}</strong>
-                      </div>
-                      <button className="btn" type="button" disabled={isBusy || !canUpgradeEssence(essence)} onClick={() => void handleUpgrade(essence)}>
-                        {getUpgradeButtonLabel(essence, pendingAction === `upgrade:${essence.id}`)}
-                      </button>
                     </section>
                     <section className="essence-detail-section">
                       <span>장착</span>
@@ -191,21 +199,61 @@ export function getSlotUnlockLevel(slotIndex: number) {
   return slotIndex === 2 ? "LV.10" : "LV.30";
 }
 
-function canUpgradeEssence(essence: Essence) {
-  return essence.grade < 5 && essence.quantity >= 3;
+function EssenceUpgradePanel({
+  essence,
+  credits,
+  isBusy,
+  isPending,
+  onUpgrade,
+}: {
+  essence: Essence | null;
+  credits: number;
+  isBusy: boolean;
+  isPending: boolean;
+  onUpgrade: (essence: Essence) => void;
+}) {
+  return (
+    <article className="panel essence-upgrade-card">
+      <div className="panel-head action-head">
+        <div><span>FORGE</span><h2>정수 강화</h2></div>
+        {essence && (
+          <button className="btn primary" type="button" disabled={isBusy || !canUpgradeEssence(essence, credits)} onClick={() => onUpgrade(essence)}>
+            {getUpgradeButtonLabel(essence, credits, isPending)}
+          </button>
+        )}
+      </div>
+      {!essence ? <p className="panel-message">강화할 정수를 선택해주세요.</p> : (
+        <div className="essence-upgrade-grid">
+          <div className="essence-upgrade-target">
+            <span>선택 정수</span>
+            <strong>{essence.name} {formatGrade(essence.grade)}</strong>
+            <small>{getEssenceSummary(essence)}</small>
+          </div>
+          <div className="essence-upgrade-metrics">
+            <div><span>재료</span><strong className={essence.quantity < 3 ? "is-insufficient" : ""}>{essence.quantity}/3</strong></div>
+            <div><span>비용</span><strong className={credits < getEssenceUpgradeCost(essence.grade) ? "is-insufficient" : ""}>{getEssenceUpgradeCost(essence.grade).toLocaleString()} CR</strong></div>
+            <div><span>결과</span><strong>{essence.grade >= 5 ? "MAX" : `${formatGrade(essence.grade)} -> ${formatGrade(essence.grade + 1)}`}</strong></div>
+          </div>
+        </div>
+      )}
+    </article>
+  );
 }
 
-function getUpgradeHint(essence: Essence) {
-  if (essence.grade >= 5) return "최대 등급";
-  if (essence.quantity < 3) return `재료 부족 · ${essence.quantity}/3`;
-  return `동일 정수 x3 -> ${formatGrade(essence.grade + 1)}`;
+function canUpgradeEssence(essence: Essence, credits: number) {
+  return essence.grade < 5 && essence.quantity >= 3 && credits >= getEssenceUpgradeCost(essence.grade);
 }
 
-function getUpgradeButtonLabel(essence: Essence, isPending: boolean) {
+function getUpgradeButtonLabel(essence: Essence, credits: number, isPending: boolean) {
   if (isPending) return "강화 중...";
   if (essence.grade >= 5) return "최대 등급";
   if (essence.quantity < 3) return "재료 부족";
+  if (credits < getEssenceUpgradeCost(essence.grade)) return "크레딧 부족";
   return "강화";
+}
+
+function getEssenceUpgradeCost(grade: number) {
+  return [0, 100, 300, 900, 2700][grade] ?? 0;
 }
 
 function getEssenceMonsterOrder(code: string) {

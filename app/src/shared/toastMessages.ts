@@ -31,7 +31,7 @@ export const toastMessages = {
   essence: {
     equipped: (name: string, slotIndex: number): ToastInput => ({ message: `정수 장착 · ${name} / SLOT ${slotIndex}`, tone: "system" }),
     unequipped: (slotIndex: number): ToastInput => ({ message: `정수 해제 · SLOT ${slotIndex}`, tone: "system" }),
-    upgraded: (name: string, grade: number): ToastInput => ({ message: `정수 강화 · ${name} ${formatEssenceGrade(grade)}`, tone: "rare" }),
+    upgraded: (name: string, grade: number, spentCredits: number): ToastInput => ({ message: `정수 강화 · ${name} ${formatEssenceGrade(grade)} · -${spentCredits.toLocaleString()} CR`, tone: "rare" }),
   },
   hunt: {
     defeated: (): ToastInput => ({ message: "전투 패배 · 10초간 회복", tone: "error" }),

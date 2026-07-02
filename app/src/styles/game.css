@@ -1183,40 +1183,74 @@ button:disabled {
   font-size: 13px;
 }
 
-.essence-detail-section,
-.essence-upgrade-panel {
+.essence-detail-section {
   display: grid;
   gap: 7px;
 }
 
-.essence-detail-section + .essence-detail-section,
-.essence-detail-section + .essence-upgrade-panel,
-.essence-upgrade-panel + .essence-detail-section {
+.essence-detail-section + .essence-detail-section {
   border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
   padding-top: 10px;
 }
 
-.essence-detail-section > span,
-.essence-upgrade-info > span {
+.essence-detail-section > span {
   color: var(--mut);
   font-size: 12px;
 }
 
-.essence-detail-section > strong,
-.essence-upgrade-info > strong {
+.essence-detail-section > strong {
   color: var(--txt-bright);
   font-size: 13px;
 }
 
-.essence-upgrade-panel {
-  grid-template-columns: minmax(0, 1fr) auto;
+.essence-upgrade-card .panel-head {
   align-items: center;
-  gap: 10px;
 }
 
-.essence-upgrade-info {
+.essence-upgrade-grid {
   display: grid;
-  gap: 3px;
+  gap: 12px;
+}
+
+.essence-upgrade-target {
+  display: grid;
+  gap: 4px;
+}
+
+.essence-upgrade-target > span,
+.essence-upgrade-metrics span {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.essence-upgrade-target > strong,
+.essence-upgrade-metrics strong {
+  color: var(--txt-bright);
+  font-size: 13px;
+}
+
+.essence-upgrade-target > small {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.essence-upgrade-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.essence-upgrade-metrics > div {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px;
+}
+
+.essence-upgrade-metrics .is-insufficient {
+  color: var(--neg);
 }
 
 .weapon-sale-action {
@@ -2842,13 +2876,6 @@ button:disabled {
     min-width: 96px;
   }
 
-  .essence-upgrade-panel {
-    grid-template-columns: 1fr;
-  }
-
-  .essence-upgrade-panel .btn {
-    justify-self: start;
-  }
 }
 
 @keyframes dropdown-in {

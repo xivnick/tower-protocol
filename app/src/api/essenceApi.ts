@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { toKoreanAuthMessage } from "../shared/authMessages";
+import type { Character } from "../types/character";
 
 export type Essence = {
   id: string;
@@ -25,6 +26,8 @@ export type EssenceInventory = {
 
 export type EssenceUpgradeResult = {
   inventory: EssenceInventory;
+  character: Character | null;
+  spentCredits: number;
   upgradedEssenceId: string | null;
 };
 
@@ -48,6 +51,8 @@ type EssenceSlotPayload = {
 type EssenceInventoryPayload = {
   essences?: EssencePayload[];
   slots?: EssenceSlotPayload[];
+  character?: Character;
+  spent_credits?: number;
   upgraded_essence_id?: string | null;
 };
 
@@ -95,14 +100,19 @@ export async function unequipEssence(slotIndex: number): Promise<{ ok: boolean; 
 }
 
 export async function upgradeEssence(essenceId: string): Promise<{ ok: boolean; result: EssenceUpgradeResult; message: string }> {
-  const emptyResult = { inventory: mapInventory(null), upgradedEssenceId: null };
+  const emptyResult = { inventory: mapInventory(null), character: null, spentCredits: 0, upgradedEssenceId: null };
   if (!supabase) return { ok: false, result: emptyResult, message: "Supabase 설정을 확인해주세요." };
   const { data, error } = await supabase.rpc("upgrade_essence", { target_character_essence_id: essenceId });
   if (error) return { ok: false, result: emptyResult, message: toKoreanAuthMessage(error.message, "정수를 강화하지 못했습니다.") };
   const payload = data as EssenceInventoryPayload;
   return {
     ok: true,
-    result: { inventory: mapInventory(payload), upgradedEssenceId: payload?.upgraded_essence_id ?? null },
+    result: {
+      inventory: mapInventory(payload),
+      character: payload?.character ?? null,
+      spentCredits: payload?.spent_credits ?? 0,
+      upgradedEssenceId: payload?.upgraded_essence_id ?? null,
+    },
     message: "",
   };
 }
