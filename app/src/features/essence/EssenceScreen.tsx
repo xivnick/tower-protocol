@@ -24,6 +24,7 @@ export function EssenceScreen({
   const { showToast } = useToast();
   const [essences, setEssences] = useState<Essence[]>([]);
   const [selectedEssenceId, setSelectedEssenceId] = useState<string | null>(null);
+  const [upgradeEssenceId, setUpgradeEssenceId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -50,6 +51,11 @@ export function EssenceScreen({
   useEffect(() => {
     if (character) void loadEssences();
   }, [character?.id]);
+
+  useEffect(() => {
+    if (!upgradeEssenceId) return;
+    if (!essences.some((essence) => essence.id === upgradeEssenceId)) setUpgradeEssenceId(null);
+  }, [essences, upgradeEssenceId]);
 
   async function handleEquip(essence: Essence, slotIndex: number) {
     setPendingAction(`${essence.id}:${slotIndex}`);
@@ -90,7 +96,7 @@ export function EssenceScreen({
     setEssences(result.result.inventory.essences);
     if (result.result.character) onCharacterChange(result.result.character);
     const upgradedEssence = result.result.inventory.essences.find((candidate) => candidate.id === result.result.upgradedEssenceId) ?? null;
-    setSelectedEssenceId(result.result.upgradedEssenceId ?? essence.id);
+    setUpgradeEssenceId(result.result.upgradedEssenceId ?? null);
     showToast(toastMessages.essence.upgraded(upgradedEssence?.name ?? essence.name, upgradedEssence?.grade ?? essence.grade + 1, result.result.spentCredits));
   }
 
@@ -102,11 +108,11 @@ export function EssenceScreen({
     if (result.ok) onNoticeChange?.(result.status);
   }
 
-  if (!character) return <section className="screen-panel"><article className="panel"><p className="panel-message">캐릭터를 먼저 생성해주세요.</p></article></section>;
-
-  const selectedEssence = essences.find((essence) => essence.id === selectedEssenceId) ?? essences[0] ?? null;
   const sortedEssences = useMemo(() => [...essences].sort((left, right) => getEssenceMonsterOrder(left.code) - getEssenceMonsterOrder(right.code) || left.createdAt.localeCompare(right.createdAt)), [essences]);
+  const selectedUpgradeEssence = essences.find((essence) => essence.id === upgradeEssenceId) ?? null;
   const isBusy = pendingAction !== null;
+
+  if (!character) return <section className="screen-panel"><article className="panel"><p className="panel-message">캐릭터를 먼저 생성해주세요.</p></article></section>;
 
   return (
     <section className="screen-panel">
@@ -129,10 +135,14 @@ export function EssenceScreen({
       </article>
 
       <EssenceUpgradePanel
-        essence={selectedEssence}
+        essences={sortedEssences}
+        selectedEssence={selectedUpgradeEssence}
+        selectedEssenceId={upgradeEssenceId}
         credits={character.credits}
         isBusy={isBusy}
-        isPending={Boolean(selectedEssence && pendingAction === `upgrade:${selectedEssence.id}`)}
+        isLoading={isLoading}
+        isPending={Boolean(selectedUpgradeEssence && pendingAction === `upgrade:${selectedUpgradeEssence.id}`)}
+        onSelect={setUpgradeEssenceId}
         onUpgrade={handleUpgrade}
       />
 
@@ -144,7 +154,7 @@ export function EssenceScreen({
         {isLoading ? <p className="panel-message">정수를 불러오는 중...</p> : essences.length === 0 ? <p className="panel-message">보유한 정수가 없습니다.</p> : (
           <div className="weapon-list">
             {sortedEssences.map((essence) => {
-              const isSelected = essence.id === selectedEssence?.id;
+              const isSelected = essence.id === selectedEssenceId;
               return (
                 <article className={`weapon-entry ${isSelected ? "is-open" : ""} ${essence.equippedSlotIndex ? "is-equipped" : ""}`} key={essence.id}>
                   <button className="weapon-row" type="button" onClick={() => void handleEssenceSelect(essence, isSelected)} aria-expanded={isSelected}>
@@ -200,40 +210,71 @@ export function getSlotUnlockLevel(slotIndex: number) {
 }
 
 function EssenceUpgradePanel({
-  essence,
+  essences,
+  selectedEssence,
+  selectedEssenceId,
   credits,
   isBusy,
+  isLoading,
   isPending,
+  onSelect,
   onUpgrade,
 }: {
-  essence: Essence | null;
+  essences: Essence[];
+  selectedEssence: Essence | null;
+  selectedEssenceId: string | null;
   credits: number;
   isBusy: boolean;
+  isLoading: boolean;
   isPending: boolean;
+  onSelect: (essenceId: string | null) => void;
   onUpgrade: (essence: Essence) => void;
 }) {
   return (
     <article className="panel essence-upgrade-card">
       <div className="panel-head action-head">
         <div><span>FORGE</span><h2>정수 강화</h2></div>
-        {essence && (
-          <button className="btn primary" type="button" disabled={isBusy || !canUpgradeEssence(essence, credits)} onClick={() => onUpgrade(essence)}>
-            {getUpgradeButtonLabel(essence, credits, isPending)}
+        {selectedEssence && (
+          <button className="btn primary" type="button" disabled={isBusy || !canUpgradeEssence(selectedEssence, credits)} onClick={() => onUpgrade(selectedEssence)}>
+            {getUpgradeButtonLabel(selectedEssence, credits, isPending)}
           </button>
         )}
       </div>
-      {!essence ? <p className="panel-message">강화할 정수를 선택해주세요.</p> : (
+      {isLoading ? <p className="panel-message">정수를 불러오는 중...</p> : essences.length === 0 ? <p className="panel-message">보유한 정수가 없습니다.</p> : (
         <div className="essence-upgrade-grid">
-          <div className="essence-upgrade-target">
-            <span>선택 정수</span>
-            <strong>{essence.name} {formatGrade(essence.grade)}</strong>
-            <small>{getEssenceSummary(essence)}</small>
+          <div className="essence-upgrade-picker">
+            <span>대상 선택</span>
+            <div className="essence-upgrade-options" role="listbox" aria-label="강화할 정수">
+              {essences.map((essence) => (
+                <button
+                  className={essence.id === selectedEssenceId ? "is-selected" : ""}
+                  type="button"
+                  role="option"
+                  aria-selected={essence.id === selectedEssenceId}
+                  disabled={isBusy}
+                  onClick={() => onSelect(essence.id)}
+                  key={essence.id}
+                >
+                  <strong>{essence.name} {formatGrade(essence.grade)}</strong>
+                  <small>x{essence.quantity} · {getEssenceUpgradeCostLabel(essence)}</small>
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="essence-upgrade-metrics">
-            <div><span>재료</span><strong className={essence.quantity < 3 ? "is-insufficient" : ""}>{essence.quantity}/3</strong></div>
-            <div><span>비용</span><strong className={credits < getEssenceUpgradeCost(essence.grade) ? "is-insufficient" : ""}>{getEssenceUpgradeCost(essence.grade).toLocaleString()} CR</strong></div>
-            <div><span>결과</span><strong>{essence.grade >= 5 ? "MAX" : `${formatGrade(essence.grade)} -> ${formatGrade(essence.grade + 1)}`}</strong></div>
-          </div>
+          {!selectedEssence ? <p className="panel-message">강화할 정수를 선택해주세요.</p> : (
+            <>
+              <div className="essence-upgrade-target">
+                <span>선택 정수</span>
+                <strong>{selectedEssence.name} {formatGrade(selectedEssence.grade)}</strong>
+                <small>{getEssenceSummary(selectedEssence)}</small>
+              </div>
+              <div className="essence-upgrade-metrics">
+                <div><span>재료</span><strong className={selectedEssence.quantity < 3 ? "is-insufficient" : ""}>{selectedEssence.quantity}/3</strong></div>
+                <div><span>비용</span><strong className={credits < getEssenceUpgradeCost(selectedEssence.grade) ? "is-insufficient" : ""}>{getEssenceUpgradeCostLabel(selectedEssence)}</strong></div>
+                <div><span>결과</span><strong>{selectedEssence.grade >= 5 ? "MAX" : `${formatGrade(selectedEssence.grade)} -> ${formatGrade(selectedEssence.grade + 1)}`}</strong></div>
+              </div>
+            </>
+          )}
         </div>
       )}
     </article>
@@ -254,6 +295,11 @@ function getUpgradeButtonLabel(essence: Essence, credits: number, isPending: boo
 
 function getEssenceUpgradeCost(grade: number) {
   return [0, 100, 300, 900, 2700][grade] ?? 0;
+}
+
+function getEssenceUpgradeCostLabel(essence: Essence) {
+  if (essence.grade >= 5) return "MAX";
+  return `${getEssenceUpgradeCost(essence.grade).toLocaleString()} CR`;
 }
 
 function getEssenceMonsterOrder(code: string) {

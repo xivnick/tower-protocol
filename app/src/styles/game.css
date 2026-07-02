@@ -1212,6 +1212,59 @@ button:disabled {
   gap: 12px;
 }
 
+.essence-upgrade-picker {
+  display: grid;
+  gap: 7px;
+}
+
+.essence-upgrade-picker > span {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.essence-upgrade-options {
+  display: grid;
+  gap: 6px;
+  max-height: 194px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.essence-upgrade-options button {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding: 9px;
+  text-align: left;
+}
+
+.essence-upgrade-options button:hover:not(:disabled),
+.essence-upgrade-options button.is-selected {
+  border-color: var(--acc);
+}
+
+.essence-upgrade-options button.is-selected {
+  background: var(--acc-deep);
+}
+
+.essence-upgrade-options strong {
+  color: var(--txt-bright);
+  font-size: 13px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.essence-upgrade-options small {
+  color: var(--mut);
+  flex: 0 0 auto;
+  font-size: 12px;
+}
+
 .essence-upgrade-target {
   display: grid;
   gap: 4px;
