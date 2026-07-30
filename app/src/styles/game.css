@@ -1130,6 +1130,15 @@ button:disabled {
   box-shadow: 0 0 8px color-mix(in srgb, var(--neg) 70%, transparent);
 }
 
+.inventory-upgrade-tag {
+  border: 1px solid color-mix(in srgb, var(--acc-2) 58%, var(--line));
+  color: var(--acc-2);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 3px 4px;
+}
+
 .weapon-row-title {
   display: flex;
   flex-wrap: wrap;
@@ -1147,7 +1156,31 @@ button:disabled {
   font-size: 13px;
 }
 
+.weapon-row .inventory-row-meta {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.inventory-row-meta b {
+  color: var(--mut);
+  font-size: 13px;
+}
+
+.inventory-row-meta small {
+  color: var(--mut);
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .weapon-entry.is-open .weapon-row span {
+  color: var(--acc-2);
+}
+
+.weapon-entry.is-open .inventory-row-meta b,
+.weapon-entry.is-open .inventory-row-meta small {
   color: var(--acc-2);
 }
 
@@ -1172,6 +1205,129 @@ button:disabled {
 .weapon-detail-info > strong {
   color: var(--txt-bright);
   font-size: 13px;
+}
+
+.essence-detail-section {
+  display: grid;
+  gap: 7px;
+}
+
+.essence-detail-section + .essence-detail-section {
+  border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  padding-top: 10px;
+}
+
+.essence-detail-section > span {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.essence-detail-section > strong {
+  color: var(--txt-bright);
+  font-size: 13px;
+}
+
+.essence-upgrade-card .panel-head {
+  align-items: center;
+}
+
+.essence-upgrade-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.essence-upgrade-picker {
+  display: grid;
+  gap: 7px;
+}
+
+.essence-upgrade-picker > span {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.essence-upgrade-options {
+  display: grid;
+  gap: 6px;
+  max-height: 194px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.essence-upgrade-options button {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding: 9px;
+  text-align: left;
+}
+
+.essence-upgrade-options button:hover:not(:disabled),
+.essence-upgrade-options button.is-selected {
+  border-color: var(--acc);
+}
+
+.essence-upgrade-options button.is-selected {
+  background: var(--acc-deep);
+}
+
+.essence-upgrade-options strong {
+  color: var(--txt-bright);
+  font-size: 13px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.essence-upgrade-options small {
+  color: var(--mut);
+  flex: 0 0 auto;
+  font-size: 12px;
+}
+
+.essence-upgrade-target {
+  display: grid;
+  gap: 4px;
+}
+
+.essence-upgrade-target > span,
+.essence-upgrade-metrics span {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.essence-upgrade-target > strong,
+.essence-upgrade-metrics strong {
+  color: var(--txt-bright);
+  font-size: 13px;
+}
+
+.essence-upgrade-target > small {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.essence-upgrade-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.essence-upgrade-metrics > div {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px;
+}
+
+.essence-upgrade-metrics .is-insufficient {
+  color: var(--neg);
 }
 
 .weapon-sale-action {
@@ -2796,6 +2952,7 @@ button:disabled {
   .combat-stat strong {
     min-width: 96px;
   }
+
 }
 
 @keyframes dropdown-in {

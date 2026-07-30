@@ -428,7 +428,7 @@ export function AppShell({
               <Route path="/" element={<DashboardScreen session={session} profile={profile} character={character} huntState={activeHuntState} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />} />
               <Route path="/character" element={<CharacterScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} />} />
               <Route path="/equipment" element={<EquipmentScreen character={character} onCharacterChange={onCharacterChange} onNoticeChange={handleInventoryNoticeChange} />} />
-              <Route path="/essences" element={<EssenceScreen character={character} onNoticeChange={handleInventoryNoticeChange} />} />
+              <Route path="/essences" element={<EssenceScreen character={character} onCharacterChange={onCharacterChange} onNoticeChange={handleInventoryNoticeChange} />} />
               <Route path="/hunt" element={<HuntScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={handleHuntStateChange} onInventoryReward={handleInventoryReward} />} />
               <Route path="/ranking" element={<RankingScreen />} />
               <Route path="/patch-notes" element={<PatchNotesArchive />} />

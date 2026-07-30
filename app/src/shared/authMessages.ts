@@ -41,6 +41,9 @@ const AUTH_ERROR_MESSAGES: Array<[RegExp, string]> = [
   [/monster_encountered/i, "조우한 몬스터와의 전투를 먼저 완료해주세요."],
   [/no_monster_encounter/i, "먼저 몬스터를 찾아주세요."],
   [/essence_slot_locked/i, "현재 레벨에서 잠긴 정수 슬롯입니다."],
+  [/essence_max_grade/i, "이미 최대 등급입니다."],
+  [/insufficient_essence_quantity/i, "정수 재료가 부족합니다."],
+  [/essence_not_owned/i, "보유하지 않은 정수입니다."],
   [/shared_name_conflict/i, "이미 사용 중인 이름입니다."],
   [/duplicate key value/i, "이미 사용 중인 값입니다."],
 ];
