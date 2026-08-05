@@ -175,7 +175,7 @@ type HuntPayload = {
   hunt_state?: HuntStatePayload;
 };
 
-type HuntBattlePayload = {
+export type HuntBattlePayload = {
   hunt_ground_id?: string;
   status?: HuntBattle["status"];
   started_at?: string;
@@ -609,7 +609,7 @@ function mapHuntState(payload: HuntStatePayload | undefined): HuntState {
   };
 }
 
-function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
+export function mapHuntBattle(payload: HuntBattlePayload): HuntBattle {
   return {
     huntGroundId: payload.hunt_ground_id ?? "training-dummy",
     status: payload.status ?? "victory",

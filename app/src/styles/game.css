@@ -1649,6 +1649,77 @@ button:disabled {
   margin-top: 14px;
 }
 
+.tower-screen {
+  display: grid;
+  gap: 14px;
+}
+
+.tower-floor-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.tower-floor-card::after {
+  content: "01";
+  position: absolute;
+  right: 14px;
+  bottom: -18px;
+  color: rgb(255 255 255 / 3%);
+  font-size: 96px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.tower-floor-card.is-cleared {
+  border-color: var(--acc-dim);
+}
+
+.tower-floor-meta {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.tower-floor-meta div {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 10px;
+}
+
+.tower-floor-meta span,
+.tower-floor-meta strong {
+  display: block;
+}
+
+.tower-floor-meta span {
+  color: var(--mut-2);
+  font-size: 11px;
+}
+
+.tower-floor-meta strong {
+  margin-top: 3px;
+  color: var(--txt-bright);
+  font-size: 13px;
+}
+
+.tower-battle-status {
+  color: var(--mut);
+  font-size: 12px;
+}
+
+.tower-battle-status.is-victory {
+  color: var(--acc-2);
+}
+
+.tower-battle-status.is-defeated,
+.tower-battle-status.is-timed_out {
+  color: var(--danger);
+}
+
 .hunt-status-meter span,
 .hunt-status-meter strong {
   display: block;

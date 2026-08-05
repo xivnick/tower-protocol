@@ -46,6 +46,11 @@ export const toastMessages = {
     autoHuntStopped: (): ToastInput => ({ message: "자동사냥을 중단했습니다.", tone: "system" }),
     autoHuntCompleted: (): ToastInput => ({ message: "자동사냥이 종료되었습니다.", tone: "system" }),
   },
+  tower: {
+    started: (floor: number): ToastInput => ({ message: `탑 ${floor}층 도전 시작`, tone: "system" }),
+    cleared: (floor: number): ToastInput => ({ message: `탑 ${floor}층 클리어`, tone: "epic" }),
+    defeated: (floor: number): ToastInput => ({ message: `탑 ${floor}층 도전 실패`, tone: "error" }),
+  },
   recovery: {
     completed: (): ToastInput => ({ message: "체력이 모두 회복되었습니다.", tone: "system" }),
   },

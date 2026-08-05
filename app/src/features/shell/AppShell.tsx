@@ -18,12 +18,13 @@ import { DashboardScreen } from "../dashboard/DashboardScreen";
 import { HuntScreen } from "../hunt/HuntScreen";
 import { PatchNotesArchive } from "../patchNotes/PatchNotes";
 import { RankingScreen } from "../ranking/Ranking";
+import { TowerScreen } from "../tower/TowerScreen";
 import { useToast } from "../toast/ToastProvider";
 
 const navItems = [
   { label: "대시보드", to: "/", end: true, enabled: true },
   { label: "사냥", to: "/hunt", enabled: true },
-  { label: "탑", to: "/tower", enabled: false },
+  { label: "탑", to: "/tower", enabled: true },
   { label: "캐릭터", to: "/character", enabled: true },
   { label: "장비", to: "/equipment", enabled: true },
   { label: "정수", to: "/essences", enabled: true },
@@ -430,6 +431,7 @@ export function AppShell({
               <Route path="/equipment" element={<EquipmentScreen character={character} onCharacterChange={onCharacterChange} onNoticeChange={handleInventoryNoticeChange} />} />
               <Route path="/essences" element={<EssenceScreen character={character} onCharacterChange={onCharacterChange} onNoticeChange={handleInventoryNoticeChange} />} />
               <Route path="/hunt" element={<HuntScreen character={character} onCharacterChange={onCharacterChange} onCharacterRefresh={onCharacterRefresh} onHuntStateChange={handleHuntStateChange} onInventoryReward={handleInventoryReward} />} />
+              <Route path="/tower" element={<TowerScreen character={character} />} />
               <Route path="/ranking" element={<RankingScreen />} />
               <Route path="/patch-notes" element={<PatchNotesArchive />} />
               <Route path="*" element={<Navigate to="/" replace />} />
@@ -447,6 +449,7 @@ function getCurrentNavLabel(pathname: string) {
   if (pathname.startsWith("/equipment")) return "장비";
   if (pathname.startsWith("/essences")) return "정수";
   if (pathname.startsWith("/hunt")) return "사냥";
+  if (pathname.startsWith("/tower")) return "탑";
   if (pathname.startsWith("/ranking")) return "랭킹";
   if (pathname.startsWith("/patch-notes")) return "패치노트";
   return "대시보드";
