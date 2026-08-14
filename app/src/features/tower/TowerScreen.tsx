@@ -8,6 +8,7 @@ import { calculateCombatStats } from "../../shared/stats";
 import { useCombatClock } from "../../shared/useCombatClock";
 import { useDocumentTitle } from "../../shared/useDocumentTitle";
 import type { Character } from "../../types/character";
+import { CombatLog } from "../combat/CombatLog";
 import { useToast } from "../toast/ToastProvider";
 
 const FLOOR_ONE = 1;
@@ -42,6 +43,8 @@ function TowerFloorOne({ character }: { character: Character }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const settlementAttemptRef = useRef<string | null>(null);
+  const logRef = useRef<HTMLOListElement>(null);
+  const isLogPinnedToBottomRef = useRef(true);
   const battle = towerState?.lastBattle ?? null;
   const isBattleInProgress = battle?.status === "in_progress";
   const combatNow = useCombatClock(isBattleInProgress);
@@ -93,6 +96,22 @@ function TowerFloorOne({ character }: { character: Character }) {
 
     return () => { isActive = false; };
   }, [battle, isBattleInProgress, isPlaybackComplete, showToast]);
+
+  useEffect(() => {
+    if (visibleLogs.length > 0 && logRef.current && isLogPinnedToBottomRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [visibleLogs.length]);
+
+  useEffect(() => {
+    isLogPinnedToBottomRef.current = true;
+  }, [battle?.startedAt]);
+
+  function handleCombatLogScroll() {
+    const log = logRef.current;
+    if (!log) return;
+    isLogPinnedToBottomRef.current = log.scrollHeight - log.scrollTop - log.clientHeight <= 16;
+  }
 
   async function handleChallenge() {
     setIsSubmitting(true);
@@ -149,14 +168,17 @@ function TowerFloorOne({ character }: { character: Character }) {
           <TowerCombatantCard label="ENEMY" name={battle ? `LV.${battle.enemy.level} ${battle.enemy.name}` : "LV.1 성난 멧돼지"} currentHp={battle ? enemyHp ?? battle.enemy.maxHp : null} maxHp={battle?.enemy.maxHp ?? null} />
         </div>
 
-        <ol className="combat-log" aria-label="탑 전투 로그">
-          {battle ? visibleLogs.map((entry, index) => (
-            <li className={`is-${entry.kind}`} key={`${entry.timeTenths}-${entry.kind}-${index}`}>
-              <time>[{formatTime(entry.timeTenths)}]</time>
-              <span>{formatLog(entry, battle)}</span>
-            </li>
-          )) : <li className="is-empty">1층 도전을 기다리고 있습니다.</li>}
-        </ol>
+        <CombatLog
+          logs={battle ? visibleLogs : []}
+          playerName={battle?.player.name ?? character.name}
+          enemyName={battle?.enemy.name ?? "성난 멧돼지"}
+          enemyLevel={battle?.enemy.level ?? 1}
+          victoryMessage="1층 클리어"
+          emptyMessage={battle ? "전투 개시 중..." : "1층 도전을 기다리고 있습니다."}
+          ariaLabel="탑 전투 로그"
+          listRef={logRef}
+          onScroll={handleCombatLogScroll}
+        />
       </article>
     </section>
   );
@@ -205,22 +227,4 @@ function formatBattleStatus(status: HuntBattle["status"]) {
   if (status === "defeated") return "DEFEAT";
   if (status === "timed_out") return "TIMEOUT";
   return status.toUpperCase();
-}
-
-function formatLog(entry: HuntLogEntry, battle: HuntBattle) {
-  if (entry.kind === "encounter") return `${battle.enemy.name} 조우`;
-  if (entry.kind === "defeat") return `${battle.enemy.name} 격파`;
-  if (entry.kind === "player_defeat") return `${battle.player.name} 전투 불능`;
-  if (entry.kind === "timeout") return "시간 제한 도달";
-  if (entry.kind === "miss") return `${battle.player.name} 공격 빗나감`;
-  if (entry.kind === "enemy_miss") return `${battle.player.name} 회피`;
-  if (entry.kind === "regeneration" || entry.kind === "player_regeneration") return `체력 +${Math.round(entry.amount).toLocaleString()}`;
-  if (entry.kind === "essence_cast") return `${entry.name ?? "정수"} 발동`;
-  if (entry.kind.startsWith("essence_")) return `${entry.name ?? "정수"} ${Math.round(entry.amount).toLocaleString()} 피해`;
-  const attacker = entry.target === "player" ? battle.enemy.name : battle.player.name;
-  return `${attacker} ${entry.kind.includes("critical") ? "치명타 " : ""}${Math.round(entry.amount).toLocaleString()} 피해`;
-}
-
-function formatTime(tenths: number) {
-  return `${Math.floor(tenths / 10).toString().padStart(2, "0")}.${Math.abs(tenths % 10)}`;
 }
