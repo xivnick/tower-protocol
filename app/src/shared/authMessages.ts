@@ -34,6 +34,8 @@ const AUTH_ERROR_MESSAGES: Array<[RegExp, string]> = [
   [/tower_battle_in_progress/i, "탑 전투가 진행 중입니다."],
   [/tower_battle_requires_settlement/i, "종료된 탑 전투를 정산해주세요."],
   [/tower_battle_not_found/i, "정산할 탑 전투가 없습니다."],
+  [/tower_floor_locked/i, "이전 층을 먼저 클리어해주세요."],
+  [/tower_floor_not_supported/i, "도전할 수 없는 층입니다."],
   [/tower_recovery_in_progress/i, "회복을 마친 후 탑에 도전해주세요."],
   [/hunt_in_progress/i, "진행 중인 사냥 전투를 먼저 완료해주세요."],
   [/training_charges_empty/i, "훈련 보관이 비어 있습니다."],

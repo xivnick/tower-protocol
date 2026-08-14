@@ -1654,13 +1654,70 @@ button:disabled {
   gap: 14px;
 }
 
+.tower-floor-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tower-floor-select {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: var(--mut);
+  padding: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tower-floor-select:hover:not(:disabled),
+.tower-floor-select.is-selected {
+  border-color: var(--acc-dim);
+  background: var(--acc-faint);
+}
+
+.tower-floor-select.is-cleared small {
+  color: var(--acc-2);
+}
+
+.tower-floor-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.tower-floor-select span,
+.tower-floor-select strong,
+.tower-floor-select small {
+  display: block;
+}
+
+.tower-floor-select span {
+  color: var(--acc-2);
+  font-size: 11px;
+}
+
+.tower-floor-select strong {
+  overflow: hidden;
+  margin-top: 4px;
+  color: var(--txt-bright);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tower-floor-select small {
+  margin-top: 6px;
+  color: var(--mut-2);
+  font-size: 10px;
+}
+
 .tower-floor-card {
   position: relative;
   overflow: hidden;
 }
 
 .tower-floor-card::after {
-  content: "01";
+  content: attr(data-floor);
   position: absolute;
   right: 14px;
   bottom: -18px;
@@ -1704,20 +1761,6 @@ button:disabled {
   margin-top: 3px;
   color: var(--txt-bright);
   font-size: 13px;
-}
-
-.tower-battle-status {
-  color: var(--mut);
-  font-size: 12px;
-}
-
-.tower-battle-status.is-victory {
-  color: var(--acc-2);
-}
-
-.tower-battle-status.is-defeated,
-.tower-battle-status.is-timed_out {
-  color: var(--danger);
 }
 
 .hunt-status-meter span,
@@ -2657,6 +2700,12 @@ button:disabled {
 @media (max-width: 860px) {
   :root {
     --auto-battle-hud-clearance: 64px;
+  }
+
+  .tower-floor-list {
+    grid-template-columns: repeat(5, minmax(112px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 4px;
   }
 
   body {

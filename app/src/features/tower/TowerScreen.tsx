@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { challengeTowerFloorOne, getMyTowerState, settleTowerFloorOne } from "../../api/towerApi";
+import { challengeTowerFloor, getMyTowerState, settleTowerBattle } from "../../api/towerApi";
 import type { TowerState } from "../../api/towerApi";
 import type { HuntBattle, HuntLogEntry } from "../../api/characterApi";
 import { toastMessages } from "../../shared/toastMessages";
@@ -11,10 +11,23 @@ import type { Character } from "../../types/character";
 import { CombatLog } from "../combat/CombatLog";
 import { useToast } from "../toast/ToastProvider";
 
-const FLOOR_ONE = 1;
+type TowerFloor = {
+  floor: number;
+  name: string;
+  enemy: string;
+  enemyLevel: number;
+};
+
+const TOWER_FLOORS: TowerFloor[] = [
+  { floor: 1, name: "시작의 계단", enemy: "성난 멧돼지", enemyLevel: 1 },
+  { floor: 2, name: "울음의 회랑", enemy: "숲 늑대", enemyLevel: 2 },
+  { floor: 3, name: "잔불의 방", enemy: "반딧불 정령", enemyLevel: 3 },
+  { floor: 4, name: "돌갑옷 문턱", enemy: "바위 딱정벌레", enemyLevel: 4 },
+  { floor: 5, name: "숲지기의 관문", enemy: "숲지기 큰사슴", enemyLevel: 5 },
+];
 
 export function TowerScreen({ character }: { character: Character | null }) {
-  useDocumentTitle("TOWER://FLOOR 01");
+  useDocumentTitle("TOWER://ASCENT");
 
   if (!character) {
     return (
@@ -33,12 +46,13 @@ export function TowerScreen({ character }: { character: Character | null }) {
     );
   }
 
-  return <TowerFloorOne character={character} />;
+  return <TowerFloors character={character} />;
 }
 
-function TowerFloorOne({ character }: { character: Character }) {
+function TowerFloors({ character }: { character: Character }) {
   const { showToast } = useToast();
   const [towerState, setTowerState] = useState<TowerState | null>(null);
+  const [selectedFloor, setSelectedFloor] = useState(1);
   const [message, setMessage] = useState("탑 정보를 불러오는 중...");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,6 +60,9 @@ function TowerFloorOne({ character }: { character: Character }) {
   const logRef = useRef<HTMLOListElement>(null);
   const isLogPinnedToBottomRef = useRef(true);
   const battle = towerState?.lastBattle ?? null;
+  const battleFloor = getBattleFloor(battle);
+  const recordFloor = battle ? battleFloor : selectedFloor;
+  const floorInfo = getFloorInfo(selectedFloor);
   const isBattleInProgress = battle?.status === "in_progress";
   const combatNow = useCombatClock(isBattleInProgress);
   const playbackTenths = battle ? getElapsedTenths(battle, combatNow) : 0;
@@ -57,6 +74,10 @@ function TowerFloorOne({ character }: { character: Character }) {
   const playerHp = getVisibleHp(battle, visibleLogs, "player");
   const enemyHp = getVisibleHp(battle, visibleLogs, "enemy");
   const playerMaxHp = battle?.player.maxHp ?? calculateCombatStats(character).maxHp;
+  const highestClearedFloor = towerState?.highestClearedFloor ?? 0;
+  const supportedFloor = towerState?.supportedFloor ?? 1;
+  const hasClearedSelectedFloor = highestClearedFloor >= selectedFloor;
+  const isSelectedFloorLocked = selectedFloor > highestClearedFloor + 1;
 
   useEffect(() => {
     let isActive = true;
@@ -68,7 +89,13 @@ function TowerFloorOne({ character }: { character: Character }) {
         setMessage(result.message);
         return;
       }
+
       setTowerState(result.state);
+      const activeBattleFloor = getBattleFloor(result.state.lastBattle);
+      const nextFloor = result.state.lastBattle?.status === "in_progress"
+        ? activeBattleFloor
+        : Math.min(result.state.highestClearedFloor + 1, result.state.supportedFloor);
+      setSelectedFloor(Math.max(1, nextFloor));
       setMessage("");
     });
 
@@ -80,7 +107,7 @@ function TowerFloorOne({ character }: { character: Character }) {
 
     let isActive = true;
     settlementAttemptRef.current = battle.startedAt;
-    void settleTowerFloorOne().then((result) => {
+    void settleTowerBattle().then((result) => {
       if (!isActive) return;
       settlementAttemptRef.current = null;
       if (!result.ok || !result.state) {
@@ -90,12 +117,12 @@ function TowerFloorOne({ character }: { character: Character }) {
 
       setTowerState(result.state);
       const settledBattle = result.state.lastBattle;
-      if (settledBattle?.status === "victory") showToast(toastMessages.tower.cleared(FLOOR_ONE));
-      else showToast(toastMessages.tower.defeated(FLOOR_ONE));
+      if (settledBattle?.status === "victory") showToast(toastMessages.tower.cleared(battleFloor));
+      else showToast(toastMessages.tower.defeated(battleFloor));
     });
 
     return () => { isActive = false; };
-  }, [battle, isBattleInProgress, isPlaybackComplete, showToast]);
+  }, [battle, battleFloor, isBattleInProgress, isPlaybackComplete, showToast]);
 
   useEffect(() => {
     if (visibleLogs.length > 0 && logRef.current && isLogPinnedToBottomRef.current) {
@@ -114,9 +141,10 @@ function TowerFloorOne({ character }: { character: Character }) {
   }
 
   async function handleChallenge() {
+    const floor = selectedFloor;
     setIsSubmitting(true);
     setMessage("");
-    const result = await challengeTowerFloorOne();
+    const result = await challengeTowerFloor(floor);
     setIsSubmitting(false);
 
     if (!result.ok || !result.state) {
@@ -126,55 +154,69 @@ function TowerFloorOne({ character }: { character: Character }) {
 
     settlementAttemptRef.current = null;
     setTowerState(result.state);
-    showToast(toastMessages.tower.started(FLOOR_ONE));
+    showToast(toastMessages.tower.started(floor));
   }
-
-  const resultLabel = getResultLabel(battle);
-  const hasCleared = (towerState?.highestClearedFloor ?? 0) >= FLOOR_ONE;
 
   return (
     <section className="screen-panel tower-screen">
-      <article className={`panel tower-floor-card ${hasCleared ? "is-cleared" : ""}`}>
+      <nav className="tower-floor-list" aria-label="탑 층 선택">
+        {TOWER_FLOORS.filter(({ floor }) => floor <= supportedFloor).map((item) => {
+          const isCleared = item.floor <= highestClearedFloor;
+          const isLocked = item.floor > highestClearedFloor + 1;
+          return (
+            <button
+              className={`tower-floor-select ${selectedFloor === item.floor ? "is-selected" : ""} ${isCleared ? "is-cleared" : ""}`}
+              type="button"
+              key={item.floor}
+              onClick={() => setSelectedFloor(item.floor)}
+              disabled={isBattleInProgress || isLocked}
+            >
+              <span>{item.floor.toString().padStart(2, "0")}F</span>
+              <strong>{item.name}</strong>
+              <small>{isCleared ? "완료" : isLocked ? "잠김" : "도전 가능"}</small>
+            </button>
+          );
+        })}
+      </nav>
+
+      <article className={`panel tower-floor-card ${hasClearedSelectedFloor ? "is-cleared" : ""}`} data-floor={selectedFloor.toString().padStart(2, "0")}>
         <div className="panel-head compact action-head">
           <div>
-            <span>TOWER / FLOOR 01</span>
-            <h2>시작의 계단</h2>
+            <span>TOWER / FLOOR {selectedFloor.toString().padStart(2, "0")}</span>
+            <h2>{floorInfo.name}</h2>
           </div>
-          <button className="btn primary" type="button" onClick={() => void handleChallenge()} disabled={isLoading || isSubmitting || isBattleInProgress}>
-            {isSubmitting ? "입장 중..." : isBattleInProgress ? "전투 중..." : hasCleared ? "다시 도전" : "1층 도전"}
+          <button className="btn primary" type="button" onClick={() => void handleChallenge()} disabled={isLoading || isSubmitting || isBattleInProgress || isSelectedFloorLocked}>
+            {isSubmitting ? "입장 중..." : isBattleInProgress ? "전투 중..." : isSelectedFloorLocked ? "잠김" : hasClearedSelectedFloor ? "다시 도전" : `${selectedFloor}층 도전`}
           </button>
         </div>
 
         <div className="tower-floor-meta">
-          <div><span>클리어</span><strong>{hasCleared ? "CLEAR" : "--"}</strong></div>
-          <div><span>최고층</span><strong>{towerState?.highestClearedFloor ?? 0}F</strong></div>
-          <div><span>적</span><strong>LV.1 성난 멧돼지</strong></div>
+          <div><span>상태</span><strong>{hasClearedSelectedFloor ? "완료" : isSelectedFloorLocked ? "잠김" : "도전 가능"}</strong></div>
+          <div><span>최고층</span><strong>{highestClearedFloor}F</strong></div>
+          <div><span>적</span><strong>LV.{floorInfo.enemyLevel} {floorInfo.enemy}</strong></div>
         </div>
 
         {message && <p className={`panel-message ${isLoading ? "" : "is-error"}`} aria-live="polite">{message}</p>}
       </article>
 
       <article className="panel combat-record-panel">
-        <div className="panel-head compact action-head">
-          <div>
-            <span>CHALLENGE</span>
-            <h2>{resultLabel}</h2>
-          </div>
-          {battle && <strong className={`tower-battle-status is-${battle.status}`}>{formatBattleStatus(battle.status)}</strong>}
+        <div className="panel-head compact">
+          <span>CHALLENGE / FLOOR {recordFloor.toString().padStart(2, "0")}</span>
+          <h2>{getResultLabel(battle, recordFloor)}</h2>
         </div>
 
         <div className="combat-hp-grid">
           <TowerCombatantCard label="PLAYER" name={`LV.${battle?.player.level ?? character.level} ${battle?.player.name ?? character.name}`} currentHp={playerHp ?? playerMaxHp} maxHp={playerMaxHp} />
-          <TowerCombatantCard label="ENEMY" name={battle ? `LV.${battle.enemy.level} ${battle.enemy.name}` : "LV.1 성난 멧돼지"} currentHp={battle ? enemyHp ?? battle.enemy.maxHp : null} maxHp={battle?.enemy.maxHp ?? null} />
+          <TowerCombatantCard label="ENEMY" name={battle ? `LV.${battle.enemy.level} ${battle.enemy.name}` : `LV.${floorInfo.enemyLevel} ${floorInfo.enemy}`} currentHp={battle ? enemyHp ?? battle.enemy.maxHp : null} maxHp={battle?.enemy.maxHp ?? null} />
         </div>
 
         <CombatLog
           logs={battle ? visibleLogs : []}
           playerName={battle?.player.name ?? character.name}
-          enemyName={battle?.enemy.name ?? "성난 멧돼지"}
-          enemyLevel={battle?.enemy.level ?? 1}
-          victoryMessage="1층 클리어"
-          emptyMessage={battle ? "전투 개시 중..." : "1층 도전을 기다리고 있습니다."}
+          enemyName={battle?.enemy.name ?? floorInfo.enemy}
+          enemyLevel={battle?.enemy.level ?? floorInfo.enemyLevel}
+          victoryMessage={`${recordFloor}층 클리어`}
+          emptyMessage={battle ? "전투 개시 중..." : `${selectedFloor}층 도전을 기다리고 있습니다.`}
           ariaLabel="탑 전투 로그"
           listRef={logRef}
           onScroll={handleCombatLogScroll}
@@ -200,6 +242,17 @@ function TowerCombatantCard({ label, name, currentHp, maxHp }: { label: string; 
   );
 }
 
+function getFloorInfo(floor: number) {
+  return TOWER_FLOORS.find((item) => item.floor === floor) ?? TOWER_FLOORS[0];
+}
+
+function getBattleFloor(battle: HuntBattle | null) {
+  if (!battle) return 1;
+  const match = /^tower-floor-(\d+)$/.exec(battle.huntGroundId);
+  const floor = Number(match?.[1]);
+  return Number.isInteger(floor) && floor >= 1 && floor <= TOWER_FLOORS.length ? floor : 1;
+}
+
 function getElapsedTenths(battle: HuntBattle, now: number) {
   if (battle.status !== "in_progress") return battle.durationTicks;
   const startedAt = Date.parse(battle.startedAt);
@@ -214,17 +267,9 @@ function getVisibleHp(battle: HuntBattle | null, logs: HuntLogEntry[], target: "
   return target === "player" ? battle.player.startHp ?? battle.player.maxHp : battle.enemy.maxHp;
 }
 
-function getResultLabel(battle: HuntBattle | null) {
-  if (!battle) return "1층 도전";
-  if (battle.status === "in_progress") return "전투 진행";
-  if (battle.status === "victory") return "1층 클리어";
-  return "도전 실패";
-}
-
-function formatBattleStatus(status: HuntBattle["status"]) {
-  if (status === "in_progress") return "RUNNING";
-  if (status === "victory") return "CLEAR";
-  if (status === "defeated") return "DEFEAT";
-  if (status === "timed_out") return "TIMEOUT";
-  return status.toUpperCase();
+function getResultLabel(battle: HuntBattle | null, floor: number) {
+  if (!battle) return "전투 기록 없음";
+  if (battle.status === "in_progress") return `${floor}층 전투 진행`;
+  if (battle.status === "victory") return `${floor}층 클리어`;
+  return `${floor}층 도전 실패`;
 }

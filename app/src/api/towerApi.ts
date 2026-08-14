@@ -25,21 +25,22 @@ export function getMyTowerState() {
   return runTowerAction("get_my_tower_state", "탑 정보를 불러오지 못했습니다.");
 }
 
-export function challengeTowerFloorOne() {
-  return runTowerAction("challenge_tower_floor_one", "탑 1층 도전을 시작하지 못했습니다.");
+export function challengeTowerFloor(floor: number) {
+  return runTowerAction("challenge_tower_floor", `탑 ${floor}층 도전을 시작하지 못했습니다.`, { p_floor: floor });
 }
 
-export function settleTowerFloorOne() {
-  return runTowerAction("settle_tower_floor_one", "탑 1층 전투를 정산하지 못했습니다.");
+export function settleTowerBattle() {
+  return runTowerAction("settle_tower_battle", "탑 전투를 정산하지 못했습니다.");
 }
 
 async function runTowerAction(
-  rpc: "get_my_tower_state" | "challenge_tower_floor_one" | "settle_tower_floor_one",
+  rpc: "get_my_tower_state" | "challenge_tower_floor" | "settle_tower_battle",
   fallbackMessage: string,
+  args?: { p_floor: number },
 ): Promise<TowerStateResult> {
   if (!supabase) return { ok: false, state: null, message: "Supabase 설정을 확인해주세요." };
 
-  const { data, error } = await supabase.rpc(rpc);
+  const { data, error } = await supabase.rpc(rpc, args);
   if (error) {
     return { ok: false, state: null, message: toKoreanAuthMessage(error.message, fallbackMessage) };
   }
